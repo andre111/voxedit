@@ -3,6 +3,9 @@
 	"package": "me.andre111.voxedit.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
+        "MixinClientPlayerEntity",
+        "MixinEntity",
+        "MixinWorldRenderer"
 	],
 	"injectors": {
 		"defaultRequire": 1

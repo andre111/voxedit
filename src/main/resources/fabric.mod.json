@@ -14,6 +14,9 @@
 	"entrypoints": {
 		"main": [
 			"me.andre111.voxedit.VoxEdit"
+		],
+		"client": [
+			"me.andre111.voxedit.VoxEdit"
 		]
 	},
 	"mixins": [
@@ -21,8 +24,8 @@
 	],
 	"depends": {
 		"fabricloader": ">=0.14.24",
-		"minecraft": "~1.20.3",
-		"java": ">=21"
+		"minecraft": "*",
+		"java": ">=17"
 	},
 	"suggests": {}
 }
