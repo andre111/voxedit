@@ -13,9 +13,13 @@ public class UndoState {
 	}
 	
 	public void undo(World world) {
-		for(EditAction action : actions) action.undo(world);
+		for(int i=actions.size()-1; i>=0; i--) {
+			actions.get(i).undo(world);
+		}
 	}
 	public void redo(World world) {
-		for(EditAction action : actions) action.redo(world);
+		for(int i=0; i<actions.size(); i++) {
+			actions.get(i).redo(world);
+		}
 	}
 }

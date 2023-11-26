@@ -7,8 +7,10 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.Camera;
@@ -18,7 +20,6 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -38,16 +39,20 @@ import org.slf4j.LoggerFactory;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import me.andre111.voxedit.tool.ToolItem;
+import me.andre111.voxedit.tool.ToolItemBrush;
+import me.andre111.voxedit.tool.ToolItemSmooth;
 
 public class VoxEdit implements ModInitializer, ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("voxedit");
     
-    public static final ToolItem TOOL = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool"), new ToolItem(new Item.Settings().maxCount(1)));
+    public static final ToolItem TOOL_BRUSH = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool"), new ToolItemBrush());
+    public static final ToolItem TOOL_SMOOTH = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool_smooth"), new ToolItemSmooth());
     
     public static final KeyBinding INCREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.increaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_UP, "key.category.voxedit"));
     public static final KeyBinding DECREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.decreaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_DOWN, "key.category.voxedit"));
     public static final KeyBinding UNDO = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.undo", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_Z, "key.category.voxedit"));
     public static final KeyBinding REDO = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.redo", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_Y, "key.category.voxedit"));
+    public static final KeyBinding OPEN_MENU = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.openMenu", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_M, "key.category.voxedit"));
     
 	@Override
 	public void onInitialize() {
@@ -59,7 +64,8 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		BuiltinItemRendererRegistry.INSTANCE.register(TOOL, new ToolRenderer());
+		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_BRUSH, new ToolRenderer());
+		HudRenderer.init();
 		
     	ClientTickEvents.START_CLIENT_TICK.register((mc) -> {
     		if(mc.world != null && mc.player != null) tickClient();
@@ -69,7 +75,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
     	});
     	ClientPreAttackCallback.EVENT.register((client, player, clickCount) -> {
     		ItemStack stack = player.getMainHandStack();
-    		if(stack.isOf(TOOL)) {
+    		if(stack.getItem() instanceof ToolItem) {
     			if(player.isCreative() && MinecraftClient.getInstance().attackCooldown <= 0) {
     				MinecraftClient.getInstance().attackCooldown = 5;
     				Networking.clientSendCommand(Networking.Command.TOOL_LEFT_CLICK);
@@ -78,35 +84,53 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
     		}
     		return false;
     	});
+    	ServerEntityEvents.EQUIPMENT_CHANGE.register((livingEntity, equipmentSlot, previous, next) -> {
+    		
+    	});
 	}
 	
-	private static ClientPlayerEntity player;
-	private static ToolState active;
-	private static BlockPos target;
+	public static ClientPlayerEntity player;
+	public static ToolItem activeItem;
+	public static ToolState active;
+	public static BlockPos target;
 	
 	@SuppressWarnings("resource")
 	public static void tickClient() {
 		player = MinecraftClient.getInstance().player;
+		
+		ToolState oldActive = active;
+		ToolItem oldActiveItem = activeItem;
 		active = null;
+		activeItem = null;
 		ItemStack stack = player.getMainHandStack();
-		if(stack.isOf(TOOL)) active = TOOL.readState(stack);
+		if(stack.getItem() instanceof ToolItem tool) {
+			activeItem = tool;
+			active = ToolItem.readState(stack);
+		}
+		if(active != null && activeItem != oldActiveItem) HudRenderer.getToolSettingsScreen().rebuild();
+		if(active != null && !active.equals(oldActive)) HudRenderer.getToolSettingsScreen().reload();
+		
+		if(MinecraftClient.getInstance().currentScreen != null) return;
 		
 		if(active != null) {
 			target = getTargetOf(player, active);
 			
 			if(INCREASE_RADIUS.wasPressed()) {
-				Networking.clientSendToolState(active.withRadius(Math.min(active.radius+1, 16)));
+				Networking.clientSendToolState(active.withRadius(Math.min(active.radius()+1, 16)));
 			}
 			if(DECREASE_RADIUS.wasPressed()) {
-				Networking.clientSendToolState(active.withRadius(Math.max(1, active.radius-1)));
+				Networking.clientSendToolState(active.withRadius(Math.max(1, active.radius()-1)));
+			}
+			if(OPEN_MENU.wasPressed()) {
+				MinecraftClient.getInstance().setScreen(HudRenderer.getToolSettingsScreen());
 			}
 		}
 		
 		while(UNDO.wasPressed()) {
-			Networking.clientSendCommand(Networking.Command.UNDO);
+			if(Screen.hasControlDown()) Networking.clientSendCommand(Networking.Command.UNDO);
 		}
 		while(REDO.wasPressed()) {
-			Networking.clientSendCommand(Networking.Command.REDO);
+			if(Screen.hasControlDown()) Networking.clientSendCommand(Networking.Command.REDO);
 		}
 	}
 	
@@ -274,7 +298,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 	}
 	
 	public static BlockPos getTargetOf(Entity e, ToolState state) {
-		HitResult result = e.raycast(40, 0, state.targetFluids);
+		HitResult result = e.raycast(64, 0, state.targetFluids());
 		if(result instanceof BlockHitResult blockHit) {
 			return blockHit.getBlockPos();
 		}

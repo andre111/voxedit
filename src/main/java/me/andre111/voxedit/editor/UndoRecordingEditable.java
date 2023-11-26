@@ -20,6 +20,11 @@ public class UndoRecordingEditable implements Editable {
 		this.actions = new ArrayList<>();
 	}
 
+	@Override
+	public void applyCurrentChanges() {
+		for(EditAction action : actions) action.redo(world);
+	}
+
 	protected void apply() {
 		for(EditAction action : actions) action.redo(world);
 		undo.push(new UndoState(actions));

@@ -5,4 +5,5 @@ import net.minecraft.util.math.BlockPos;
 
 public interface Editable {
 	public void setBlock(BlockPos pos, BlockState state);
+	public void applyCurrentChanges();
 }

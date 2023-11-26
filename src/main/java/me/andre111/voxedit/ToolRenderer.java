@@ -3,7 +3,9 @@ package me.andre111.voxedit;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 
+import me.andre111.voxedit.tool.ToolItem;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry.DynamicItemRenderer;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -31,10 +33,10 @@ public class ToolRenderer implements DynamicItemRenderer {
 		DrawContext context = new DrawContext(MinecraftClient.getInstance(), (Immediate) vertexConsumers);
 		context.getMatrices().translate(matrices.peek().getPositionMatrix().m30(), matrices.peek().getPositionMatrix().m31(), matrices.peek().getPositionMatrix().m32());
 		
-		ToolState state = VoxEdit.TOOL.readState(stack);
+		ToolState state = ToolItem.readState(stack);
 		
 		//TODO: render shape
-		switch(state.shape) {
+		switch(state.shape()) {
 		case CUBE:
 			break;
 		case SPHERE:
@@ -46,13 +48,15 @@ public class ToolRenderer implements DynamicItemRenderer {
 		// render size
 		context.getMatrices().push();
 		context.getMatrices().translate(1, 1 - 16, 200);
-		context.drawText(MinecraftClient.getInstance().textRenderer, state.radius+"", 0, 0, 0xFFFFFF, true);
+		context.drawText(MinecraftClient.getInstance().textRenderer, state.radius()+"", 0, 0, 0xFFFFFF, true);
 		context.getMatrices().pop();
 		
 		// render selected block
 		matrices.push();
 		matrices.multiplyPositionMatrix(BLOCK_POSE.getPositionMatrix());
-		MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(state.blockState, matrices, vertexConsumers, light, overlay);
+		int blockStateIndex = (int) ((System.currentTimeMillis()) / (1000 * 2)) % state.palette().size();
+		BlockState blockState = state.palette().get(blockStateIndex);
+		MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(blockState, matrices, vertexConsumers, light, overlay);
 		matrices.pop();
 	}
 }

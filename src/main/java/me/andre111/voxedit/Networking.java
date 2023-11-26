@@ -27,8 +27,8 @@ public class Networking {
     		NbtCompound tag = buf.readNbt();
     		ToolState state = ToolState.CODEC.decode(NbtOps.INSTANCE, tag).result().get().getFirst();
     		ItemStack stack = player.getMainHandStack();
-    		if(stack.isOf(VoxEdit.TOOL)) {
-    			VoxEdit.TOOL.storeState(stack, state);
+    		if(stack.getItem() instanceof ToolItem) {
+    			ToolItem.storeState(stack, state);
     			
     			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
     			responseSender.sendPacket(new EntityEquipmentUpdateS2CPacket(player.getId(), list));
@@ -48,9 +48,8 @@ public class Networking {
 				break;
 			case "TOOL_LEFT_CLICK":
 				ItemStack stack = player.getMainHandStack();
-				if(stack.isOf(VoxEdit.TOOL)) {
+	    		if(stack.getItem() instanceof ToolItem item) {
 					//TODO: verify attack cooldown
-					ToolItem item = (ToolItem) stack.getItem();
 					item.leftClicked(world, player, Hand.MAIN_HAND);
 				}
 				break;

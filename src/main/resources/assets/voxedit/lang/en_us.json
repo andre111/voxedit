@@ -1,0 +1,11 @@
+{
+    "item.voxedit.tool": "Brush",
+    "item.voxedit.tool_smooth": "Smooth",
+    
+    "key.category.voxedit": "VoxEdit",
+    "key.voxedit.decreaseRadius": "Decrease Tool Radius",
+    "key.voxedit.increaseRadius": "Increase Tool Radius",
+    "key.voxedit.openMenu": "Open Tool Setttings Menu",
+    "key.voxedit.redo": "Redo Action",
+    "key.voxedit.undo": "Undo Action"
+}

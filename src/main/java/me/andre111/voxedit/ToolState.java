@@ -6,17 +6,17 @@ import java.util.Set;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 //TODO: sync changes to server
-public class ToolState {
+public record ToolState(BlockPalette palette, Mode mode, Shape shape, int radius, boolean targetFluids) {
 	public static final Codec<ToolState> CODEC = RecordCodecBuilder.create(instance -> instance
 			.group(
-					BlockState.CODEC.optionalFieldOf("blockState", Blocks.STONE.getDefaultState()).forGetter(ts -> ts.blockState),
+					BlockPalette.CODEC.optionalFieldOf("palette", new BlockPalette(Blocks.STONE.getDefaultState())).forGetter(ts -> ts.palette),
 					Codec.STRING.optionalFieldOf("mode", "FILL").xmap(str -> Mode.valueOf(str), mode -> mode.name()).forGetter(ts -> ts.mode),
 					Codec.STRING.optionalFieldOf("shape", "SPHERE").xmap(str -> Shape.valueOf(str), shape -> shape.name()).forGetter(ts -> ts.shape),
 					Codec.INT.optionalFieldOf("radius", 3).forGetter(ts -> ts.radius),
@@ -24,41 +24,28 @@ public class ToolState {
 			)
 			.apply(instance, ToolState::new));
 	
-	public final BlockState blockState;
-	public final Mode mode;
-	public final Shape shape;
-	public final int radius;
-	public final boolean targetFluids;
-	
-	public ToolState() {
-		this(Blocks.STONE.getDefaultState(), Mode.FILL, Shape.SPHERE, 3, false);
-	}
-	private ToolState(BlockState blockState, Mode mode, Shape shape, int radius, boolean targetFluids) {
-		this.blockState = blockState;
-		this.mode = mode;
-		this.shape = shape;
-		this.radius = radius;
-		this.targetFluids = targetFluids;
+	public static ToolState initial() {
+		return new ToolState(new BlockPalette(Blocks.STONE.getDefaultState()), Mode.FILL, Shape.SPHERE, 3, false);
 	}
 	
-	public ToolState withBlockState(BlockState blockState) {
-		return new ToolState(blockState, mode, shape, radius, targetFluids);
+	public ToolState withBlockPalette(BlockPalette palette) {
+		return new ToolState(palette, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withMode(Mode mode) {
-		return new ToolState(blockState, mode, shape, radius, targetFluids);
+		return new ToolState(palette, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withShape(Shape shape) {
-		return new ToolState(blockState, mode, shape, radius, targetFluids);
+		return new ToolState(palette, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withRadius(int radius) {
-		return new ToolState(blockState, mode, shape, radius, targetFluids);
+		return new ToolState(palette, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withTargetFluids(boolean targetFluids) {
-		return new ToolState(blockState, mode, shape, radius, targetFluids);
+		return new ToolState(palette, mode, shape, radius, targetFluids);
 	}
 	
 	public Set<BlockPos> getBlockPositions(World world, BlockPos center) {
@@ -81,20 +68,6 @@ public class ToolState {
 		return positions;
 	}
 	
-	public static enum Shape {
-		SPHERE((state, x, y, z) -> Math.sqrt(x*x + y*y + z*z) <= state.radius),
-		CUBE((state, x, y, z) -> true);
-		
-		final OffsetPredicate offsetPredicate;
-		
-		Shape(OffsetPredicate offsetPredicate) {
-			this.offsetPredicate = offsetPredicate;
-		}
-		
-		public static interface OffsetPredicate {
-			public boolean test(ToolState state, int x, int y, int z);
-		}
-	}
 	public static enum Mode {
 		FILL((state, world, pos) -> true),
 		PAINT((state, world, pos) -> {
@@ -115,10 +88,38 @@ public class ToolState {
 			this.testPredicate = testPredicate;
 		}
 		
+		public Text asText() {
+			return Text.of(name());
+		}
+		
 		public static interface TestPredicate {
 			public boolean test(ToolState state, World world, BlockPos pos);
 		}
 	}
+	public static enum Shape {
+		SPHERE((state, x, y, z) -> Math.sqrt(x*x + y*y + z*z) <= state.radius),
+		CUBE((state, x, y, z) -> true),
+		HOLLOW_SPHERE((state, x, y, z) -> {
+			double dist = Math.sqrt(x*x + y*y + z*z);
+			return (state.radius - 0.5) <= dist && dist <= (state.radius + 0.5);
+		}),
+		HOLLOW_CUBE((state, x, y, z) -> Math.abs(x) == state.radius || Math.abs(y) == state.radius || Math.abs(z) == state.radius);
+		
+		final OffsetPredicate offsetPredicate;
+		
+		Shape(OffsetPredicate offsetPredicate) {
+			this.offsetPredicate = offsetPredicate;
+		}
+		
+		public Text asText() {
+			return Text.of(name());
+		}
+		
+		public static interface OffsetPredicate {
+			public boolean test(ToolState state, int x, int y, int z);
+		}
+	}
+	
 	public static boolean isFree(World world, BlockPos pos) {
 		return world.getBlockState(pos).getCollisionShape(world, pos).isEmpty();
 	}
