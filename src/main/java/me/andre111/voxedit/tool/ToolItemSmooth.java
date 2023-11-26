@@ -17,12 +17,12 @@ import net.minecraft.world.World;
 
 public class ToolItemSmooth extends ToolItem {
 	public ToolItemSmooth() {
-		super(false, true, true, false);
+		super(false, true, true, false, true);
 	}
 	
 	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
-		if(!world.isClient) {
+		if(!world.isClient && player.isCreative()) {
 			ToolState state = readState(player.getStackInHand(hand));
 			BlockPos target = VoxEdit.getTargetOf(player, state);
 			if(state != null && target != null) {

@@ -13,12 +13,12 @@ import net.minecraft.world.World;
 
 public class ToolItemBrush extends ToolItem {
 	public ToolItemBrush() {
-		super(true, true, true, true);
+		super(true, true, true, true, true);
 	}
 
 	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
-		if(!world.isClient) {
+		if(!world.isClient && player.isCreative()) {
 			ToolState state = readState(player.getStackInHand(hand));
 			BlockPos target = VoxEdit.getTargetOf(player, state);
 			if(state != null && target != null) {
@@ -37,7 +37,7 @@ public class ToolItemBrush extends ToolItem {
 
 	@Override
 	public void leftClicked(World world, PlayerEntity player, Hand hand) {
-		if(!world.isClient) {
+		if(!world.isClient && player.isCreative()) {
 			ToolState state = readState(player.getStackInHand(hand));
 			BlockPos target = VoxEdit.getTargetOf(player, state);
 			if(state != null && target != null) {

@@ -13,10 +13,11 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 //TODO: sync changes to server
-public record ToolState(BlockPalette palette, Mode mode, Shape shape, int radius, boolean targetFluids) {
+public record ToolState(BlockPalette palette, BlockPalette filter, Mode mode, Shape shape, int radius, boolean targetFluids) {
 	public static final Codec<ToolState> CODEC = RecordCodecBuilder.create(instance -> instance
 			.group(
 					BlockPalette.CODEC.optionalFieldOf("palette", new BlockPalette(Blocks.STONE.getDefaultState())).forGetter(ts -> ts.palette),
+					BlockPalette.CODEC.optionalFieldOf("filter", new BlockPalette()).forGetter(ts -> ts.filter),
 					Codec.STRING.optionalFieldOf("mode", "FILL").xmap(str -> Mode.valueOf(str), mode -> mode.name()).forGetter(ts -> ts.mode),
 					Codec.STRING.optionalFieldOf("shape", "SPHERE").xmap(str -> Shape.valueOf(str), shape -> shape.name()).forGetter(ts -> ts.shape),
 					Codec.INT.optionalFieldOf("radius", 3).forGetter(ts -> ts.radius),
@@ -25,27 +26,31 @@ public record ToolState(BlockPalette palette, Mode mode, Shape shape, int radius
 			.apply(instance, ToolState::new));
 	
 	public static ToolState initial() {
-		return new ToolState(new BlockPalette(Blocks.STONE.getDefaultState()), Mode.FILL, Shape.SPHERE, 3, false);
+		return new ToolState(new BlockPalette(Blocks.STONE.getDefaultState()), new BlockPalette(), Mode.FILL, Shape.SPHERE, 3, false);
 	}
 	
 	public ToolState withBlockPalette(BlockPalette palette) {
-		return new ToolState(palette, mode, shape, radius, targetFluids);
+		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
+	}
+	
+	public ToolState withBlockFilter(BlockPalette filter) {
+		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withMode(Mode mode) {
-		return new ToolState(palette, mode, shape, radius, targetFluids);
+		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withShape(Shape shape) {
-		return new ToolState(palette, mode, shape, radius, targetFluids);
+		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withRadius(int radius) {
-		return new ToolState(palette, mode, shape, radius, targetFluids);
+		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withTargetFluids(boolean targetFluids) {
-		return new ToolState(palette, mode, shape, radius, targetFluids);
+		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public Set<BlockPos> getBlockPositions(World world, BlockPos center) {
@@ -59,6 +64,7 @@ public record ToolState(BlockPalette palette, Mode mode, Shape shape, int radius
                 	BlockPos pos = center.add(x, y, z);
                 	
                 	if(!mode.testPredicate.test(this, world, pos)) continue;
+                	if(filter.size() > 0 && !filter.has(world.getBlockState(pos).getBlock())) continue;
                 	
         			positions.add(pos);
                 }

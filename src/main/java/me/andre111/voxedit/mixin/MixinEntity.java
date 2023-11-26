@@ -18,7 +18,7 @@ public abstract class MixinEntity {
 
 	@Inject(method = "move", at = @At("HEAD"))
     public void move(MovementType movementType, Vec3d movement, CallbackInfo ci) {
-		if((Object) this instanceof PlayerEntity) {
+		if((Object) this instanceof PlayerEntity player && player.isCreative() && player.getAbilities().flying) {
 			noClip = true;
 		}
 	}

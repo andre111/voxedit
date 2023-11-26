@@ -35,14 +35,21 @@ public class BlockStateWidget extends TextFieldWidget {
     private static final Identifier TEXTURE = new Identifier("container/slot");
 	
 	private BlockState value;
+	private final boolean includeProperties;
 	private final Consumer<BlockState> consumer;
 
-    public BlockStateWidget(TextRenderer textRenderer, int x, int y, int width, int height, BlockState initialValue, Consumer<BlockState> consumer) {
+    public BlockStateWidget(TextRenderer textRenderer, int x, int y, int width, int height, boolean includeProperties, BlockState initialValue, Consumer<BlockState> consumer) {
 		super(textRenderer, x, y, width, height, Text.empty());
+		this.includeProperties = includeProperties;
 		this.consumer = consumer;
 		this.value = initialValue;
 		
-		this.setText(BlockArgumentParser.stringifyBlockState(value));
+		this.setMaxLength(200);
+		if(this.includeProperties) {
+			this.setText(BlockArgumentParser.stringifyBlockState(value));
+		} else {
+			this.setText(value.getRegistryEntry().getKey().map(key -> key.getValue().toString()).orElse("air"));
+		}
 		
 		this.setChangedListener((string) -> {
 			try {

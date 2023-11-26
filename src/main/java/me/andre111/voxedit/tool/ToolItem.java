@@ -13,14 +13,16 @@ public abstract class ToolItem extends Item {
 	private final boolean usesMode;
 	private final boolean usesShape;
 	private final boolean usesRadius;
-	private final boolean usesBlockState;
+	private final boolean usesBlockPalette;
+	private final boolean usesBlockFilter;
 
-	public ToolItem(boolean usesMode, boolean usesShape, boolean usesRadius, boolean usesBlockState) {
+	public ToolItem(boolean usesMode, boolean usesShape, boolean usesRadius, boolean usesBlockPalette, boolean usesBlockFilter) {
 		super(new Item.Settings().maxCount(1));
 		this.usesMode = usesMode;
 		this.usesShape = usesShape;
 		this.usesRadius = usesRadius;
-		this.usesBlockState = usesBlockState;
+		this.usesBlockPalette = usesBlockPalette;
+		this.usesBlockFilter = usesBlockFilter;
 	}
 	
 	@Override
@@ -47,8 +49,12 @@ public abstract class ToolItem extends Item {
 		return usesRadius;
 	}
 	
-	public boolean usesBlockState() {
-		return usesBlockState;
+	public boolean usesBlockPalette() {
+		return usesBlockPalette;
+	}
+	
+	public boolean usesBlockFilter() {
+		return usesBlockFilter;
 	}
 	
 	public static ToolState readState(ItemStack stack) {

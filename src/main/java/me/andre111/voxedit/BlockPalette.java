@@ -6,6 +6,7 @@ import java.util.List;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.math.random.Random;
@@ -18,7 +19,9 @@ public class BlockPalette {
 			.apply(instance, BlockPalette::new));
 	
 	private List<Entry> entries = new ArrayList<>();
-	
+
+	public BlockPalette() {
+	}
 	public BlockPalette(BlockState state) {
 		entries.add(new Entry(state, 1));
 	}
@@ -28,6 +31,13 @@ public class BlockPalette {
 	
 	public int size() {
 		return entries.size();
+	}
+	
+	public boolean has(Block block) {
+		for(Entry entry : entries) {
+			if(entry.state.getBlock() == block) return true;
+		}
+		return false;
 	}
 	
 	public BlockState get(int index) {

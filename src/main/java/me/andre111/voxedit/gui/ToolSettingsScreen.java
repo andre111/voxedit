@@ -1,12 +1,9 @@
 package me.andre111.voxedit.gui;
 
-import me.andre111.voxedit.BlockPalette;
 import me.andre111.voxedit.IntSliderWidget;
 import me.andre111.voxedit.Networking;
 import me.andre111.voxedit.ToolState;
 import me.andre111.voxedit.VoxEdit;
-import me.andre111.voxedit.ToolState.Mode;
-import me.andre111.voxedit.ToolState.Shape;
 import me.andre111.voxedit.gui.widget.BlockPaletteDisplayWidget;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -17,8 +14,6 @@ import net.minecraft.client.gui.widget.DirectionalLayoutWidget;
 import net.minecraft.client.gui.widget.DirectionalLayoutWidget.DisplayAxis;
 import net.minecraft.client.gui.widget.TextWidget;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 public class ToolSettingsScreen extends Screen {
 	private int contentWidth = 100;
@@ -31,6 +26,9 @@ public class ToolSettingsScreen extends Screen {
 	
 	private DirectionalLayoutWidget blockWidgetContainer;
 	private BlockPaletteDisplayWidget blockStateDisplay;
+	
+	private DirectionalLayoutWidget filterWidgetContainer;
+	private BlockPaletteDisplayWidget filterDisplay;
 
 	public ToolSettingsScreen() {
 		super(Text.of("Tool Settings"));
@@ -47,6 +45,7 @@ public class ToolSettingsScreen extends Screen {
 		if(shapeSelector != null && shapeSelector.getValue() != state.shape()) shapeSelector.setValue(state.shape());
 		if(radiusSlider != null && radiusSlider.getIntValue() != state.radius()) radiusSlider.setIntValue(state.radius());
 		if(blockStateDisplay != null && !blockStateDisplay.getValue().equals(state.palette())) blockStateDisplay.setValue(state.palette());
+		if(filterDisplay != null && !filterDisplay.getValue().equals(state.filter())) filterDisplay.setValue(state.filter());
 	}
 
 	@Override
@@ -56,12 +55,12 @@ public class ToolSettingsScreen extends Screen {
 		if(VoxEdit.activeItem.usesMode()) contentHeight += 22;
 		if(VoxEdit.activeItem.usesShape()) contentHeight += 22;
 		if(VoxEdit.activeItem.usesRadius()) contentHeight += 22;
-		if(VoxEdit.activeItem.usesBlockState()) contentHeight += 22*2;
+		if(VoxEdit.activeItem.usesBlockPalette()) contentHeight += 22;
+		if(VoxEdit.activeItem.usesBlockFilter()) contentHeight += 22;
 		
 		int x = 2+padding;
 		int y = (height-contentHeight-padding*2) / 2;
 		
-		//TODO: Change title based on tool
 		int currentY = y;
 		addDrawableChild(new TextWidget(x, currentY, contentWidth, 14, VoxEdit.activeItem.getName().copy().append(": Settings"), textRenderer).alignCenter());
 		currentY += 12;
@@ -84,27 +83,29 @@ public class ToolSettingsScreen extends Screen {
 			currentY += 22;
 		}
 		
-		if(VoxEdit.activeItem.usesBlockState()) {
+		if(VoxEdit.activeItem.usesBlockPalette()) {
 			blockWidgetContainer = new DirectionalLayoutWidget(x, currentY, DisplayAxis.HORIZONTAL);
 			blockWidgetContainer.spacing(2);
-			blockStateDisplay = blockWidgetContainer.add(addDrawableChild(new BlockPaletteDisplayWidget(0, 0, 20, 20, VoxEdit.active.palette())));
-			blockWidgetContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Set focused"), (button) -> {
-				World world = MinecraftClient.getInstance().world;
-				if(world != null) {
-					BlockPos pos = VoxEdit.getTargetOf(VoxEdit.player, VoxEdit.active);
-					if(pos != null && !world.isAir(pos)) {
-						Networking.clientSendToolState(VoxEdit.active.withBlockPalette(new BlockPalette(world.getBlockState(pos))));
-					}
-				}
-			}).size(contentWidth-22, 20).build()));
-			blockWidgetContainer.refreshPositions();
-			currentY += 22;
-			
-			addDrawableChild(ButtonWidget.builder(Text.of("Edit Palette"), (button) -> {
-				MinecraftClient.getInstance().setScreen(new EditBlockPaletteScreen(this, VoxEdit.active.palette(), palette -> {
+			blockWidgetContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Edit Palette"), (button) -> {
+				MinecraftClient.getInstance().setScreen(new EditBlockPaletteScreen(this, Text.of("Edit Block Palette"), 1, true, true, VoxEdit.active.palette(), palette -> {
 					Networking.clientSendToolState(VoxEdit.active.withBlockPalette(palette));
 				}));
-			}).position(x, currentY).size(contentWidth, 20).build());
+			}).size(contentWidth-22, 20).build()));
+			blockStateDisplay = blockWidgetContainer.add(addDrawableChild(new BlockPaletteDisplayWidget(0, 0, 20, 20, VoxEdit.active.palette())));
+			blockWidgetContainer.refreshPositions();
+			currentY += 22;
+		}
+		
+		if(VoxEdit.activeItem.usesBlockFilter()) {
+			filterWidgetContainer = new DirectionalLayoutWidget(x, currentY, DisplayAxis.HORIZONTAL);
+			filterWidgetContainer.spacing(2);
+			filterWidgetContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Edit Filter"), (button) -> {
+				MinecraftClient.getInstance().setScreen(new EditBlockPaletteScreen(this, Text.of("Edit Block Filter"), 0, false, false, VoxEdit.active.filter(), filter -> {
+					Networking.clientSendToolState(VoxEdit.active.withBlockFilter(filter));
+				}));
+			}).size(contentWidth-22, 20).build()));
+			filterDisplay = filterWidgetContainer.add(addDrawableChild(new BlockPaletteDisplayWidget(0, 0, 20, 20, VoxEdit.active.filter())));
+			filterWidgetContainer.refreshPositions();
 			currentY += 22;
 		}
 	}

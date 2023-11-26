@@ -1,10 +1,9 @@
 package me.andre111.voxedit.gui;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
-
-import org.jetbrains.annotations.Nullable;
 
 import me.andre111.voxedit.BlockPalette;
 import me.andre111.voxedit.IntSliderWidget;
@@ -14,12 +13,8 @@ import net.fabricmc.api.Environment;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.ParentElement;
 import net.minecraft.client.gui.Selectable;
-import net.minecraft.client.gui.navigation.GuiNavigation;
-import net.minecraft.client.gui.navigation.GuiNavigationPath;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.ElementListWidget;
 import net.minecraft.screen.ScreenTexts;
@@ -27,16 +22,22 @@ import net.minecraft.text.Text;
 
 public class EditBlockPaletteScreen extends Screen {
     private final Screen parent;
+	private final int minSize;
+	private final boolean includeProperties;
+	private final boolean showWeights;
 	private final Consumer<BlockPalette> callback;
 	private BlockPalette palette;
 	
 	private BlockPaletteListWidget paletteWidget;
     private ButtonWidget removeEntryButton;
 
-	protected EditBlockPaletteScreen(Screen parent, BlockPalette palette, Consumer<BlockPalette> callback) {
-		super(Text.of("Edit Block Palette"));
+	protected EditBlockPaletteScreen(Screen parent, Text text, int minSize, boolean includeProperties, boolean showWeights, BlockPalette palette, Consumer<BlockPalette> callback) {
+		super(text);
 
 		this.parent = parent;
+		this.minSize = minSize;
+		this.includeProperties = includeProperties;
+		this.showWeights = showWeights;
 		this.callback = callback;
 		this.palette = new BlockPalette(palette.getEntries());
 	}
@@ -46,7 +47,7 @@ public class EditBlockPaletteScreen extends Screen {
     	paletteWidget = addDrawableChild(new BlockPaletteListWidget());
     	removeEntryButton = addDrawableChild(ButtonWidget.builder(Text.of("Remove Entry"), button -> {
             if (!hasEntrySelected()) return;
-            if(palette.size() <= 1) return;
+            if(palette.size() <= minSize) return;
             
             List<BlockPalette.Entry> list = palette.getEntries();
             int index = paletteWidget.getSelectedOrNull().index;
@@ -88,7 +89,7 @@ public class EditBlockPaletteScreen extends Screen {
     }
 
     private void updateRemoveEntryButton() {
-    	removeEntryButton.active = hasEntrySelected() && palette.size() > 1;
+    	removeEntryButton.active = hasEntrySelected() && palette.size() > minSize;
     }
 
     private boolean hasEntrySelected() {
@@ -152,29 +153,34 @@ public class EditBlockPaletteScreen extends Screen {
 				this.index = index;
 				
 				BlockPalette.Entry paletteEntry = palette.getEntry(index);
-				stateWidget = new BlockStateWidget(textRenderer, 0, 0, 200, 20, paletteEntry.state(), (blockState) -> {
+				stateWidget = new BlockStateWidget(textRenderer, 0, 0, 200, 20, includeProperties, paletteEntry.state(), (blockState) -> {
 					BlockPalette.Entry oldEntry = palette.getEntry(index);
 					palette.setEntry(index, new BlockPalette.Entry(blockState, oldEntry.weight()));
 				});
-				weightWidget = new IntSliderWidget(0, 0, 100, 20, Text.of("Weight"), 1, 100, paletteEntry.weight(), (weight) -> {
-					BlockPalette.Entry oldEntry = palette.getEntry(index);
-					palette.setEntry(index, new BlockPalette.Entry(oldEntry.state(), weight));
-				});
+				children.add(stateWidget);
+				selectableChildren.add(stateWidget);
 				
-				children = List.of(stateWidget, weightWidget);
-				selectableChildren = List.of(stateWidget, weightWidget);
+				if(showWeights) {
+					weightWidget = new IntSliderWidget(0, 0, 100, 20, Text.of("Weight"), 1, 20, paletteEntry.weight(), (weight) -> {
+						BlockPalette.Entry oldEntry = palette.getEntry(index);
+						palette.setEntry(index, new BlockPalette.Entry(oldEntry.state(), weight));
+					});
+					children.add(weightWidget);
+					selectableChildren.add(weightWidget);
+				}
 			}
 			
 			@Override
 			public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
 				stateWidget.setX(x);
 				stateWidget.setY(y);
-				
-				weightWidget.setX(x+entryWidth-weightWidget.getWidth()-4);
-				weightWidget.setY(y);
-				
 				stateWidget.render(context, mouseX, mouseY, tickDelta);
-				weightWidget.render(context, mouseX, mouseY, tickDelta);
+				
+				if(weightWidget != null) {
+					weightWidget.setX(x+entryWidth-weightWidget.getWidth()-4);
+					weightWidget.setY(y);
+					weightWidget.render(context, mouseX, mouseY, tickDelta);
+				}
 			}
 
 	        @Override
@@ -183,8 +189,8 @@ public class EditBlockPaletteScreen extends Screen {
 	        	return super.mouseClicked(mouseX, mouseY, button);
 	        }
 			
-			private List<Element> children;
-			private List<Selectable> selectableChildren;
+			private List<Element> children = new ArrayList<>();
+			private List<Selectable> selectableChildren = new ArrayList<>();
 
 			@Override
 			public List<? extends Element> children() {

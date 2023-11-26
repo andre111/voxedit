@@ -54,16 +54,18 @@ public class BlockPaletteDisplayWidget extends ClickableWidget {
         context.drawGuiTexture(TEXTURE, this.getX(), this.getY(), this.getWidth(), this.getHeight());
         context.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-		MatrixStack matrices = context.getMatrices();
-		matrices.push();
-		matrices.translate(getX()+Math.min(width, height)/2, getY()+height/2, 200);
-		float scale = 10 * (20.0f / Math.min(width, height));
-		matrices.scale(scale, scale, scale);
-		matrices.multiplyPositionMatrix(BLOCK_POSE.getPositionMatrix());
-		int blockStateIndex = (int) ((System.currentTimeMillis()) / (1000 * 2)) % value.size();
-		BlockState blockState = value.get(blockStateIndex);
-        MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(blockState, matrices, context.getVertexConsumers(), LightmapTextureManager.MAX_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV);
-        matrices.pop();
+        if(value.size() > 0) {
+			MatrixStack matrices = context.getMatrices();
+			matrices.push();
+			matrices.translate(getX()+Math.min(width, height)/2, getY()+height/2, 200);
+			float scale = 10 * (20.0f / Math.min(width, height));
+			matrices.scale(scale, scale, scale);
+			matrices.multiplyPositionMatrix(BLOCK_POSE.getPositionMatrix());
+			int blockStateIndex = (int) ((System.currentTimeMillis()) / (1000 * 2)) % value.size();
+			BlockState blockState = value.get(blockStateIndex);
+	        MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(blockState, matrices, context.getVertexConsumers(), LightmapTextureManager.MAX_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV);
+	        matrices.pop();
+        }
 	}
 
 	@Override
