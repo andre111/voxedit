@@ -116,7 +116,6 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
     	});
 	}
 	
-	@SuppressWarnings("resource")
 	public static void tickClient() {
 		ClientState.ticks++;
 		ClientState.player = MinecraftClient.getInstance().player;
@@ -157,7 +156,6 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 		}
 	}
 	
-	@SuppressWarnings("resource")
 	public static void render(MatrixStack matrices, float frame) {
 		if(ClientState.active != null && ClientState.target != null) {
 			if(ClientState.ticks % 200 == 0 || ClientState.positions == null) {

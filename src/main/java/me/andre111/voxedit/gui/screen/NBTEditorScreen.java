@@ -70,7 +70,7 @@ public class NBTEditorScreen extends Screen {
 
 	@Override
 	protected void init() {
-		buttonContainer = new DirectionalLayoutWidget(0, 0, DisplayAxis.HORIZONTAL);
+		buttonContainer = new DirectionalLayoutWidget(0, 2, DisplayAxis.HORIZONTAL);
 		buttonContainer.spacing(2);
 		
 		int buttonSize = 20;
@@ -154,18 +154,18 @@ public class NBTEditorScreen extends Screen {
 		buttonContainer.refreshPositions();
 		buttonContainer.setX((width-buttonContainer.getWidth())/2);
 		
-		rootList = addDrawableChild(new NBTEditorList(root, width, height-40, 6));
+		rootList = addDrawableChild(new NBTEditorList(root, width, height-40-2*4, 6));
 		
 
         addDrawableChild(ButtonWidget.builder(ScreenTexts.DONE, button -> {
         	Networking.clientSendNBTEditorResult(root);
             close();
-        }).dimensions(width / 2 - 155, height - 20, 150, 20).build());
+        }).dimensions(width / 2 - 155, height - 20-2, 150, 20).build());
         
         addDrawableChild(ButtonWidget.builder(ScreenTexts.CANCEL, button -> {
         	Networking.clientSendNBTEditorResult(null);
            	close();
-        }).dimensions(width / 2 + 5, height - 20, 150, 20).build());
+        }).dimensions(width / 2 + 5, height - 20-2, 150, 20).build());
 		
 		updateButtons();
 	}
@@ -293,7 +293,7 @@ public class NBTEditorScreen extends Screen {
 		private final NbtElement compoundOrList;
 		
 		public NBTEditorList(NbtElement compoundOrList, int width, int height, int padding) {
-			super(NBTEditorScreen.this.client, width, height, 20, padding);
+			super(NBTEditorScreen.this.client, width, height, 20+2*2, padding);
 			this.compoundOrList = compoundOrList;
 			reload();
 		}

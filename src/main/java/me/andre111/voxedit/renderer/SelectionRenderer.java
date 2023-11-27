@@ -16,26 +16,11 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
 public class SelectionRenderer {
-	@SuppressWarnings("resource")
 	public static void render(Set<BlockPos> positions, MatrixStack matrices, float frame) {
 		VertexConsumerProvider.Immediate consumer = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
 
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         Vec3d camPos = camera.getPos();
-        
-        
-        // render blocks
-        /*
-       	for(BlockPos pos : positions) {
-			poseStack.pushPose();
-            poseStack.translate(pos.getX() - camPos.x, pos.getY() - camPos.y, pos.getZ() - camPos.z);
-            
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(active.blockState, poseStack, bs, Brightness.FULL_BRIGHT.pack(), OverlayTexture.NO_OVERLAY);
-            
-            poseStack.popPose();
-        }
-        bs.endLastBatch();
-        */
 
         float expand = 0.01f;
         float one = 1 + expand * 2;

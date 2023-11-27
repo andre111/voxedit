@@ -28,7 +28,6 @@ public class ToolRenderer implements DynamicItemRenderer {
 		BLOCK_POSE = matrices.peek();
 	}
 	
-	@SuppressWarnings("resource")
 	@Override
 	public void render(ItemStack stack, ModelTransformationMode mode, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
 		if(mode != ModelTransformationMode.GUI) return;

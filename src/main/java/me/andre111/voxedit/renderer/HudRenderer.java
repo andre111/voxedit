@@ -19,7 +19,6 @@ public class HudRenderer implements HudRenderCallback {
 		return TOOL_SETTINGS;
 	}
 
-	@SuppressWarnings("resource")
 	@Override
 	public void onHudRender(DrawContext drawContext, float tickDelta) {
 		var currentScreen = MinecraftClient.getInstance().currentScreen;

@@ -2,21 +2,20 @@ package me.andre111.voxedit.gui.screen;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import me.andre111.voxedit.BlockPalette;
 import me.andre111.voxedit.gui.widget.BlockStateWidget;
 import me.andre111.voxedit.gui.widget.IntSliderWidget;
+import me.andre111.voxedit.gui.widget.ModListWidget;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.Selectable;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ElementListWidget;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
 
@@ -98,20 +97,10 @@ public class EditBlockPaletteScreen extends Screen {
 
 
 	@Environment(value=EnvType.CLIENT)
-	class BlockPaletteListWidget extends ElementListWidget<me.andre111.voxedit.gui.screen.EditBlockPaletteScreen.BlockPaletteListWidget.BlockPaletteEntry> {
+	class BlockPaletteListWidget extends ModListWidget<me.andre111.voxedit.gui.screen.EditBlockPaletteScreen.BlockPaletteListWidget.BlockPaletteEntry> {
 		public BlockPaletteListWidget() {
-			super(EditBlockPaletteScreen.this.client, EditBlockPaletteScreen.this.width, EditBlockPaletteScreen.this.height - 80, 20, 24);
+			super(EditBlockPaletteScreen.this.client, EditBlockPaletteScreen.this.width, EditBlockPaletteScreen.this.height - 80, 20, 6);
 			updateEntries();
-		}
-
-		@Override
-	    public int getRowWidth() {
-	        return EditBlockPaletteScreen.this.width - 80;
-	    }
-
-		@Override
-		protected int getScrollbarPositionX() {
-			return this.width - 30;
 		}
 
 		@Override
@@ -123,11 +112,6 @@ public class EditBlockPaletteScreen extends Screen {
 	    @Override
 	    public boolean isFocused() {
 	        return true;
-	    }
-
-	    @Override
-	    protected boolean isSelectedEntry(int index) {
-	        return Objects.equals(getSelectedOrNull(), getEntry(index));
 	    }
 
 		public void updateEntries() {
@@ -144,7 +128,9 @@ public class EditBlockPaletteScreen extends Screen {
 		}
 
 		@Environment(value=EnvType.CLIENT)
-		class BlockPaletteEntry extends ElementListWidget.Entry<BlockPaletteEntry> {
+		class BlockPaletteEntry extends ModListWidget.Entry<BlockPaletteEntry> {
+			private List<Element> children = new ArrayList<>();
+			
 			private final int index;
 			private BlockStateWidget stateWidget;
 			private IntSliderWidget weightWidget;
@@ -153,12 +139,11 @@ public class EditBlockPaletteScreen extends Screen {
 				this.index = index;
 				
 				BlockPalette.Entry paletteEntry = palette.getEntry(index);
-				stateWidget = new BlockStateWidget(textRenderer, 0, 0, 200, 20, includeProperties, paletteEntry.state(), (blockState) -> {
+				stateWidget = new BlockStateWidget(textRenderer, 0, 0, 250, 20, includeProperties, paletteEntry.state(), (blockState) -> {
 					BlockPalette.Entry oldEntry = palette.getEntry(index);
 					palette.setEntry(index, new BlockPalette.Entry(blockState, oldEntry.weight()));
 				});
 				children.add(stateWidget);
-				selectableChildren.add(stateWidget);
 				
 				if(showWeights) {
 					weightWidget = new IntSliderWidget(0, 0, 100, 20, Text.of("Weight"), 1, 32, paletteEntry.weight(), (weight) -> {
@@ -166,40 +151,34 @@ public class EditBlockPaletteScreen extends Screen {
 						palette.setEntry(index, new BlockPalette.Entry(oldEntry.state(), weight));
 					});
 					children.add(weightWidget);
-					selectableChildren.add(weightWidget);
 				}
 			}
-			
+
 			@Override
-			public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-				stateWidget.setX(x);
-				stateWidget.setY(y);
+			public int getHeight() {
+				return 23;
+			}
+
+			@Override
+			protected void renderWidget(DrawContext context, int mouseX, int mouseY, float tickDelta) {
+				stateWidget.setX(getX());
+				stateWidget.setY(getY());
 				stateWidget.render(context, mouseX, mouseY, tickDelta);
 				
 				if(weightWidget != null) {
-					weightWidget.setX(x+entryWidth-weightWidget.getWidth()-4);
-					weightWidget.setY(y);
+					weightWidget.setX(getX()+getWidth()-weightWidget.getWidth());
+					weightWidget.setY(getY());
 					weightWidget.render(context, mouseX, mouseY, tickDelta);
 				}
 			}
 
-	        @Override
-	        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-	        	BlockPaletteListWidget.this.setSelected(this);
-	        	return super.mouseClicked(mouseX, mouseY, button);
-	        }
-			
-			private List<Element> children = new ArrayList<>();
-			private List<Selectable> selectableChildren = new ArrayList<>();
+			@Override
+			protected void appendClickableNarrations(NarrationMessageBuilder var1) {
+			}
 
 			@Override
 			public List<? extends Element> children() {
 				return children;
-			}
-
-			@Override
-			public List<? extends Selectable> selectableChildren() {
-				return selectableChildren;
 			}
 		}
 	}

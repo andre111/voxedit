@@ -33,13 +33,13 @@ import org.jetbrains.annotations.Nullable;
 public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.ModListWidget.Entry<E>> extends ContainerWidget implements LayoutWidget {
     private static final Identifier SCROLLER_TEXTURE = new Identifier("widget/scroller");
     protected final MinecraftClient client;
-    private final List<Entry<E>> children = new ArrayList<>();
+    private final List<E> children = new ArrayList<>();
     private int padding;
     private double scrollAmount;
     private boolean scrolling;
-    private Entry<E> selected;
+    private E selected;
     private boolean renderBackground = true;
-    private Entry<E> hoveredEntry;
+    private E hoveredEntry;
 
     public ModListWidget(MinecraftClient client, int width, int height, int y, int padding) {
         super(0, y, width, height, ScreenTexts.EMPTY);
@@ -57,15 +57,15 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
         return width-20;
     }
 
-    public Entry<E> getSelectedOrNull() {
+    public E getSelectedOrNull() {
         return this.selected;
     }
 
-    public void setSelected(@Nullable Entry<E> entry) {
+    public void setSelected(@Nullable E entry) {
         this.selected = entry;
     }
 
-    public Entry<E> getFirst() {
+    public E getFirst() {
         return children.get(0);
     }
 
@@ -73,7 +73,7 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
         this.renderBackground = renderBackground;
     }
 
-    public final List<Entry<E>> children() {
+    public final List<E> children() {
         return this.children;
     }
 
@@ -82,18 +82,18 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
         this.selected = null;
     }
 
-    protected Entry<E> getEntry(int index) {
+    protected E getEntry(int index) {
         return children().get(index);
     }
 
-    protected int addEntry(Entry<E> entry) {
+    protected int addEntry(E entry) {
     	entry.parentList = this;
         this.children.add(entry);
         this.refreshPositions();
         return this.children.size() - 1;
     }
 
-    protected void addEntryToTop(Entry<E> entry) {
+    protected void addEntryToTop(E entry) {
     	entry.parentList = this;
         double d = this.getMaxScroll() - this.getScrollAmount();
         this.children.add(0, entry);
@@ -101,7 +101,7 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
         this.setScrollAmount(this.getMaxScroll() - d);
     }
 
-    protected boolean removeEntryWithoutScrolling(Entry<E> entry) {
+    protected boolean removeEntryWithoutScrolling(E entry) {
         double d = this.getMaxScroll() - this.getScrollAmount();
         boolean bl = this.removeEntry(entry);
         this.setScrollAmount(this.getMaxScroll() - d);
@@ -112,12 +112,12 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
         return this.children().size();
     }
 
-    protected boolean isSelectedEntry(Entry<E> entry) {
+    protected boolean isSelectedEntry(E entry) {
         return Objects.equals(this.getSelectedOrNull(), entry);
     }
 
-    protected final Entry<E> getEntryAtPosition(double x, double y) {
-        for(Entry<E> child : children) {
+    protected final E getEntryAtPosition(double x, double y) {
+        for(E child : children) {
         	if(child.getX() < x && x < child.getX() + child.getWidth() && child.getY() < y && y < child.getY() + child.getHeight()) return child;
         }
         return null;
@@ -125,7 +125,7 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
 
     protected int getMaxPosition() {
     	int height = padding;
-    	for(Entry<E> child : children) height += child.getHeight()+1;
+    	for(E child : children) height += child.getHeight()+1;
         return height;
     }
 
@@ -170,11 +170,11 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
         context.enableScissor(getX(), getY(), getRight(), getBottom());
     }
 
-    protected void centerScrollOn(Entry<E> entry) {
+    protected void centerScrollOn(E entry) {
         this.setScrollAmount(entry.getY() + entry.getHeight() / 2 - getHeight() / 2);
     }
 
-    protected void ensureVisible(Entry<E> entry) {
+    protected void ensureVisible(E entry) {
         if(entry.getY() < getY()) {
             scroll(getY()-entry.getY());
         } else if(entry.getY() + entry.getHeight() > getY() + getHeight()) {
@@ -220,7 +220,7 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
         if (!this.isMouseOver(mouseX, mouseY)) {
             return false;
         }
-        Entry<E> entry = this.getEntryAtPosition(mouseX, mouseY);
+        E entry = this.getEntryAtPosition(mouseX, mouseY);
         if (entry != null) {
             if (entry.mouseClicked(mouseX, mouseY, button)) {
                 Element entry2 = this.getFocused();
@@ -277,7 +277,7 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
         super.setFocused(focused);
         int i = children.indexOf(focused);
         if (i >= 0) {
-        	Entry<E> entry = children.get(i);
+        	E entry = children.get(i);
             setSelected(entry);
             if (client.getNavigationType().isKeyboard()) {
             	ensureVisible(entry);
@@ -288,17 +288,17 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
     }
 
     @Nullable
-    protected Entry<E> getNeighboringEntry(NavigationDirection direction) {
+    protected E getNeighboringEntry(NavigationDirection direction) {
         return getNeighboringEntry(direction, entry -> true);
     }
 
     @Nullable
-    protected Entry<E> getNeighboringEntry(NavigationDirection direction, Predicate<Entry<E>> predicate) {
+    protected E getNeighboringEntry(NavigationDirection direction, Predicate<E> predicate) {
         return getNeighboringEntry(direction, predicate, this.getSelectedOrNull());
     }
 
     @Nullable
-    protected Entry<E> getNeighboringEntry(NavigationDirection direction, Predicate<Entry<E>> predicate, @Nullable Entry<E> selected) {
+    protected E getNeighboringEntry(NavigationDirection direction, Predicate<E> predicate, @Nullable E selected) {
         int offset = switch(direction) {
             case RIGHT, LEFT -> 0;
             case UP -> -1;
@@ -307,7 +307,7 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
         if(!this.children().isEmpty() && offset != 0) {
             int startIndex = selected == null ? (offset > 0 ? 0 : children().size() - 1) : children().indexOf(selected) + offset;
             for (int index = startIndex; index >= 0 && index < children.size(); index += offset) {
-                Entry<E> entry = children().get(index);
+                E entry = children().get(index);
                 if (!predicate.test(entry)) continue;
                 return entry;
             }
@@ -321,7 +321,7 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
     }
 
     protected void renderList(DrawContext context, int mouseX, int mouseY, float delta) {
-        for(Entry<E> child : children) {
+        for(E child : children) {
         	if(child.getY() + child.getHeight() < getY()) continue;
         	if(child.getY() > getY() + getHeight()) return;
         	
@@ -357,15 +357,15 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
     }
 
     @Nullable
-    protected Entry<E> remove(int index) {
-    	Entry<E> entry = children.get(index);
+    protected E remove(int index) {
+    	E entry = children.get(index);
         if (this.removeEntry(children.get(index))) {
             return entry;
         }
         return null;
     }
 
-    protected boolean removeEntry(Entry<E> entry) {
+    protected boolean removeEntry(E entry) {
         boolean bl = this.children.remove(entry);
         if (bl && entry == this.getSelectedOrNull()) {
             this.setSelected(null);
@@ -374,7 +374,7 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
     }
 
     @Nullable
-    protected Entry<E> getHoveredEntry() {
+    protected E getHoveredEntry() {
         return this.hoveredEntry;
     }
 
@@ -382,9 +382,9 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
 	protected void appendClickableNarrations(NarrationMessageBuilder builder) {
 	}
 
-    protected void appendNarrations(NarrationMessageBuilder builder, Entry<E> entry) {
+    protected void appendNarrations(NarrationMessageBuilder builder, E entry) {
         int i;
-        List<Entry<E>> list = this.children();
+        List<E> list = this.children();
         if (list.size() > 1 && (i = list.indexOf(entry)) != -1) {
             builder.put(NarrationPart.POSITION, (Text)Text.translatable("narrator.position.list", i + 1, list.size()));
         }
@@ -392,14 +392,14 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
 
 	@Override
 	public void forEachElement(Consumer<Widget> consumer) {
-		for(Entry<E> child : children) consumer.accept(child);
+		for(E child : children) consumer.accept(child);
 	}
 	
 	@Override
 	public void refreshPositions() {
 		int currentX = getX() + (width-getRowWidth()) / 2;
 		int currentY = (int) (getY() + padding - getScrollAmount());
-		for(Entry<E> child : children) {
+		for(E child : children) {
 			child.setPosition(currentX, currentY);
 			child.setWidth(getRowWidth());
 			currentY += child.getHeight()+1;

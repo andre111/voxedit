@@ -109,6 +109,7 @@ public class BlockStateWidget extends TextFieldWidget {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
         context.drawGuiTexture(Textures.SLOT, this.getX()+width, this.getY(), height, height);
         context.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 

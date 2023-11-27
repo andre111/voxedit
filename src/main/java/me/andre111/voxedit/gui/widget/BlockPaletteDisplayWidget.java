@@ -49,6 +49,7 @@ public class BlockPaletteDisplayWidget extends ClickableWidget {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
         context.drawGuiTexture(Textures.SLOT, this.getX(), this.getY(), this.getWidth(), this.getHeight());
         context.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
