@@ -3,7 +3,6 @@ package me.andre111.voxedit.gui.widget;
 import java.util.Locale;
 import java.util.function.Consumer;
 
-import org.jetbrains.annotations.Nullable;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 import org.lwjgl.glfw.GLFW;

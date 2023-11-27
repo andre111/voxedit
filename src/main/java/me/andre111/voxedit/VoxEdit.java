@@ -43,6 +43,7 @@ import me.andre111.voxedit.renderer.ToolRenderer;
 import me.andre111.voxedit.tool.ToolItem;
 import me.andre111.voxedit.tool.ToolItemBrush;
 import me.andre111.voxedit.tool.ToolItemFill;
+import me.andre111.voxedit.tool.ToolItemFlatten;
 import me.andre111.voxedit.tool.ToolItemSmooth;
 
 public class VoxEdit implements ModInitializer, ClientModInitializer {
@@ -51,6 +52,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
     public static final ToolItem TOOL_BRUSH = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool_brush"), new ToolItemBrush());
     public static final ToolItem TOOL_SMOOTH = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool_smooth"), new ToolItemSmooth());
     public static final ToolItem TOOL_FILL = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool_fill"), new ToolItemFill());
+    public static final ToolItem TOOL_FLATTEN = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool_flatten"), new ToolItemFlatten());
     
     public static final KeyBinding INCREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.increaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_UP, "key.category.voxedit"));
     public static final KeyBinding DECREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.decreaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_DOWN, "key.category.voxedit"));
@@ -71,6 +73,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_BRUSH, new ToolRenderer(false));
 		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_SMOOTH, new ToolRenderer(true));
 		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_FILL, new ToolRenderer(true));
+		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_FLATTEN, new ToolRenderer(true));
 		HudRenderer.init();
 		
 		ItemGroupEvents.MODIFY_ENTRIES_ALL.register((group, entries) -> {
@@ -80,6 +83,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 					entries.add(TOOL_BRUSH.getDefaultStack());
 					entries.add(TOOL_SMOOTH.getStackWith(ToolState.initial().withRadius(7)));
 					entries.add(TOOL_FILL.getStackWith(ToolState.initial().withRadius(16)));
+					entries.add(TOOL_FLATTEN.getStackWith(ToolState.initial().withRadius(6)));
 
 					entries.add(TOOL_BRUSH.getStackWith(ToolState.initial().withMode(ToolState.Mode.PAINT_TOP).withRadius(5).withBlockPalette(new BlockPalette(Util.make(new ArrayList<>(), list -> {
 						list.add(new BlockPalette.Entry(Blocks.GRASS_BLOCK.getDefaultState(), 1));

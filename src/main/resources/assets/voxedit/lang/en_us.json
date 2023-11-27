@@ -2,6 +2,7 @@
     "item.voxedit.tool_brush": "Brush",
     "item.voxedit.tool_smooth": "Smooth",
     "item.voxedit.tool_fill": "Fill",
+    "item.voxedit.tool_flatten": "Flatten",
     
     "key.category.voxedit": "VoxEdit",
     "key.voxedit.decreaseRadius": "Decrease Tool Radius",

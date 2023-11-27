@@ -47,10 +47,11 @@ public class ToolItemFill extends ToolItem {
 	public void leftClicked(World world, PlayerEntity player, Hand hand) {
 	}
 
-
-	public Set<BlockPos> getBlockPositions(World world, BlockPos center, ToolState state) {
+	@Override
+	public Set<BlockPos> getBlockPositions(World world, BlockHitResult target, ToolState state) {
 		Set<BlockPos> positions = new HashSet<>();
 		
+		BlockPos center = target.getBlockPos();
 		if(!shouldFill(world.getBlockState(center), null, state)) return positions;
 		
 		Block targetBlock = world.getBlockState(center).getBlock();	
