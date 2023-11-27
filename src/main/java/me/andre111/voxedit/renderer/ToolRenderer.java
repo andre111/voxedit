@@ -1,8 +1,10 @@
-package me.andre111.voxedit;
+package me.andre111.voxedit.renderer;
 
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 
+import me.andre111.voxedit.ToolState;
+import me.andre111.voxedit.gui.Textures;
 import me.andre111.voxedit.tool.ToolItem;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry.DynamicItemRenderer;
 import net.minecraft.block.BlockState;
@@ -25,6 +27,12 @@ public class ToolRenderer implements DynamicItemRenderer {
 		BLOCK_POSE = matrices.peek();
 	}
 	
+	private final boolean drawName;
+	
+	public ToolRenderer(boolean drawName) {
+		this.drawName = drawName;
+	}
+	
 	@SuppressWarnings("resource")
 	@Override
 	public void render(ItemStack stack, ModelTransformationMode mode, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
@@ -32,31 +40,36 @@ public class ToolRenderer implements DynamicItemRenderer {
 		
 		DrawContext context = new DrawContext(MinecraftClient.getInstance(), (Immediate) vertexConsumers);
 		context.getMatrices().translate(matrices.peek().getPositionMatrix().m30(), matrices.peek().getPositionMatrix().m31(), matrices.peek().getPositionMatrix().m32());
+        context.drawGuiTexture(Textures.TOOL, 0, -16, 16, 16);
 		
+        ToolItem item = (ToolItem) stack.getItem();
 		ToolState state = ToolItem.readState(stack);
 		
-		//TODO: render shape
-		switch(state.shape()) {
-		case CUBE:
-			break;
-		case SPHERE:
-			break;
-		default:
-			break;
-		}
-		
-		// render size
+		// render information
 		context.getMatrices().push();
-		context.getMatrices().translate(1, 1 - 16, 200);
-		context.drawText(MinecraftClient.getInstance().textRenderer, state.radius()+"", 0, 0, 0xFFFFFF, true);
+		context.getMatrices().translate(1, 1 - 16, 0);
+		context.getMatrices().scale(0.35f, 0.35f, 0.35f);
+		int textY = 0;
+		if(drawName) { context.drawText(MinecraftClient.getInstance().textRenderer, stack.getName(), 0, textY, 0xFFFFFF, true); textY += 10; }
+		if(item.usesMode()) { context.drawText(MinecraftClient.getInstance().textRenderer, limit(state.mode().name(), 7), 0, textY, 0xFFFFFF, true); textY += 10; }
+		if(item.usesShape()) { context.drawText(MinecraftClient.getInstance().textRenderer, limit(state.shape().name(), 7), 0, textY, 0xFFFFFF, true); textY += 10; }
+		if(item.usesRadius()) { context.drawText(MinecraftClient.getInstance().textRenderer, state.radius()+"", 0, textY, 0xFFFFFF, true); textY += 10; }
 		context.getMatrices().pop();
 		
-		// render selected block
-		matrices.push();
-		matrices.multiplyPositionMatrix(BLOCK_POSE.getPositionMatrix());
-		int blockStateIndex = (int) ((System.currentTimeMillis()) / (1000 * 2)) % state.palette().size();
-		BlockState blockState = state.palette().get(blockStateIndex);
-		MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(blockState, matrices, vertexConsumers, light, overlay);
-		matrices.pop();
+		// render palette
+		if(item.usesBlockPalette()) {
+			matrices.push();
+			context.getMatrices().translate(0, 0, 200);
+			matrices.multiplyPositionMatrix(BLOCK_POSE.getPositionMatrix());
+			int blockStateIndex = (int) ((System.currentTimeMillis()) / (1000 * 2)) % state.palette().size();
+			BlockState blockState = state.palette().get(blockStateIndex);
+			MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(blockState, matrices, vertexConsumers, light, overlay);
+			matrices.pop();
+		}
+	}
+	
+	private String limit(String str, int maxLength) {
+		if(str.length() < maxLength) return str;
+		return str.substring(0, maxLength);
 	}
 }

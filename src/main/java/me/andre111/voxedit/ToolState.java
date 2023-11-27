@@ -6,8 +6,10 @@ import java.util.Set;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.text.Text;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
@@ -18,7 +20,7 @@ public record ToolState(BlockPalette palette, BlockPalette filter, Mode mode, Sh
 			.group(
 					BlockPalette.CODEC.optionalFieldOf("palette", new BlockPalette(Blocks.STONE.getDefaultState())).forGetter(ts -> ts.palette),
 					BlockPalette.CODEC.optionalFieldOf("filter", new BlockPalette()).forGetter(ts -> ts.filter),
-					Codec.STRING.optionalFieldOf("mode", "FILL").xmap(str -> Mode.valueOf(str), mode -> mode.name()).forGetter(ts -> ts.mode),
+					Codec.STRING.optionalFieldOf("mode", "SOLID").xmap(str -> Mode.valueOf(str), mode -> mode.name()).forGetter(ts -> ts.mode),
 					Codec.STRING.optionalFieldOf("shape", "SPHERE").xmap(str -> Shape.valueOf(str), shape -> shape.name()).forGetter(ts -> ts.shape),
 					Codec.INT.optionalFieldOf("radius", 3).forGetter(ts -> ts.radius),
 					Codec.BOOL.optionalFieldOf("targetFluids", false).forGetter(ts -> ts.targetFluids)
@@ -26,7 +28,7 @@ public record ToolState(BlockPalette palette, BlockPalette filter, Mode mode, Sh
 			.apply(instance, ToolState::new));
 	
 	public static ToolState initial() {
-		return new ToolState(new BlockPalette(Blocks.STONE.getDefaultState()), new BlockPalette(), Mode.FILL, Shape.SPHERE, 3, false);
+		return new ToolState(new BlockPalette(Blocks.STONE.getDefaultState()), new BlockPalette(), Mode.SOLID, Shape.SPHERE, 3, false);
 	}
 	
 	public ToolState withBlockPalette(BlockPalette palette) {
@@ -53,18 +55,19 @@ public record ToolState(BlockPalette palette, BlockPalette filter, Mode mode, Sh
 		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
 	}
 	
-	public Set<BlockPos> getBlockPositions(World world, BlockPos center) {
+	public Set<BlockPos> getBlockPositions(World world, BlockHitResult target) {
 		Set<BlockPos> positions = new HashSet<>();
 		
+		BlockPos center = target.getBlockPos();
 		for(int x = -radius; x <= radius; x++) {
         	for(int y = -radius; y <= radius; y++) {
         		for(int z = -radius; z <= radius; z++) {
-                	if(!shape.offsetPredicate.test(this, x, y, z)) continue;
+                	if(!shape.offsetPredicate.test(target, this, x, y, z)) continue;
                 	
                 	BlockPos pos = center.add(x, y, z);
                 	
-                	if(!mode.testPredicate.test(this, world, pos)) continue;
-                	if(filter.size() > 0 && !filter.has(world.getBlockState(pos).getBlock())) continue;
+                	if(!mode.testPredicate.test(target, this, world, pos)) continue;
+                	if(!passesFilter(world.getBlockState(pos))) continue;
                 	
         			positions.add(pos);
                 }
@@ -74,18 +77,26 @@ public record ToolState(BlockPalette palette, BlockPalette filter, Mode mode, Sh
 		return positions;
 	}
 	
+	public boolean passesFilter(BlockState state) {
+		return filter.size() == 0 || filter.has(state.getBlock());
+	}
+	
 	public static enum Mode {
-		FILL((state, world, pos) -> true),
-		PAINT((state, world, pos) -> {
+		SOLID((target, state, world, pos) -> true),
+		PAINT((target, state, world, pos) -> {
 			if(isFree(world, pos)) return false;
 			for(Direction d : Direction.values()) {
 				if(isFree(world, pos.offset(d))) return true;
 			}
 			return false;
 		}),
-		PAINT_TOP((state, world, pos) -> {
+		PAINT_TOP((target, state, world, pos) -> {
 			if(isFree(world, pos)) return false;
 			return isFree(world, pos.offset(Direction.UP));
+		}),
+		SCATTER((target, state, world, pos) -> {
+			if(!world.isAir(pos)) return false;
+			return !isFree(world, pos.offset(target.getSide().getOpposite()));
 		});
 		
 		final TestPredicate testPredicate;
@@ -99,17 +110,24 @@ public record ToolState(BlockPalette palette, BlockPalette filter, Mode mode, Sh
 		}
 		
 		public static interface TestPredicate {
-			public boolean test(ToolState state, World world, BlockPos pos);
+			public boolean test(BlockHitResult target, ToolState state, World world, BlockPos pos);
 		}
 	}
 	public static enum Shape {
-		SPHERE((state, x, y, z) -> Math.sqrt(x*x + y*y + z*z) <= state.radius),
-		CUBE((state, x, y, z) -> true),
-		HOLLOW_SPHERE((state, x, y, z) -> {
+		SPHERE((target, state, x, y, z) -> Math.sqrt(x*x + y*y + z*z) <= state.radius),
+		CUBE((target, state, x, y, z) -> true),
+		DISC((target, state, x, y, z) -> {
+			if(Math.sqrt(x*x + y*y + z*z) > state.radius) return false;
+			if(target.getSide().getOffsetX() != 0 && x != 0) return false;
+			if(target.getSide().getOffsetY() != 0 && y != 0) return false;
+			if(target.getSide().getOffsetZ() != 0 && z != 0) return false;
+			return true;
+		}),
+		HOLLOW_SPHERE((target, state, x, y, z) -> {
 			double dist = Math.sqrt(x*x + y*y + z*z);
 			return (state.radius - 0.5) <= dist && dist <= (state.radius + 0.5);
 		}),
-		HOLLOW_CUBE((state, x, y, z) -> Math.abs(x) == state.radius || Math.abs(y) == state.radius || Math.abs(z) == state.radius);
+		HOLLOW_CUBE((target, state, x, y, z) -> Math.abs(x) == state.radius || Math.abs(y) == state.radius || Math.abs(z) == state.radius);
 		
 		final OffsetPredicate offsetPredicate;
 		
@@ -122,7 +140,7 @@ public record ToolState(BlockPalette palette, BlockPalette filter, Mode mode, Sh
 		}
 		
 		public static interface OffsetPredicate {
-			public boolean test(ToolState state, int x, int y, int z);
+			public boolean test(BlockHitResult target, ToolState state, int x, int y, int z);
 		}
 	}
 	

@@ -8,6 +8,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -20,10 +21,10 @@ public class ToolItemBrush extends ToolItem {
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
 		if(!world.isClient && player.isCreative()) {
 			ToolState state = readState(player.getStackInHand(hand));
-			BlockPos target = VoxEdit.getTargetOf(player, state);
+			BlockHitResult target = VoxEdit.getTargetOf(player, state);
 			if(state != null && target != null) {
 				Editor.undoable(player, world, editable -> {
-					for(BlockPos pos : state.getBlockPositions(world, target)) {
+					for(BlockPos pos : getBlockPositions(world, target, state)) {
 						editable.setBlock(pos, state.palette().getRandom(world.getRandom()));
 					}
 				});
@@ -39,10 +40,10 @@ public class ToolItemBrush extends ToolItem {
 	public void leftClicked(World world, PlayerEntity player, Hand hand) {
 		if(!world.isClient && player.isCreative()) {
 			ToolState state = readState(player.getStackInHand(hand));
-			BlockPos target = VoxEdit.getTargetOf(player, state);
+			BlockHitResult target = VoxEdit.getTargetOf(player, state);
 			if(state != null && target != null) {
 				Editor.undoable(player, world, editable -> {
-					for(BlockPos pos : state.getBlockPositions(world, target)) {
+					for(BlockPos pos : getBlockPositions(world, target, state)) {
 						editable.setBlock(pos, Blocks.AIR.getDefaultState());
 					}
 				});

@@ -1,6 +1,7 @@
 {
-    "item.voxedit.tool": "Brush",
+    "item.voxedit.tool_brush": "Brush",
     "item.voxedit.tool_smooth": "Smooth",
+    "item.voxedit.tool_fill": "Fill",
     
     "key.category.voxedit": "VoxEdit",
     "key.voxedit.decreaseRadius": "Decrease Tool Radius",

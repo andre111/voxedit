@@ -11,6 +11,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
@@ -24,9 +25,9 @@ public class ToolItemSmooth extends ToolItem {
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
 		if(!world.isClient && player.isCreative()) {
 			ToolState state = readState(player.getStackInHand(hand));
-			BlockPos target = VoxEdit.getTargetOf(player, state);
+			BlockHitResult target = VoxEdit.getTargetOf(player, state);
 			if(state != null && target != null) {
-				Set<BlockPos> positions = state.getBlockPositions(world, target);
+				Set<BlockPos> positions = getBlockPositions(world, target, state);
 				
 				Editor.undoable(player, world, editable -> {
 					// erode

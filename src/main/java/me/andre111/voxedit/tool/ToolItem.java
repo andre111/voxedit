@@ -1,5 +1,7 @@
 package me.andre111.voxedit.tool;
 
+import java.util.Set;
+
 import me.andre111.voxedit.ToolState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -7,6 +9,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public abstract class ToolItem extends Item {
@@ -32,8 +36,12 @@ public abstract class ToolItem extends Item {
 	
 	@Override
 	public ItemStack getDefaultStack() {
+		return getStackWith(ToolState.initial());
+	}
+	
+	public ItemStack getStackWith(ToolState state) {
 		ItemStack stack = super.getDefaultStack();
-		storeState(stack, ToolState.initial());
+		storeState(stack, state);
 		return stack;
 	}
 	
@@ -55,6 +63,10 @@ public abstract class ToolItem extends Item {
 	
 	public boolean usesBlockFilter() {
 		return usesBlockFilter;
+	}
+
+	public Set<BlockPos> getBlockPositions(World world, BlockHitResult target, ToolState state) {
+		return state.getBlockPositions(world, target);
 	}
 	
 	public static ToolState readState(ItemStack stack) {

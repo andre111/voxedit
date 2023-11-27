@@ -26,6 +26,7 @@ public class UndoRecordingEditable implements Editable {
 	}
 
 	protected void apply() {
+		if(actions.isEmpty()) return;
 		for(EditAction action : actions) action.redo(world);
 		undo.push(new UndoState(actions));
 	}

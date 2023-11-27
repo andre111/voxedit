@@ -6,6 +6,7 @@ import org.joml.Quaternionf;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import me.andre111.voxedit.BlockPalette;
+import me.andre111.voxedit.gui.Textures;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -15,10 +16,8 @@ import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 
 public class BlockPaletteDisplayWidget extends ClickableWidget {
-    private static final Identifier TEXTURE = new Identifier("container/slot");
     private static final MatrixStack.Entry BLOCK_POSE;
 	static {
 		MatrixStack matrices = new MatrixStack();
@@ -44,27 +43,31 @@ public class BlockPaletteDisplayWidget extends ClickableWidget {
 		this.value = value;
 	}
 
-	@SuppressWarnings("resource")
 	@Override
 	protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
         context.setShaderColor(1.0f, 1.0f, 1.0f, this.alpha);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
-        context.drawGuiTexture(TEXTURE, this.getX(), this.getY(), this.getWidth(), this.getHeight());
+        context.drawGuiTexture(Textures.SLOT, this.getX(), this.getY(), this.getWidth(), this.getHeight());
         context.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
         if(value.size() > 0) {
-			MatrixStack matrices = context.getMatrices();
-			matrices.push();
-			matrices.translate(getX()+Math.min(width, height)/2, getY()+height/2, 200);
-			float scale = 10 * (20.0f / Math.min(width, height));
-			matrices.scale(scale, scale, scale);
-			matrices.multiplyPositionMatrix(BLOCK_POSE.getPositionMatrix());
 			int blockStateIndex = (int) ((System.currentTimeMillis()) / (1000 * 2)) % value.size();
 			BlockState blockState = value.get(blockStateIndex);
-	        MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(blockState, matrices, context.getVertexConsumers(), LightmapTextureManager.MAX_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV);
-	        matrices.pop();
+
+	        if(blockState.isAir()) {
+	            context.drawGuiTexture(Textures.AIR, getX()+2, getY()+2, getWidth()-4, getHeight()-4);
+	        } else {
+				MatrixStack matrices = context.getMatrices();
+				matrices.push();
+				matrices.translate(getX()+Math.min(width, height)/2, getY()+height/2, 200);
+				float scale = 10 * (20.0f / Math.min(width, height));
+				matrices.scale(scale, scale, scale);
+				matrices.multiplyPositionMatrix(BLOCK_POSE.getPositionMatrix());
+		        MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(blockState, matrices, context.getVertexConsumers(), LightmapTextureManager.MAX_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV);
+		        matrices.pop();
+	        }
         }
 	}
 

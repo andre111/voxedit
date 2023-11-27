@@ -1,10 +1,10 @@
 package me.andre111.voxedit.gui;
 
-import me.andre111.voxedit.IntSliderWidget;
 import me.andre111.voxedit.Networking;
 import me.andre111.voxedit.ToolState;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.gui.widget.BlockPaletteDisplayWidget;
+import me.andre111.voxedit.gui.widget.IntSliderWidget;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -41,6 +41,7 @@ public class ToolSettingsScreen extends Screen {
 	
 	public void reload() {
 		ToolState state = VoxEdit.active;
+		if(state == null) return;
 		if(modeSelector != null && modeSelector.getValue() != state.mode()) modeSelector.setValue(state.mode());
 		if(shapeSelector != null && shapeSelector.getValue() != state.shape()) shapeSelector.setValue(state.shape());
 		if(radiusSlider != null && radiusSlider.getIntValue() != state.radius()) radiusSlider.setIntValue(state.radius());
@@ -52,6 +53,7 @@ public class ToolSettingsScreen extends Screen {
 	protected void init() {
 		contentWidth = 100;
 		contentHeight = 8;
+		if(VoxEdit.activeItem == null) return;
 		if(VoxEdit.activeItem.usesMode()) contentHeight += 22;
 		if(VoxEdit.activeItem.usesShape()) contentHeight += 22;
 		if(VoxEdit.activeItem.usesRadius()) contentHeight += 22;

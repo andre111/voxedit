@@ -1,13 +1,19 @@
 package me.andre111.voxedit.gui.widget;
 
+import java.util.Locale;
 import java.util.function.Consumer;
 
+import org.jetbrains.annotations.Nullable;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
+import org.lwjgl.glfw.GLFW;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestion;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
+import me.andre111.voxedit.gui.Textures;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
@@ -20,7 +26,6 @@ import net.minecraft.command.argument.BlockArgumentParser;
 import net.minecraft.command.argument.BlockArgumentParser.BlockResult;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 
 public class BlockStateWidget extends TextFieldWidget {
 	public static final MatrixStack.Entry BLOCK_POSE;
@@ -32,9 +37,9 @@ public class BlockStateWidget extends TextFieldWidget {
 		matrices.multiply(new AxisAngle4f((float) (45 * Math.PI / 180), 0, 1, 0).get(new Quaternionf()), 0, 0, 0);
 		BLOCK_POSE = matrices.peek();
 	}
-    private static final Identifier TEXTURE = new Identifier("container/slot");
 	
 	private BlockState value;
+	private String suggestion;
 	private final boolean includeProperties;
 	private final Consumer<BlockState> consumer;
 
@@ -53,7 +58,19 @@ public class BlockStateWidget extends TextFieldWidget {
 		
 		this.setChangedListener((string) -> {
 			try {
-				BlockResult result = BlockArgumentParser.block(Registries.BLOCK.getReadOnlyWrapper(), string, false);
+				var wrapper = Registries.BLOCK.getReadOnlyWrapper();
+				var builder = new SuggestionsBuilder(string, string.toLowerCase(Locale.ROOT), string.length());
+				BlockArgumentParser.getSuggestions(wrapper, builder, false, false).thenAccept((suggestions) -> {
+					setSuggestion("");
+					for(Suggestion suggestion : suggestions.getList()) {
+						if(suggestion.getText().startsWith(string)) {
+							setSuggestion(suggestion.getText().substring(string.length()));
+							break;
+						}
+					}
+				});
+				
+				BlockResult result = BlockArgumentParser.block(wrapper, string, false);
 				this.setEditableColor(0xFFFFFF);
 				this.consumer.accept(value = result.blockState());
 			} catch (CommandSyntaxException e) {
@@ -65,6 +82,25 @@ public class BlockStateWidget extends TextFieldWidget {
 	public BlockState getValue() {
 		return value;
 	}
+	
+	@Override
+    public void setSuggestion(String suggestion) {
+		this.suggestion = suggestion;
+		super.setSuggestion(suggestion);
+	}
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    	if(isFocused()) {
+    		if(keyCode == GLFW.GLFW_KEY_TAB) {
+    			if(suggestion != null && !suggestion.isEmpty() && getCursor() == getText().length()) {
+    				setText(getText() + suggestion);
+    				return true;
+    			}
+    		}
+    	}
+    	return super.keyPressed(keyCode, scanCode, modifiers);
+    }
 
     @Override
     public void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
@@ -74,16 +110,20 @@ public class BlockStateWidget extends TextFieldWidget {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
-        context.drawGuiTexture(TEXTURE, this.getX()+width, this.getY(), height, height);
+        context.drawGuiTexture(Textures.SLOT, this.getX()+width, this.getY(), height, height);
         context.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-		MatrixStack matrices = context.getMatrices();
-		matrices.push();
-		matrices.translate(getX()+width+height/2, getY()+height/2, 200);
-		float scale = 10 * (20.0f / Math.min(width, height));
-		matrices.scale(scale, scale, scale);
-		matrices.multiplyPositionMatrix(BLOCK_POSE.getPositionMatrix());
-        MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(value, matrices, context.getVertexConsumers(), LightmapTextureManager.MAX_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV);
-        matrices.pop();
+        if(value.isAir()) {
+            context.drawGuiTexture(Textures.AIR, this.getX()+width+2, this.getY()+2, height-4, height-4);
+        } else {
+			MatrixStack matrices = context.getMatrices();
+			matrices.push();
+			matrices.translate(getX()+width+height/2, getY()+height/2, 200);
+			float scale = 10 * (20.0f / Math.min(width, height));
+			matrices.scale(scale, scale, scale);
+			matrices.multiplyPositionMatrix(BLOCK_POSE.getPositionMatrix());
+	        MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(value, matrices, context.getVertexConsumers(), LightmapTextureManager.MAX_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV);
+	        matrices.pop();
+        }
 	}
 }

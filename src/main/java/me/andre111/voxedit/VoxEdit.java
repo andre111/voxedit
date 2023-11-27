@@ -9,50 +9,54 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
 
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
+import java.util.ArrayList;
+import java.util.Set;
+
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongepowered.include.com.google.common.base.Objects;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-
+import me.andre111.voxedit.renderer.HudRenderer;
+import me.andre111.voxedit.renderer.SelectionRenderer;
+import me.andre111.voxedit.renderer.ToolRenderer;
 import me.andre111.voxedit.tool.ToolItem;
 import me.andre111.voxedit.tool.ToolItemBrush;
+import me.andre111.voxedit.tool.ToolItemFill;
 import me.andre111.voxedit.tool.ToolItemSmooth;
 
 public class VoxEdit implements ModInitializer, ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("voxedit");
     
-    public static final ToolItem TOOL_BRUSH = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool"), new ToolItemBrush());
+    public static final ToolItem TOOL_BRUSH = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool_brush"), new ToolItemBrush());
     public static final ToolItem TOOL_SMOOTH = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool_smooth"), new ToolItemSmooth());
+    public static final ToolItem TOOL_FILL = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool_fill"), new ToolItemFill());
     
     public static final KeyBinding INCREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.increaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_UP, "key.category.voxedit"));
     public static final KeyBinding DECREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.decreaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_DOWN, "key.category.voxedit"));
     public static final KeyBinding UNDO = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.undo", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_Z, "key.category.voxedit"));
     public static final KeyBinding REDO = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.redo", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_Y, "key.category.voxedit"));
-    public static final KeyBinding OPEN_MENU = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.openMenu", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_M, "key.category.voxedit"));
+    public static final KeyBinding OPEN_MENU = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.openMenu", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.category.voxedit"));
     
 	@Override
 	public void onInitialize() {
@@ -64,8 +68,34 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_BRUSH, new ToolRenderer());
+		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_BRUSH, new ToolRenderer(false));
+		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_SMOOTH, new ToolRenderer(true));
+		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_FILL, new ToolRenderer(true));
 		HudRenderer.init();
+		
+		ItemGroupEvents.MODIFY_ENTRIES_ALL.register((group, entries) -> {
+			if(group.getType() == ItemGroup.Type.CATEGORY && entries.shouldShowOpRestrictedItems()) {
+				boolean hasCB = entries.getDisplayStacks().stream().filter(stack -> stack.getItem() == Items.COMMAND_BLOCK).findAny().isPresent();
+				if(hasCB) {
+					entries.add(TOOL_BRUSH.getDefaultStack());
+					entries.add(TOOL_SMOOTH.getStackWith(ToolState.initial().withRadius(7)));
+					entries.add(TOOL_FILL.getStackWith(ToolState.initial().withRadius(16)));
+
+					entries.add(TOOL_BRUSH.getStackWith(ToolState.initial().withMode(ToolState.Mode.PAINT_TOP).withRadius(5).withBlockPalette(new BlockPalette(Util.make(new ArrayList<>(), list -> {
+						list.add(new BlockPalette.Entry(Blocks.GRASS_BLOCK.getDefaultState(), 1));
+						list.add(new BlockPalette.Entry(Blocks.MOSS_BLOCK.getDefaultState(), 3));
+						list.add(new BlockPalette.Entry(Blocks.GREEN_CONCRETE_POWDER.getDefaultState(), 2));
+					})))));
+					entries.add(TOOL_BRUSH.getStackWith(ToolState.initial().withMode(ToolState.Mode.SCATTER).withRadius(6).withBlockPalette(new BlockPalette(Util.make(new ArrayList<>(), list -> {
+						list.add(new BlockPalette.Entry(Blocks.AIR.getDefaultState(), 20));
+						list.add(new BlockPalette.Entry(Blocks.SHORT_GRASS.getDefaultState(), 5));
+						list.add(new BlockPalette.Entry(Blocks.FERN.getDefaultState(), 5));
+						list.add(new BlockPalette.Entry(Blocks.POPPY.getDefaultState(), 1));
+						list.add(new BlockPalette.Entry(Blocks.DANDELION.getDefaultState(), 1));
+					})))));
+				}
+			}
+		});
 		
     	ClientTickEvents.START_CLIENT_TICK.register((mc) -> {
     		if(mc.world != null && mc.player != null) tickClient();
@@ -92,14 +122,19 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 	public static ClientPlayerEntity player;
 	public static ToolItem activeItem;
 	public static ToolState active;
-	public static BlockPos target;
+	public static BlockHitResult target;
+	
+	private static Set<BlockPos> positions;
+	private static int ticks;
 	
 	@SuppressWarnings("resource")
 	public static void tickClient() {
+		ticks++;
 		player = MinecraftClient.getInstance().player;
 		
 		ToolState oldActive = active;
 		ToolItem oldActiveItem = activeItem;
+		BlockHitResult oldTarget = target;
 		active = null;
 		activeItem = null;
 		ItemStack stack = player.getMainHandStack();
@@ -107,13 +142,16 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 			activeItem = tool;
 			active = ToolItem.readState(stack);
 		}
-		if(active != null && activeItem != oldActiveItem) HudRenderer.getToolSettingsScreen().rebuild();
-		if(active != null && !active.equals(oldActive)) HudRenderer.getToolSettingsScreen().reload();
-		
-		if(MinecraftClient.getInstance().currentScreen != null) return;
 		
 		if(active != null) {
+			if(activeItem != oldActiveItem) { HudRenderer.getToolSettingsScreen().rebuild(); /*positions = null;*/ }
+			if(!active.equals(oldActive)) { HudRenderer.getToolSettingsScreen().reload(); positions = null; }
+			if(MinecraftClient.getInstance().currentScreen != null) return;
+			
 			target = getTargetOf(player, active);
+			if(oldTarget == null || !Objects.equal(target.getBlockPos(), oldTarget.getBlockPos()) || !Objects.equal(target.getSide(), oldTarget.getSide())) {
+				positions = null;
+			}
 			
 			if(INCREASE_RADIUS.wasPressed()) {
 				Networking.clientSendToolState(active.withRadius(Math.min(active.radius()+1, 16)));
@@ -136,171 +174,20 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 	
 	@SuppressWarnings("resource")
 	public static void render(MatrixStack matrices, float frame) {
-		if(active != null && target != null) {
-            Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
-            Vec3d camPos = camera.getPos();
+		if(activeItem != null && active != null && target != null) {
+			if(ticks % 200 == 0 || positions == null) {
+				ticks++; // just increase the value to avoid recalculation in further frames during same tick
+				positions = activeItem.getBlockPositions(MinecraftClient.getInstance().world, target, active);
+			}
             
-            VertexConsumerProvider.Immediate consumer = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
-            var positions = active.getBlockPositions(MinecraftClient.getInstance().world, target);
-            
-            // render blocks
-            /*
-           	for(BlockPos pos : positions) {
-    			poseStack.pushPose();
-                poseStack.translate(pos.getX() - camPos.x, pos.getY() - camPos.y, pos.getZ() - camPos.z);
-                
-                Minecraft.getInstance().getBlockRenderer().renderSingleBlock(active.blockState, poseStack, bs, Brightness.FULL_BRIGHT.pack(), OverlayTexture.NO_OVERLAY);
-                
-                poseStack.popPose();
-            }
-            bs.endLastBatch();
-            */
-
-            float expand = 0.01f;
-            float one = 1 + expand * 2;
-            
-            // render outlines
-            VertexConsumer lineConsumer = consumer.getBuffer(RenderLayer.getLines());
-        	Matrix4f matrix4f = matrices.peek().getPositionMatrix();
-            Matrix3f matrix3f = matrices.peek().getNormalMatrix();
-            
-            for(BlockPos pos : positions) {
-                boolean up = positions.contains(pos.offset(Direction.UP));
-                boolean down = positions.contains(pos.offset(Direction.DOWN));
-                boolean north = positions.contains(pos.offset(Direction.NORTH));
-                boolean east = positions.contains(pos.offset(Direction.EAST));
-                boolean south = positions.contains(pos.offset(Direction.SOUTH));
-                boolean west = positions.contains(pos.offset(Direction.WEST));
-
-                float x = (float) (pos.getX() - camPos.x)-expand;
-                float y = (float) (pos.getY() - camPos.y)-expand;
-                float z = (float) (pos.getZ() - camPos.z)-expand;
-                
-                // top face
-                if(!up) {
-                	if(!north) {
-                        lineConsumer.vertex(matrix4f, x, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                        lineConsumer.vertex(matrix4f, x+one, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                	}
-                	if(!east) {
-                        lineConsumer.vertex(matrix4f, x+one, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                        lineConsumer.vertex(matrix4f, x+one, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                	}
-                	if(!south) {
-                        lineConsumer.vertex(matrix4f, x, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                        lineConsumer.vertex(matrix4f, x+one, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                	}
-                	if(!west) {
-                        lineConsumer.vertex(matrix4f, x, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                        lineConsumer.vertex(matrix4f, x, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                	}
-                }
-                
-
-                // bottom face
-                if(!down) {
-                	if(!north) {
-                        lineConsumer.vertex(matrix4f, x, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                        lineConsumer.vertex(matrix4f, x+one, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                	}
-                	if(!east) {
-                        lineConsumer.vertex(matrix4f, x+one, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                        lineConsumer.vertex(matrix4f, x+one, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                	}
-                	if(!south) {
-                        lineConsumer.vertex(matrix4f, x, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                        lineConsumer.vertex(matrix4f, x+one, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                	}
-                	if(!west) {
-                        lineConsumer.vertex(matrix4f, x, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                        lineConsumer.vertex(matrix4f, x, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                	}
-                }
-                
-                // sides
-                if(!north) {
-                	if(!east) {
-                        lineConsumer.vertex(matrix4f, x+one, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                        lineConsumer.vertex(matrix4f, x+one, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                	}
-                	if(!west) {
-                        lineConsumer.vertex(matrix4f, x, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                        lineConsumer.vertex(matrix4f, x, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                	}
-                }
-                if(!south) {
-                	if(!east) {
-                        lineConsumer.vertex(matrix4f, x+one, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                        lineConsumer.vertex(matrix4f, x+one, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                	}
-                	if(!west) {
-                        lineConsumer.vertex(matrix4f, x, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                        lineConsumer.vertex(matrix4f, x, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                	}
-                }
-            }
-            consumer.drawCurrentLayer();
-            
-            VertexConsumer quadConsumer = consumer.getBuffer(RenderLayer.getDebugQuads());
-            for(BlockPos pos : positions) {
-                boolean up = positions.contains(pos.offset(Direction.UP));
-                boolean down = positions.contains(pos.offset(Direction.DOWN));
-                boolean north = positions.contains(pos.offset(Direction.NORTH));
-                boolean east = positions.contains(pos.offset(Direction.EAST));
-                boolean south = positions.contains(pos.offset(Direction.SOUTH));
-                boolean west = positions.contains(pos.offset(Direction.WEST));
-                
-                float x = (float) (pos.getX() - camPos.x)-expand;
-                float y = (float) (pos.getY() - camPos.y)-expand;
-                float z = (float) (pos.getZ() - camPos.z)-expand;
-
-                if(!up && y < 0) {
-                	quadConsumer.vertex(matrix4f, x, y+one, z).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x+one, y+one, z).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x+one, y+one, z+one).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x, y+one, z+one).color(1, 1, 1, 0.25f).next();
-                }
-                if(!down && y > 0) {
-                	quadConsumer.vertex(matrix4f, x, y, z).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x+one, y, z).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x+one, y, z+one).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x, y, z+one).color(1, 1, 1, 0.25f).next();
-                }
-                if(!north && z > 0) {
-                	quadConsumer.vertex(matrix4f, x, y, z).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x+one, y, z).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x+one, y+one, z).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x, y+one, z).color(1, 1, 1, 0.25f).next();
-                }
-                if(!east && x < 0) {
-                	quadConsumer.vertex(matrix4f, x+one, y, z).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x+one, y+one, z).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x+one, y+one, z+one).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x+one, y, z+one).color(1, 1, 1, 0.25f).next();
-                }
-                if(!south && z < 0) {
-                	quadConsumer.vertex(matrix4f, x, y, z+one).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x+one, y, z+one).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x+one, y+one, z+one).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x, y+one, z+one).color(1, 1, 1, 0.25f).next();
-                }
-                if(!west && x > 0) {
-                	quadConsumer.vertex(matrix4f, x, y, z).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x, y+one, z).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x, y+one, z+one).color(1, 1, 1, 0.25f).next();
-                	quadConsumer.vertex(matrix4f, x, y, z+one).color(1, 1, 1, 0.25f).next();
-                }
-            }
-            consumer.drawCurrentLayer();
-            
-			RenderSystem.disableBlend();
+            SelectionRenderer.render(positions, matrices, frame);
 		}
 	}
 	
-	public static BlockPos getTargetOf(Entity e, ToolState state) {
+	public static BlockHitResult getTargetOf(Entity e, ToolState state) {
 		HitResult result = e.raycast(64, 0, state.targetFluids());
 		if(result instanceof BlockHitResult blockHit) {
-			return blockHit.getBlockPos();
+			return blockHit;
 		}
 		return null;
 	}

@@ -66,6 +66,13 @@ public class BlockPalette {
 		return new ArrayList<>(entries);
 	}
 	
+	@Override
+	public boolean equals(Object other) {
+		if(other == null) return false;
+		if(other instanceof BlockPalette otherPallete) return entries.equals(otherPallete.entries);
+		return false;
+	}
+	
 	public static record Entry(BlockState state, int weight) {
 		private static final Codec<Entry> CODEC = RecordCodecBuilder.create(instance -> instance
 				.group(

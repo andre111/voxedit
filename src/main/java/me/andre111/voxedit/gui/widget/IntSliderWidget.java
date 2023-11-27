@@ -1,4 +1,4 @@
-package me.andre111.voxedit;
+package me.andre111.voxedit.gui.widget;
 
 import java.util.function.Consumer;
 

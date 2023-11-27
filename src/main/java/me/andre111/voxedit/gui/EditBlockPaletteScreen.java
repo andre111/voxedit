@@ -6,8 +6,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import me.andre111.voxedit.BlockPalette;
-import me.andre111.voxedit.IntSliderWidget;
 import me.andre111.voxedit.gui.widget.BlockStateWidget;
+import me.andre111.voxedit.gui.widget.IntSliderWidget;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Blocks;
