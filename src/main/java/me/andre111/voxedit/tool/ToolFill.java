@@ -18,8 +18,8 @@ import net.minecraft.world.World;
 
 public class ToolFill extends Tool {
 	@Override
-	public void rightClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions) {
-		Editor.undoable(player, world, editable -> {
+	public int rightClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions) {
+		return Editor.undoable(player, world, editable -> {
 			for(BlockPos pos : getBlockPositions(world, target, state)) {
 				editable.setBlock(pos, state.palette().getRandom(world.getRandom()));
 			}
@@ -27,7 +27,8 @@ public class ToolFill extends Tool {
 	}
 
 	@Override
-	public void leftClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions) {
+	public int leftClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions) {
+		return 0;
 	}
 
 	@Override

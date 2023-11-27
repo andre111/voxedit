@@ -7,10 +7,10 @@ import net.minecraft.world.World;
 
 public class Editor {
 	//TODO: combine "held" actions into one undo state
-	public static void undoable(PlayerEntity player, World world, Consumer<Editable> edit) {
+	public static int undoable(PlayerEntity player, World world, Consumer<Editable> edit) {
 		Undo undo = Undo.of(player, world);
 		UndoRecordingEditable editable = new UndoRecordingEditable(world, undo);
 		edit.accept(editable);
-		editable.apply();
+		return editable.apply();
 	}
 }

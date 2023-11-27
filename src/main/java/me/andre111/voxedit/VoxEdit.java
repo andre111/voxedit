@@ -12,7 +12,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
@@ -27,9 +26,6 @@ import net.minecraft.registry.SimpleRegistry;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-
-import java.util.Set;
 
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -42,6 +38,7 @@ import me.andre111.voxedit.renderer.HudRenderer;
 import me.andre111.voxedit.renderer.SelectionRenderer;
 import me.andre111.voxedit.renderer.ToolRenderer;
 import me.andre111.voxedit.tool.Tool;
+import me.andre111.voxedit.tool.ToolBlend;
 import me.andre111.voxedit.tool.ToolBrush;
 import me.andre111.voxedit.tool.ToolFill;
 import me.andre111.voxedit.tool.ToolFlatten;
@@ -57,6 +54,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
     public static final Tool TOOL_SMOOTH = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "smooth"), new ToolSmooth());
     public static final Tool TOOL_FILL = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "fill"), new ToolFill());
     public static final Tool TOOL_FLATTEN = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "flatten"), new ToolFlatten());
+    public static final Tool TOOL_BLEND = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "blend"), new ToolBlend());
     
     public static final ToolItem TOOL_ITEM = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool"), new ToolItem());
     
@@ -114,40 +112,33 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
     	});
 	}
 	
-	public static ClientPlayerEntity player;
-	public static ToolState active;
-	public static BlockHitResult target;
-	
-	private static Set<BlockPos> positions;
-	private static int ticks;
-	
 	@SuppressWarnings("resource")
 	public static void tickClient() {
-		ticks++;
-		player = MinecraftClient.getInstance().player;
+		ClientState.ticks++;
+		ClientState.player = MinecraftClient.getInstance().player;
 		
-		ToolState oldActive = active;
-		BlockHitResult oldTarget = target;
-		active = null;
-		ItemStack stack = player.getMainHandStack();
+		ToolState oldActive = ClientState.active;
+		BlockHitResult oldTarget = ClientState.target;
+		ClientState.active = null;
+		ItemStack stack = ClientState.player.getMainHandStack();
 		if(stack.getItem() instanceof ToolItem toolItem) {
-			active = ToolItem.readState(stack);
+			ClientState.active = ToolItem.readState(stack);
 		}
 		
-		if(active != null) {
-			if(!active.equals(oldActive)) { HudRenderer.getToolSettingsScreen().rebuild(); positions = null; }
+		if(ClientState.active != null) {
+			if(!ClientState.active.equals(oldActive)) { HudRenderer.getToolSettingsScreen().rebuild(); ClientState.positions = null; }
 			if(MinecraftClient.getInstance().currentScreen != null) return;
 			
-			target = getTargetOf(player, active);
-			if(oldTarget == null || !Objects.equal(target.getBlockPos(), oldTarget.getBlockPos()) || !Objects.equal(target.getSide(), oldTarget.getSide())) {
-				positions = null;
+			ClientState.target = getTargetOf(ClientState.player, ClientState.active);
+			if(oldTarget == null || !Objects.equal(ClientState.target.getBlockPos(), oldTarget.getBlockPos()) || !Objects.equal(ClientState.target.getSide(), oldTarget.getSide())) {
+				ClientState.positions = null;
 			}
 			
 			if(INCREASE_RADIUS.wasPressed()) {
-				Networking.clientSendToolState(active.withRadius(Math.min(active.radius()+1, 16)));
+				Networking.clientSendToolState(ClientState.active.withRadius(Math.min(ClientState.active.radius()+1, 16)));
 			}
 			if(DECREASE_RADIUS.wasPressed()) {
-				Networking.clientSendToolState(active.withRadius(Math.max(1, active.radius()-1)));
+				Networking.clientSendToolState(ClientState.active.withRadius(Math.max(1, ClientState.active.radius()-1)));
 			}
 			if(OPEN_MENU.wasPressed()) {
 				MinecraftClient.getInstance().setScreen(HudRenderer.getToolSettingsScreen());
@@ -164,13 +155,13 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 	
 	@SuppressWarnings("resource")
 	public static void render(MatrixStack matrices, float frame) {
-		if(active != null && target != null) {
-			if(ticks % 200 == 0 || positions == null) {
-				ticks++; // just increase the value to avoid recalculation in further frames during same tick
-				positions = active.tool().getBlockPositions(MinecraftClient.getInstance().world, target, active);
+		if(ClientState.active != null && ClientState.target != null) {
+			if(ClientState.ticks % 200 == 0 || ClientState.positions == null) {
+				ClientState.ticks++; // just increase the value to avoid recalculation in further frames during same tick
+				ClientState.positions = ClientState.active.tool().getBlockPositions(MinecraftClient.getInstance().world, ClientState.target, ClientState.active);
 			}
             
-            SelectionRenderer.render(positions, matrices, frame);
+            SelectionRenderer.render(ClientState.positions, matrices, frame);
 		}
 	}
 	

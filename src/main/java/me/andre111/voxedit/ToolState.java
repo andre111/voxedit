@@ -130,6 +130,12 @@ public record ToolState(Tool tool, BlockPalette palette, BlockPalette filter, Mo
 			if(target.getSide().getOffsetZ() != 0 && z != 0) return false;
 			return true;
 		}),
+		CYLINDER((target, state, x, y, z) -> {
+			if(target.getSide().getOffsetX() != 0 && Math.sqrt(y*y + z*z) > state.radius) return false;
+			if(target.getSide().getOffsetY() != 0 && Math.sqrt(x*x + z*z) > state.radius) return false;
+			if(target.getSide().getOffsetZ() != 0 && Math.sqrt(x*x + y*y) > state.radius) return false;
+			return true;
+		}),
 		HOLLOW_SPHERE((target, state, x, y, z) -> {
 			double dist = Math.sqrt(x*x + y*y + z*z);
 			return (state.radius - 0.5) <= dist && dist <= (state.radius + 0.5);

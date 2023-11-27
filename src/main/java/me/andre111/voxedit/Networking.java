@@ -14,6 +14,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.EntityEquipmentUpdateS2CPacket;
+import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
@@ -40,10 +41,12 @@ public class Networking {
 			String command = buf.readString();
 			switch(command) {
 			case "UNDO":
-				Undo.of(player, world).undo(world);
+				int undoCount = Undo.of(player, world).undo(world);
+				if(undoCount > 0) player.sendMessage(Text.of("Undone "+undoCount+" block changes."), true);
 				break;
 			case "REDO":
-				Undo.of(player, world).redo(world);
+				int redoCount = Undo.of(player, world).redo(world);
+				if(redoCount > 0) player.sendMessage(Text.of("Redone "+redoCount+" block changes."), true);
 				break;
 			case "TOOL_LEFT_CLICK":
 				ItemStack stack = player.getMainHandStack();
@@ -53,6 +56,9 @@ public class Networking {
 				}
 				break;
 			}
+		});
+		ClientPlayNetworking.registerGlobalReceiver(new Identifier("voxedit:feedback"), (client, handler, buf, responseSender) -> {
+			
 		});
 	}
 	

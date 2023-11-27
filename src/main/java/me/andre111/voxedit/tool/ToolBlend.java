@@ -1,25 +1,35 @@
 package me.andre111.voxedit.tool;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import me.andre111.voxedit.ToolState;
 import me.andre111.voxedit.editor.Editor;
-import net.minecraft.block.Blocks;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
-public class ToolFlatten extends Tool {
+public class ToolBlend extends Tool {
 	@Override
 	public int rightClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions) {
 		return Editor.undoable(player, world, editable -> {
+			List<BlockState> neighbors = new ArrayList<>();
 			for(BlockPos pos : getBlockPositions(world, target, state)) {
-				if(ToolState.isFree(world, pos)) {
-					editable.setBlock(pos, state.palette().getRandom(world.getRandom()));
-				} else {
-					editable.setBlock(pos, Blocks.AIR.getDefaultState());
+				// find all solid neighbors
+				neighbors.clear();
+				for(Direction dir : Direction.values()) {
+					BlockPos offset = pos.offset(dir);
+					if(!ToolState.isFree(world, offset)) neighbors.add(world.getBlockState(offset));
 				}
+				if(neighbors.isEmpty()) continue;
+				
+				// select random neighbor
+				BlockState newBlockState = neighbors.get(world.getRandom().nextInt(neighbors.size()));
+				editable.setBlock(pos, newBlockState);
 			}
 		});
 	}
@@ -35,18 +45,7 @@ public class ToolFlatten extends Tool {
 		if(ToolState.isFree(world, center)) return Set.of();
 		
 		Set<BlockPos> positions = super.getBlockPositions(world, target, state);
-		positions.removeIf(pos -> {
-			int offset = switch(target.getSide()) {
-			case UP -> pos.getY() - center.getY();
-			case DOWN -> center.getY() - pos.getY();
-			case SOUTH -> pos.getZ() - center.getZ();
-			case NORTH -> center.getZ() - pos.getZ();
-			case EAST -> pos.getX() - center.getX();
-			case WEST -> center.getX() - pos.getX();
-			};
-			if(offset <= 0) return !ToolState.isFree(world, pos);
-			else return ToolState.isFree(world, pos);
-		});
+		positions.removeIf(pos -> ToolState.isFree(world, pos));
 		return positions;
 	}
 	
@@ -54,9 +53,14 @@ public class ToolFlatten extends Tool {
 	public boolean usesMode() {
 		return false;
 	}
+	
+	@Override
+	public boolean usesBlockPalette() {
+		return false;
+	}
 
 	@Override
-	public boolean usesBlockFilter() {
-		return false;
+	public List<ToolState> getCreativeMenuStates() {
+		return List.of(ToolState.of(this).withShape(ToolState.Shape.DISC).withRadius(5));
 	}
 }

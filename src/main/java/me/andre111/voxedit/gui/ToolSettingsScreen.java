@@ -1,5 +1,6 @@
 package me.andre111.voxedit.gui;
 
+import me.andre111.voxedit.ClientState;
 import me.andre111.voxedit.Networking;
 import me.andre111.voxedit.ToolState;
 import me.andre111.voxedit.VoxEdit;
@@ -38,9 +39,9 @@ public class ToolSettingsScreen extends Screen {
 	}
 	
 	public void rebuild() {
-		if(VoxEdit.active == null) return;
-		if(lastTool != VoxEdit.active.tool()) {
-			lastTool = VoxEdit.active.tool();
+		if(ClientState.active == null) return;
+		if(lastTool != ClientState.active.tool()) {
+			lastTool = ClientState.active.tool();
 			init(MinecraftClient.getInstance(), MinecraftClient.getInstance().getWindow().getScaledWidth(), MinecraftClient.getInstance().getWindow().getScaledHeight());
 		} else {
 			reload();
@@ -48,7 +49,7 @@ public class ToolSettingsScreen extends Screen {
 	}
 	
 	private void reload() {
-		ToolState state = VoxEdit.active;
+		ToolState state = ClientState.active;
 		if(state == null) return;
 		if(modeSelector != null && modeSelector.getValue() != state.mode()) modeSelector.setValue(state.mode());
 		if(shapeSelector != null && shapeSelector.getValue() != state.shape()) shapeSelector.setValue(state.shape());
@@ -62,12 +63,12 @@ public class ToolSettingsScreen extends Screen {
 	protected void init() {
 		contentWidth = 100;
 		contentHeight = 8+22;
-		if(VoxEdit.active == null) return;
-		if(VoxEdit.active.tool().usesMode()) contentHeight += 22;
-		if(VoxEdit.active.tool().usesShape()) contentHeight += 22;
-		if(VoxEdit.active.tool().usesRadius()) contentHeight += 22;
-		if(VoxEdit.active.tool().usesBlockPalette()) contentHeight += 22;
-		if(VoxEdit.active.tool().usesBlockFilter()) contentHeight += 22;
+		if(ClientState.active == null) return;
+		if(ClientState.active.tool().usesMode()) contentHeight += 22;
+		if(ClientState.active.tool().usesShape()) contentHeight += 22;
+		if(ClientState.active.tool().usesRadius()) contentHeight += 22;
+		if(ClientState.active.tool().usesBlockPalette()) contentHeight += 22;
+		if(ClientState.active.tool().usesBlockFilter()) contentHeight += 22;
 		
 		int x = 2+padding;
 		int y = (height-contentHeight-padding*2) / 2;
@@ -75,51 +76,51 @@ public class ToolSettingsScreen extends Screen {
 		int currentY = y;
 		addDrawableChild(new TextWidget(x, currentY, contentWidth, 14, Text.of("Tool Settings"), textRenderer).alignCenter());
 		currentY += 12;
-		addDrawableChild(CyclingButtonWidget.builder(Tool::asText).values(VoxEdit.TOOL_REGISTRY.stream().toList()).initially(VoxEdit.active.tool()).build(x, currentY, contentWidth, 20, Text.of("Tool"), (button, tool) -> {
-            Networking.clientSendToolState(VoxEdit.active.withTool(tool));
+		addDrawableChild(CyclingButtonWidget.builder(Tool::asText).values(VoxEdit.TOOL_REGISTRY.stream().toList()).initially(ClientState.active.tool()).build(x, currentY, contentWidth, 20, Text.of("Tool"), (button, tool) -> {
+            Networking.clientSendToolState(ClientState.active.withTool(tool));
         }));
 		currentY += 22;
-		if(VoxEdit.active.tool().usesMode())  {
-			modeSelector = addDrawableChild(CyclingButtonWidget.builder(ToolState.Mode::asText).values(ToolState.Mode.values()).initially(VoxEdit.active.mode()).build(x, currentY, contentWidth, 20, Text.of("Mode"), (button, mode) -> {
-	            Networking.clientSendToolState(VoxEdit.active.withMode(mode));
+		if(ClientState.active.tool().usesMode())  {
+			modeSelector = addDrawableChild(CyclingButtonWidget.builder(ToolState.Mode::asText).values(ToolState.Mode.values()).initially(ClientState.active.mode()).build(x, currentY, contentWidth, 20, Text.of("Mode"), (button, mode) -> {
+	            Networking.clientSendToolState(ClientState.active.withMode(mode));
 	        }));
 			currentY += 22;
 		}
-		if(VoxEdit.active.tool().usesShape()) {
-			shapeSelector = addDrawableChild(CyclingButtonWidget.builder(ToolState.Shape::asText).values(ToolState.Shape.values()).initially(VoxEdit.active.shape()).build(x, currentY, contentWidth, 20, Text.of("Shape"), (button, shape) -> {
-	            Networking.clientSendToolState(VoxEdit.active.withShape(shape));
+		if(ClientState.active.tool().usesShape()) {
+			shapeSelector = addDrawableChild(CyclingButtonWidget.builder(ToolState.Shape::asText).values(ToolState.Shape.values()).initially(ClientState.active.shape()).build(x, currentY, contentWidth, 20, Text.of("Shape"), (button, shape) -> {
+	            Networking.clientSendToolState(ClientState.active.withShape(shape));
 	        }));
 			currentY += 22;
 		}
-		if(VoxEdit.active.tool().usesRadius()) {
-			radiusSlider = addDrawableChild(new IntSliderWidget(x, currentY, contentWidth, 20, Text.of("Radius"), 1, 16, VoxEdit.active.radius(), (radius) -> {
-				Networking.clientSendToolState(VoxEdit.active.withRadius(radius));
+		if(ClientState.active.tool().usesRadius()) {
+			radiusSlider = addDrawableChild(new IntSliderWidget(x, currentY, contentWidth, 20, Text.of("Radius"), 1, 16, ClientState.active.radius(), (radius) -> {
+				Networking.clientSendToolState(ClientState.active.withRadius(radius));
 			}));
 			currentY += 22;
 		}
 		
-		if(VoxEdit.active.tool().usesBlockPalette()) {
+		if(ClientState.active.tool().usesBlockPalette()) {
 			blockWidgetContainer = new DirectionalLayoutWidget(x, currentY, DisplayAxis.HORIZONTAL);
 			blockWidgetContainer.spacing(2);
 			blockWidgetContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Edit Palette"), (button) -> {
-				MinecraftClient.getInstance().setScreen(new EditBlockPaletteScreen(this, Text.of("Edit Block Palette"), 1, true, true, VoxEdit.active.palette(), palette -> {
-					Networking.clientSendToolState(VoxEdit.active.withBlockPalette(palette));
+				MinecraftClient.getInstance().setScreen(new EditBlockPaletteScreen(this, Text.of("Edit Block Palette"), 1, true, true, ClientState.active.palette(), palette -> {
+					Networking.clientSendToolState(ClientState.active.withBlockPalette(palette));
 				}));
 			}).size(contentWidth-22, 20).build()));
-			blockStateDisplay = blockWidgetContainer.add(addDrawableChild(new BlockPaletteDisplayWidget(0, 0, 20, 20, VoxEdit.active.palette())));
+			blockStateDisplay = blockWidgetContainer.add(addDrawableChild(new BlockPaletteDisplayWidget(0, 0, 20, 20, ClientState.active.palette())));
 			blockWidgetContainer.refreshPositions();
 			currentY += 22;
 		}
 		
-		if(VoxEdit.active.tool().usesBlockFilter()) {
+		if(ClientState.active.tool().usesBlockFilter()) {
 			filterWidgetContainer = new DirectionalLayoutWidget(x, currentY, DisplayAxis.HORIZONTAL);
 			filterWidgetContainer.spacing(2);
 			filterWidgetContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Edit Filter"), (button) -> {
-				MinecraftClient.getInstance().setScreen(new EditBlockPaletteScreen(this, Text.of("Edit Block Filter"), 0, false, false, VoxEdit.active.filter(), filter -> {
-					Networking.clientSendToolState(VoxEdit.active.withBlockFilter(filter));
+				MinecraftClient.getInstance().setScreen(new EditBlockPaletteScreen(this, Text.of("Edit Block Filter"), 0, false, false, ClientState.active.filter(), filter -> {
+					Networking.clientSendToolState(ClientState.active.withBlockFilter(filter));
 				}));
 			}).size(contentWidth-22, 20).build()));
-			filterDisplay = filterWidgetContainer.add(addDrawableChild(new BlockPaletteDisplayWidget(0, 0, 20, 20, VoxEdit.active.filter())));
+			filterDisplay = filterWidgetContainer.add(addDrawableChild(new BlockPaletteDisplayWidget(0, 0, 20, 20, ClientState.active.filter())));
 			filterWidgetContainer.refreshPositions();
 			currentY += 22;
 		}

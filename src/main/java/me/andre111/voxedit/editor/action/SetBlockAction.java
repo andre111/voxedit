@@ -19,12 +19,14 @@ public class SetBlockAction extends EditAction {
 	}
 
 	@Override
-	public void undo(World world) {
+	public int undo(World world) {
 		world.setBlockState(pos, oldState, Block.NOTIFY_LISTENERS | Block.SKIP_DROPS, 0);
+		return 1;
 	}
 	
 	@Override
-	public void redo(World world) {
+	public int redo(World world) {
 		world.setBlockState(pos, newState, Block.NOTIFY_LISTENERS | Block.SKIP_DROPS, 0);
+		return 1;
 	}
 }

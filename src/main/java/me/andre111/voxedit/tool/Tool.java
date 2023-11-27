@@ -13,8 +13,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public abstract class Tool {
-	public abstract void rightClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions);
-	public abstract void leftClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions);
+	public abstract int rightClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions);
+	public abstract int leftClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions);
 
 	public Set<BlockPos> getBlockPositions(World world, BlockHitResult target, ToolState state) {
 		return state.getBlockPositions(world, target);

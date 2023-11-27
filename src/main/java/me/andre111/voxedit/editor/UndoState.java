@@ -12,14 +12,18 @@ public class UndoState {
 		this.actions = List.copyOf(actions);
 	}
 	
-	public void undo(World world) {
+	public int undo(World world) {
+		int count = 0;
 		for(int i=actions.size()-1; i>=0; i--) {
-			actions.get(i).undo(world);
+			count += actions.get(i).undo(world);
 		}
+		return count;
 	}
-	public void redo(World world) {
+	public int redo(World world) {
+		int count = 0;
 		for(int i=0; i<actions.size(); i++) {
-			actions.get(i).redo(world);
+			count += actions.get(i).redo(world);
 		}
+		return count;
 	}
 }

@@ -1,7 +1,7 @@
 package me.andre111.voxedit.renderer;
 
+import me.andre111.voxedit.ClientState;
 import me.andre111.voxedit.ToolState;
-import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.gui.ToolSettingsScreen;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
@@ -33,7 +33,7 @@ public class HudRenderer implements HudRenderCallback {
 			return;
 		}
 		
-		ToolState state = VoxEdit.active;
+		ToolState state = ClientState.active;
 		if(state == null) return;
 		
 		var screen = getToolSettingsScreen();

@@ -25,10 +25,12 @@ public class UndoRecordingEditable implements Editable {
 		for(EditAction action : actions) action.redo(world);
 	}
 
-	protected void apply() {
-		if(actions.isEmpty()) return;
-		for(EditAction action : actions) action.redo(world);
+	protected int apply() {
+		if(actions.isEmpty()) return 0;
+		int count = 0;
+		for(EditAction action : actions) count += action.redo(world);
 		undo.push(new UndoState(actions));
+		return count;
 	}
 
 	@Override

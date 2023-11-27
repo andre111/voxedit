@@ -4,6 +4,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.hit.BlockHitResult;
@@ -20,7 +21,8 @@ public final class ToolItem extends Item {
 			ToolState state = readState(player.getStackInHand(hand));
 			BlockHitResult target = VoxEdit.getTargetOf(player, state);
 			if(state != null && target != null) {
-				state.tool().rightClick(world, player, target, state, state.tool().getBlockPositions(world, target, state));
+				int count = state.tool().rightClick(world, player, target, state, state.tool().getBlockPositions(world, target, state));
+				if(count > 0) player.sendMessage(Text.of("Set "+count+" blocks"), true);
 				
 				return TypedActionResult.success(player.getStackInHand(hand));
 			}
@@ -34,7 +36,8 @@ public final class ToolItem extends Item {
 			ToolState state = readState(player.getStackInHand(hand));
 			BlockHitResult target = VoxEdit.getTargetOf(player, state);
 			if(state != null && target != null) {
-				state.tool().leftClick(world, player, target, state, state.tool().getBlockPositions(world, target, state));
+				int count = state.tool().leftClick(world, player, target, state, state.tool().getBlockPositions(world, target, state));
+				if(count > 0) player.sendMessage(Text.of("Set "+count+" blocks"), true);
 			}
 		}
 	}

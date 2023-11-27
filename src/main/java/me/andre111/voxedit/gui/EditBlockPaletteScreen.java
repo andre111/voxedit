@@ -161,7 +161,7 @@ public class EditBlockPaletteScreen extends Screen {
 				selectableChildren.add(stateWidget);
 				
 				if(showWeights) {
-					weightWidget = new IntSliderWidget(0, 0, 100, 20, Text.of("Weight"), 1, 20, paletteEntry.weight(), (weight) -> {
+					weightWidget = new IntSliderWidget(0, 0, 100, 20, Text.of("Weight"), 1, 32, paletteEntry.weight(), (weight) -> {
 						BlockPalette.Entry oldEntry = palette.getEntry(index);
 						palette.setEntry(index, new BlockPalette.Entry(oldEntry.state(), weight));
 					});

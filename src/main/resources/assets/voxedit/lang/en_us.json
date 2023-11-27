@@ -1,6 +1,7 @@
 {
     "item.voxedit.tool": "VoxEdit Tool",
     
+    "voxedit.tool.voxedit.blend": "Blend",
     "voxedit.tool.voxedit.brush": "Brush",
     "voxedit.tool.voxedit.fill": "Fill",
     "voxedit.tool.voxedit.flatten": "Flatten",

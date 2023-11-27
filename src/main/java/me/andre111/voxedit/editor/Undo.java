@@ -26,16 +26,14 @@ public class Undo {
 		index++;
 	}
 	
-	public void undo(World world) {
-		if(index < 0) return;
-		states.get(index).undo(world);
-		index--;
+	public int undo(World world) {
+		if(index < 0) return 0;
+		return states.get(index--).undo(world);
 	}
 	
-	public void redo(World world) {
-		if(index >= states.size()-1) return;
-		index++;
-		states.get(index).redo(world);
+	public int redo(World world) {
+		if(index >= states.size()-1) return 0;
+		return states.get(++index).redo(world);
 	}
 	
 	// Access
