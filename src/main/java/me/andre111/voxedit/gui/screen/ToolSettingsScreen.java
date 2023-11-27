@@ -1,4 +1,4 @@
-package me.andre111.voxedit.gui;
+package me.andre111.voxedit.gui.screen;
 
 import me.andre111.voxedit.ClientState;
 import me.andre111.voxedit.Networking;

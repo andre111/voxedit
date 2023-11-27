@@ -2,7 +2,7 @@ package me.andre111.voxedit.renderer;
 
 import me.andre111.voxedit.ClientState;
 import me.andre111.voxedit.ToolState;
-import me.andre111.voxedit.gui.ToolSettingsScreen;
+import me.andre111.voxedit.gui.screen.ToolSettingsScreen;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;

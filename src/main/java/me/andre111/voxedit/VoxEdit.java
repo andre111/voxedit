@@ -34,6 +34,7 @@ import org.spongepowered.include.com.google.common.base.Objects;
 
 import com.mojang.serialization.Lifecycle;
 
+import me.andre111.voxedit.renderer.EditorRenderer;
 import me.andre111.voxedit.renderer.HudRenderer;
 import me.andre111.voxedit.renderer.SelectionRenderer;
 import me.andre111.voxedit.renderer.ToolRenderer;
@@ -57,6 +58,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
     public static final Tool TOOL_BLEND = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "blend"), new ToolBlend());
     
     public static final ToolItem TOOL_ITEM = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool"), new ToolItem());
+    public static final EditorItem EDITOR_ITEM = Registry.register(Registries.ITEM, new Identifier("voxedit", "editor"), new EditorItem());
     
     public static final KeyBinding INCREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.increaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_UP, "key.category.voxedit"));
     public static final KeyBinding DECREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.decreaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_DOWN, "key.category.voxedit"));
@@ -75,6 +77,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_ITEM, new ToolRenderer());
+		BuiltinItemRendererRegistry.INSTANCE.register(EDITOR_ITEM, new EditorRenderer());
 		HudRenderer.init();
 		
 		ItemGroupEvents.MODIFY_ENTRIES_ALL.register((group, entries) -> {
@@ -86,6 +89,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 							entries.add(TOOL_ITEM.getStackWith(state));
 						}
 					}
+					entries.add(EDITOR_ITEM.getDefaultStack());
 				}
 			}
 		});

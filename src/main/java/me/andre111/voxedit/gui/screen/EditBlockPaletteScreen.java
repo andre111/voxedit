@@ -1,4 +1,4 @@
-package me.andre111.voxedit.gui;
+package me.andre111.voxedit.gui.screen;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,7 +98,7 @@ public class EditBlockPaletteScreen extends Screen {
 
 
 	@Environment(value=EnvType.CLIENT)
-	class BlockPaletteListWidget extends ElementListWidget<me.andre111.voxedit.gui.EditBlockPaletteScreen.BlockPaletteListWidget.BlockPaletteEntry> {
+	class BlockPaletteListWidget extends ElementListWidget<me.andre111.voxedit.gui.screen.EditBlockPaletteScreen.BlockPaletteListWidget.BlockPaletteEntry> {
 		public BlockPaletteListWidget() {
 			super(EditBlockPaletteScreen.this.client, EditBlockPaletteScreen.this.width, EditBlockPaletteScreen.this.height - 80, 20, 24);
 			updateEntries();

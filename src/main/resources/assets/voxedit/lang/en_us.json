@@ -1,5 +1,6 @@
 {
     "item.voxedit.tool": "VoxEdit Tool",
+    "item.voxedit.editor": "VoxEdit NBT Editor",
     
     "voxedit.tool.voxedit.blend": "Blend",
     "voxedit.tool.voxedit.brush": "Brush",

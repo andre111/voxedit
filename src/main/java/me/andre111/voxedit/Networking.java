@@ -1,10 +1,12 @@
 package me.andre111.voxedit;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.mojang.datafixers.util.Pair;
 
 import me.andre111.voxedit.editor.Undo;
+import me.andre111.voxedit.gui.screen.NBTEditorScreen;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -14,6 +16,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.EntityEquipmentUpdateS2CPacket;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
@@ -57,8 +60,22 @@ public class Networking {
 				break;
 			}
 		});
+		ServerPlayNetworking.registerGlobalReceiver(new Identifier("voxedit:nbteditor"), (server, player, handler, buf, responseSender) -> {
+			if(!player.isCreative()) return;
+			if(!ServerState.NBTEDITOR_TARGETS.containsKey(player.getUuid())) return;
+			if(buf.readBoolean()) {
+				ServerState.NBTEDITOR_TARGETS.get(player.getUuid()).accept(buf.readNbt());
+			}
+			ServerState.NBTEDITOR_TARGETS.remove(player.getUuid());
+		});
+		
+		
 		ClientPlayNetworking.registerGlobalReceiver(new Identifier("voxedit:feedback"), (client, handler, buf, responseSender) -> {
 			
+		});
+		
+		ClientPlayNetworking.registerGlobalReceiver(new Identifier("voxedit:nbteditor"), (client, handler, buf, responseSender) -> {
+			client.execute(() -> client.setScreen(new NBTEditorScreen(buf.readNbt())));
 		});
 	}
 	
@@ -72,6 +89,25 @@ public class Networking {
 		PacketByteBuf buf = PacketByteBufs.create();
 		buf.writeString(command.name());
 		ClientPlayNetworking.send(new Identifier("voxedit:command"), buf);
+	}
+	
+	public static void clientSendNBTEditorResult(NbtCompound compound) {
+		PacketByteBuf buf = PacketByteBufs.create();
+		if(compound == null) {
+			buf.writeBoolean(false);
+		} else {
+			buf.writeBoolean(true);
+			buf.writeNbt(compound);
+		}
+		ClientPlayNetworking.send(new Identifier("voxedit:nbteditor"), buf);
+	}
+	
+	public static void serverSendOpenNBTEditor(ServerPlayerEntity player, NbtCompound root, Consumer<NbtCompound> editTarget) {
+		ServerState.NBTEDITOR_TARGETS.put(player.getUuid(), editTarget);
+		
+		PacketByteBuf buf = PacketByteBufs.create();
+		buf.writeNbt(root);
+		ServerPlayNetworking.send(player, new Identifier("voxedit:nbteditor"), buf);
 	}
 	
 	public static enum Command {
