@@ -1,8 +1,10 @@
 {
-    "item.voxedit.tool_brush": "Brush",
-    "item.voxedit.tool_smooth": "Smooth",
-    "item.voxedit.tool_fill": "Fill",
-    "item.voxedit.tool_flatten": "Flatten",
+    "item.voxedit.tool": "VoxEdit Tool",
+    
+    "voxedit.tool.voxedit.brush": "Brush",
+    "voxedit.tool.voxedit.fill": "Fill",
+    "voxedit.tool.voxedit.flatten": "Flatten",
+    "voxedit.tool.voxedit.smooth": "Smooth",
     
     "key.category.voxedit": "VoxEdit",
     "key.voxedit.decreaseRadius": "Decrease Tool Radius",

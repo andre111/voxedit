@@ -5,7 +5,6 @@ import java.util.List;
 import com.mojang.datafixers.util.Pair;
 
 import me.andre111.voxedit.editor.Undo;
-import me.andre111.voxedit.tool.ToolItem;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;

@@ -6,18 +6,21 @@ import java.util.Set;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import me.andre111.voxedit.tool.Tool;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 //TODO: sync changes to server
-public record ToolState(BlockPalette palette, BlockPalette filter, Mode mode, Shape shape, int radius, boolean targetFluids) {
+public record ToolState(Tool tool, BlockPalette palette, BlockPalette filter, Mode mode, Shape shape, int radius, boolean targetFluids) {
 	public static final Codec<ToolState> CODEC = RecordCodecBuilder.create(instance -> instance
 			.group(
+					Identifier.CODEC.optionalFieldOf("tool", new Identifier("voxedit", "brush")).xmap(VoxEdit.TOOL_REGISTRY::get, Tool::id).forGetter(ts -> ts.tool),
 					BlockPalette.CODEC.optionalFieldOf("palette", new BlockPalette(Blocks.STONE.getDefaultState())).forGetter(ts -> ts.palette),
 					BlockPalette.CODEC.optionalFieldOf("filter", new BlockPalette()).forGetter(ts -> ts.filter),
 					Codec.STRING.optionalFieldOf("mode", "SOLID").xmap(str -> Mode.valueOf(str), mode -> mode.name()).forGetter(ts -> ts.mode),
@@ -27,32 +30,36 @@ public record ToolState(BlockPalette palette, BlockPalette filter, Mode mode, Sh
 			)
 			.apply(instance, ToolState::new));
 	
-	public static ToolState initial() {
-		return new ToolState(new BlockPalette(Blocks.STONE.getDefaultState()), new BlockPalette(), Mode.SOLID, Shape.SPHERE, 3, false);
+	public static ToolState of(Tool tool) {
+		return new ToolState(tool, new BlockPalette(Blocks.STONE.getDefaultState()), new BlockPalette(), Mode.SOLID, Shape.SPHERE, 5, false);
+	}
+	
+	public ToolState withTool(Tool tool) {
+		return new ToolState(tool, palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withBlockPalette(BlockPalette palette) {
-		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolState(tool, palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withBlockFilter(BlockPalette filter) {
-		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolState(tool, palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withMode(Mode mode) {
-		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolState(tool, palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withShape(Shape shape) {
-		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolState(tool, palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withRadius(int radius) {
-		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolState(tool, palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public ToolState withTargetFluids(boolean targetFluids) {
-		return new ToolState(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolState(tool, palette, filter, mode, shape, radius, targetFluids);
 	}
 	
 	public Set<BlockPos> getBlockPositions(World world, BlockHitResult target) {
