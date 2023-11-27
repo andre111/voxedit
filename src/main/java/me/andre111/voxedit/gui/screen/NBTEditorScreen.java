@@ -44,10 +44,9 @@ import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
+@Environment(value=EnvType.CLIENT)
 public class NBTEditorScreen extends Screen {
 	private final NbtCompound root;
-	
-	private DirectionalLayoutWidget buttonContainer;
 	
 	private ButtonWidget cutButton;
 	private ButtonWidget copyButton;
@@ -60,7 +59,7 @@ public class NBTEditorScreen extends Screen {
 	private List<AddNBTElementButtonWidget> addButtons;
 	
 	private NBTEditorList rootList;
-	private me.andre111.voxedit.gui.screen.NBTEditorScreen.NBTEditorList.NBTEditorListEntry selected;
+	private NBTEditorListEntry selected;
 	private boolean doNotChangeSelection;
 
 	public NBTEditorScreen(NbtCompound root) {
@@ -70,24 +69,18 @@ public class NBTEditorScreen extends Screen {
 
 	@Override
 	protected void init() {
-		buttonContainer = new DirectionalLayoutWidget(0, 2, DisplayAxis.HORIZONTAL);
+		DirectionalLayoutWidget buttonContainer = new DirectionalLayoutWidget(0, 2, DisplayAxis.HORIZONTAL);
 		buttonContainer.spacing(2);
 		
 		int buttonSize = 20;
 		cutButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Cut"), (button) -> {
 			if(selected != null) {
 				client.keyboard.setClipboard(selected.element.asString());
-				
-				NbtElement parent = selected.parent;
-				if(parent instanceof NbtCompound c) c.remove(selected.key);
-				if(parent instanceof AbstractNbtList<?> l) l.remove(Integer.parseInt(selected.key));
-				reload();
+				replaceSelected(null);
 			}
 		}).tooltip(Tooltip.of(Text.of("Cut Tag"))).size(buttonSize, 20).build()));
 		copyButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Copy"), (button) -> {
-			if(selected != null) {
-				client.keyboard.setClipboard(selected.element.asString());
-			}
+			client.keyboard.setClipboard(selected != null ? selected.element.asString() : root.asString());
 		}).tooltip(Tooltip.of(Text.of("Copy Tag"))).size(buttonSize, 20).build()));
 		pasteButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Paste"), (button) -> {
 			NbtCompound compound = getClipboardCompound();
@@ -156,7 +149,6 @@ public class NBTEditorScreen extends Screen {
 		
 		rootList = addDrawableChild(new NBTEditorList(root, width, height-40-2*4, 6));
 		
-
         addDrawableChild(ButtonWidget.builder(ScreenTexts.DONE, button -> {
         	Networking.clientSendNBTEditorResult(root);
             close();
@@ -198,12 +190,12 @@ public class NBTEditorScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
     	boolean value = super.mouseClicked(mouseX, mouseY, button);
-    	if(!doNotChangeSelection && !value) setSelected(null);
+    	if(!value) setSelected(null);
     	doNotChangeSelection = false;
     	return value;
     }
 	
-	private void setSelected(me.andre111.voxedit.gui.screen.NBTEditorScreen.NBTEditorList.NBTEditorListEntry selected) {
+	private void setSelected(NBTEditorListEntry selected) {
 		if(this.doNotChangeSelection) return;
 		
 		this.selected = selected;
@@ -214,7 +206,7 @@ public class NBTEditorScreen extends Screen {
 	
 	private void updateButtons() {
 		cutButton.active = selected != null && selected.element instanceof NbtCompound;
-		copyButton.active = selected != null && selected.element instanceof NbtCompound;
+		copyButton.active = selected == null || selected.element instanceof NbtCompound;
 		pasteButton.active = CAN_ADD_COMPOUND.test(selected != null ? selected.element : root) && getClipboardCompound() != null;
 
 		renameButton.active = selected != null && selected.hasName;
@@ -269,7 +261,8 @@ public class NBTEditorScreen extends Screen {
 		super.close();
 		Networking.clientSendNBTEditorResult(null);
 	}
-	
+
+	@Environment(value=EnvType.CLIENT)
 	private class AddNBTElementButtonWidget extends ButtonWidget {
 		private final Identifier icon;
 		private final Predicate<NbtElement> canAddTo;
@@ -289,7 +282,7 @@ public class NBTEditorScreen extends Screen {
 	}
 
 	@Environment(value=EnvType.CLIENT)
-	private class NBTEditorList extends ModListWidget<me.andre111.voxedit.gui.screen.NBTEditorScreen.NBTEditorList.NBTEditorListEntry> {
+	private class NBTEditorList extends ModListWidget<NBTEditorListEntry> {
 		private final NbtElement compoundOrList;
 		
 		public NBTEditorList(NbtElement compoundOrList, int width, int height, int padding) {
@@ -302,141 +295,141 @@ public class NBTEditorScreen extends Screen {
 			clearEntries();
 			if(compoundOrList instanceof NbtCompound compound) {
 				compound.getKeys().stream().sorted().forEach(key ->
-					addEntry(new NBTEditorListEntry(key, true, compoundOrList, compound.get(key)))
+					addEntry(new NBTEditorListEntry(getWidth(), key, true, compoundOrList, compound.get(key)))
 				);
 			} else if(compoundOrList instanceof AbstractNbtList<?> list) {
 				for(int i=0; i<list.size(); i++) {
-					addEntry(new NBTEditorListEntry(i+"", false, compoundOrList, list.get(i)));
+					addEntry(new NBTEditorListEntry(getWidth(), i+"", false, compoundOrList, list.get(i)));
 				}
 			}
 		}
+	}
 
-		@Environment(value=EnvType.CLIENT)
-		private class NBTEditorListEntry extends ModListWidget.Entry<NBTEditorListEntry> {
-			private List<ClickableWidget> children = new ArrayList<>();
+	@Environment(value=EnvType.CLIENT)
+	private class NBTEditorListEntry extends ModListWidget.Entry<NBTEditorListEntry> {
+		private List<ClickableWidget> children = new ArrayList<>();
+		
+		private String key;
+		private OrderedText displayText;
+		private boolean expanded;
+		
+		private final boolean hasName;
+		private final NbtElement parent;
+		private final NbtElement element;
+		
+		private NBTEditorListEntry(int width, String key, boolean hasName, NbtElement parent, NbtElement element) {
+			this.key = key;
+			this.hasName = hasName;
+			this.parent = parent;
+			this.element = element;
 			
-			private String key;
-			private OrderedText displayText;
-			private boolean expanded;
+			updateDisplayText();
 			
-			private final boolean hasName;
-			private final NbtElement parent;
-			private final NbtElement element;
+			if(element instanceof NbtCompound || element instanceof AbstractNbtList<?>) {
+				NBTEditorList list = new NBTEditorList(element, width-20, -1, 2);
+				list.setRenderBackground(false);
+				children.add(list);
+			}
+		}
+		
+		private void updateDisplayText() {
+			displayText = OrderedText.concat(
+				OrderedText.styledForwardsVisitedString(key, Style.EMPTY),
+				OrderedText.styledForwardsVisitedString(": "+getValueRepresentation(), Style.EMPTY.withColor(0x888888))
+			);
+		}
+		
+		private void setExpanded(boolean expanded) {
+			this.expanded = expanded;
+			rootList.refreshPositions();
+		}
+		
+		@Override
+        public void setFocused(boolean focused) {
+			if(focused) setSelected(this);
+		}
+
+        @Override
+        public boolean isFocused() {
+            return selected == this;
+        }
+
+		@Override
+		public List<? extends Element> children() {
+			return children;
+		}
+
+		@Override
+		protected void renderWidget(DrawContext context, int mouseX, int mouseY, float tickDelta) {
+			Identifier icon = getIcon();
+			if(icon != null) {
+				context.drawGuiTexture(icon, getX(), getY(), 8, 8);
+			}
+			context.drawText(textRenderer, displayText, getX()+10, getY(), -1, false);
 			
-			private NBTEditorListEntry(String key, boolean hasName, NbtElement parent, NbtElement element) {
-				this.key = key;
-				this.hasName = hasName;
-				this.parent = parent;
-				this.element = element;
-				
-				updateDisplayText();
-				
-				if(element instanceof NbtCompound || element instanceof AbstractNbtList<?>) {
-					NBTEditorList list = new NBTEditorList(element, NBTEditorList.this.width-20, -1, 2);
-					list.setRenderBackground(false);
-					children.add(list);
+			if(expanded) {
+				for(ClickableWidget child : children) {
+					child.render(context, mouseX, mouseY, tickDelta);
 				}
 			}
-			
-			private void updateDisplayText() {
-				displayText = OrderedText.concat(
-					OrderedText.styledForwardsVisitedString(key, Style.EMPTY),
-					OrderedText.styledForwardsVisitedString(": "+getValueRepresentation(), Style.EMPTY.withColor(0x888888))
-				);
-			}
-			
-			private void setExpanded(boolean expanded) {
-				this.expanded = expanded;
-				NBTEditorScreen.this.rootList.refreshPositions();
-			}
-			
-			@Override
-	        public void setFocused(boolean focused) {
-				if(focused) NBTEditorScreen.this.setSelected(this);
-			}
+		}
+		
+	    @Override
+	    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+	    	if(getX() < mouseX && mouseX < getX() + 10 && getY() < mouseY && mouseY < getY() + 10) {
+	    		setExpanded(!expanded);
+	    		return true;
+	    	}
+	    	return super.mouseClicked(mouseX, mouseY, button);
+	    }
 
-	        @Override
-	        public boolean isFocused() {
-	            return NBTEditorScreen.this.selected == this;
-	        }
+		@Override
+		public int getHeight() {
+			int height = 11;
+			if(expanded) {
+				for(ClickableWidget child : children) height += child.getHeight();
+			}
+			return height;
+		}
+	    
+	    @Override
+	    public void refreshPositions() {
+	    	for(ClickableWidget child : children) {
+	    		child.setPosition(getX()+10, getY()+11);
+	    	}
+	    	super.refreshPositions();
+	    }
 
-			@Override
-			public List<? extends Element> children() {
-				return children;
-			}
-
-			@Override
-			protected void renderWidget(DrawContext context, int mouseX, int mouseY, float tickDelta) {
-				Identifier icon = getIcon();
-				if(icon != null) {
-					context.drawGuiTexture(icon, getX(), getY(), 8, 8);
-				}
-				context.drawText(NBTEditorScreen.this.textRenderer, displayText, getX()+10, getY(), -1, false);
-				
-				if(expanded) {
-					for(ClickableWidget child : children) {
-						child.render(context, mouseX, mouseY, tickDelta);
-					}
-				}
-			}
-			
-		    @Override
-		    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		    	if(getX() < mouseX && mouseX < getX() + 10 && getY() < mouseY && mouseY < getY() + 10) {
-		    		setExpanded(!expanded);
-		    		return true;
-		    	}
-		    	return super.mouseClicked(mouseX, mouseY, button);
-		    }
-
-			@Override
-			public int getHeight() {
-				int height = 11;
-				if(expanded) {
-					for(ClickableWidget child : children) height += child.getHeight();
-				}
-				return height;
-			}
-		    
-		    @Override
-		    public void refreshPositions() {
-		    	for(ClickableWidget child : children) {
-		    		child.setPosition(getX()+10, getY()+11);
-		    	}
-		    	super.refreshPositions();
-		    }
-
-			@Override
-			protected void appendClickableNarrations(NarrationMessageBuilder builder) {
-			}
-			
-			private Identifier getIcon() {
-				if(element instanceof NbtCompound) return Textures.NBT_COMPOUND;
-				if(element instanceof NbtList) return Textures.NBT_LIST;
-				if(element instanceof AbstractNbtList) return Textures.NBT_ARRAY;
-				if(element instanceof NbtByte) return Textures.NBT_BYTE;
-				if(element instanceof NbtShort) return Textures.NBT_SHORT;
-				if(element instanceof NbtInt) return Textures.NBT_INT;
-				if(element instanceof NbtLong) return Textures.NBT_LONG;
-				if(element instanceof NbtFloat) return Textures.NBT_FLOAT;
-				if(element instanceof NbtDouble) return Textures.NBT_DOUBLE;
-				if(element instanceof NbtString) return Textures.NBT_STRING;
-				return null;
-			}
-			
-			private String getValueRepresentation() {
-				if(element instanceof NbtCompound c) return c.getSize()+" Entries";
-				if(element instanceof NbtList l) return l.size()+" Entries";
-				if(element instanceof AbstractNbtList l) return l.size()+" Entries";
-				if(element instanceof NbtByte) return element.asString();
-				if(element instanceof NbtShort) return element.asString();
-				if(element instanceof NbtInt) return element.asString();
-				if(element instanceof NbtLong) return element.asString();
-				if(element instanceof NbtFloat) return element.asString();
-				if(element instanceof NbtDouble) return element.asString();
-				if(element instanceof NbtString) return element.asString();
-				return "UNKNOWN NBT TAG";
-			}
+		@Override
+		protected void appendClickableNarrations(NarrationMessageBuilder builder) {
+		}
+		
+		private Identifier getIcon() {
+			if(element instanceof NbtCompound) return Textures.NBT_COMPOUND;
+			if(element instanceof NbtList) return Textures.NBT_LIST;
+			if(element instanceof AbstractNbtList) return Textures.NBT_ARRAY;
+			if(element instanceof NbtByte) return Textures.NBT_BYTE;
+			if(element instanceof NbtShort) return Textures.NBT_SHORT;
+			if(element instanceof NbtInt) return Textures.NBT_INT;
+			if(element instanceof NbtLong) return Textures.NBT_LONG;
+			if(element instanceof NbtFloat) return Textures.NBT_FLOAT;
+			if(element instanceof NbtDouble) return Textures.NBT_DOUBLE;
+			if(element instanceof NbtString) return Textures.NBT_STRING;
+			return null;
+		}
+		
+		private String getValueRepresentation() {
+			if(element instanceof NbtCompound c) return c.getSize()+" Entries";
+			if(element instanceof NbtList l) return l.size()+" Entries";
+			if(element instanceof AbstractNbtList l) return l.size()+" Entries";
+			if(element instanceof NbtByte) return element.asString();
+			if(element instanceof NbtShort) return element.asString();
+			if(element instanceof NbtInt) return element.asString();
+			if(element instanceof NbtLong) return element.asString();
+			if(element instanceof NbtFloat) return element.asString();
+			if(element instanceof NbtDouble) return element.asString();
+			if(element instanceof NbtString) return element.asString();
+			return "UNKNOWN NBT TAG";
 		}
 	}
 }
