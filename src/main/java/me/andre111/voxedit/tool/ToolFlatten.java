@@ -2,39 +2,41 @@ package me.andre111.voxedit.tool;
 
 import java.util.Set;
 
-import me.andre111.voxedit.ToolState;
-import me.andre111.voxedit.editor.Editor;
+import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
+import me.andre111.voxedit.tool.config.ToolConfigFlatten;
+import me.andre111.voxedit.tool.util.Defaults;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.BlockView;
 
-public class ToolFlatten extends Tool {
+public class ToolFlatten extends Tool<ToolConfigFlatten, ToolFlatten> {
+	public ToolFlatten() {
+		super(ToolConfigFlatten.CODEC, new ToolConfigFlatten());
+	}
+
 	@Override
-	public int rightClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions) {
-		return Editor.undoable(player, world, editable -> {
-			for(BlockPos pos : getBlockPositions(world, target, state)) {
-				if(ToolState.isFree(world, pos)) {
-					editable.setBlock(pos, state.palette().getRandom(world.getRandom()));
-				} else {
-					editable.setBlock(pos, Blocks.AIR.getDefaultState());
-				}
+	public void rightClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigFlatten config, Set<BlockPos> positions) {
+		for(BlockPos pos : positions) {
+			if(Defaults.isFree(world, pos)) {
+				world.setBlockState(pos, config.palette().getRandom(world.getRandom()), 0);
+			} else {
+				world.setBlockState(pos, Blocks.AIR.getDefaultState(), 0);
 			}
-		});
+		}
 	}
 
 	@Override
-	public int leftClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions) {
-		return 0;
+	public void leftClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigFlatten config, Set<BlockPos> positions) {
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(World world, BlockHitResult target, ToolState state) {
+	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigFlatten config) {
 		BlockPos center = target.getBlockPos();
-		if(ToolState.isFree(world, center)) return Set.of();
+		if(Defaults.isFree(world, center)) return Set.of();
 		
-		Set<BlockPos> positions = super.getBlockPositions(world, target, state);
+		Set<BlockPos> positions = Defaults.getBlockPositions(world, target, config.radius(), config.shape());
 		positions.removeIf(pos -> {
 			int offset = switch(target.getSide()) {
 			case UP -> pos.getY() - center.getY();
@@ -44,19 +46,9 @@ public class ToolFlatten extends Tool {
 			case EAST -> pos.getX() - center.getX();
 			case WEST -> center.getX() - pos.getX();
 			};
-			if(offset <= 0) return !ToolState.isFree(world, pos);
-			else return ToolState.isFree(world, pos);
+			if(offset <= 0) return !Defaults.isFree(world, pos);
+			else return Defaults.isFree(world, pos);
 		});
 		return positions;
-	}
-	
-	@Override
-	public boolean usesMode() {
-		return false;
-	}
-
-	@Override
-	public boolean usesBlockFilter() {
-		return false;
 	}
 }

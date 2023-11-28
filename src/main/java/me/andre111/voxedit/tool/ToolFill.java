@@ -2,41 +2,41 @@ package me.andre111.voxedit.tool;
 
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
-import me.andre111.voxedit.ToolState;
-import me.andre111.voxedit.editor.Editor;
+import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
+import me.andre111.voxedit.tool.config.ToolConfigFill;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.world.BlockView;
 
-public class ToolFill extends Tool {
-	@Override
-	public int rightClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions) {
-		return Editor.undoable(player, world, editable -> {
-			for(BlockPos pos : getBlockPositions(world, target, state)) {
-				editable.setBlock(pos, state.palette().getRandom(world.getRandom()));
-			}
-		});
+public class ToolFill extends Tool<ToolConfigFill, ToolFill> {
+	public ToolFill() {
+		super(ToolConfigFill.CODEC, new ToolConfigFill());
 	}
 
 	@Override
-	public int leftClick(World world, PlayerEntity player, BlockHitResult target, ToolState state, Set<BlockPos> positions) {
-		return 0;
+	public void rightClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigFill config, Set<BlockPos> positions) {
+		for(BlockPos pos : positions) {
+			world.setBlockState(pos, config.palette().getRandom(world.getRandom()), 0);
+		}
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(World world, BlockHitResult target, ToolState state) {
+	public void leftClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigFill config, Set<BlockPos> positions) {
+	}
+
+	@Override
+	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigFill config) {
 		Set<BlockPos> positions = new HashSet<>();
 		
 		BlockPos center = target.getBlockPos();
-		if(!shouldFill(world.getBlockState(center), null, state)) return positions;
+		if(!shouldFill(world.getBlockState(center), null, config)) return positions;
 		
 		Block targetBlock = world.getBlockState(center).getBlock();	
 		Queue<BlockPos> checkNeighbors = new LinkedList<>();
@@ -48,10 +48,10 @@ public class ToolFill extends Tool {
 			BlockPos pos = checkNeighbors.poll();
 			for(Direction dir : Direction.values()) {
 				BlockPos neighbor = pos.offset(dir);
-				if(Math.abs(neighbor.getX() - center.getX()) > state.radius()) continue;
-				if(Math.abs(neighbor.getY() - center.getY()) > state.radius()) continue;
-				if(Math.abs(neighbor.getZ() - center.getZ()) > state.radius()) continue;
-				if(!shouldFill(world.getBlockState(neighbor), targetBlock, state)) continue;
+				if(Math.abs(neighbor.getX() - center.getX()) > config.radius()) continue;
+				if(Math.abs(neighbor.getY() - center.getY()) > config.radius()) continue;
+				if(Math.abs(neighbor.getZ() - center.getZ()) > config.radius()) continue;
+				if(!shouldFill(world.getBlockState(neighbor), targetBlock, config)) continue;
 				if(positions.contains(neighbor)) continue;
 				if(checkNeighbors.contains(neighbor)) continue;
 				
@@ -63,27 +63,12 @@ public class ToolFill extends Tool {
 		return positions;
 	}
 	
-	private boolean shouldFill(BlockState blockState, Block targetBlock, ToolState state) {
-		if(state.filter().size() == 0) {
+	private boolean shouldFill(BlockState blockState, Block targetBlock, ToolConfigFill config) {
+		if(config.filter().size() == 0) {
 			if(targetBlock == null) return !blockState.isAir();
 			else return blockState.getBlock() == targetBlock;
 		} else {
-			return state.passesFilter(blockState);
+			return config.filter().has(blockState.getBlock());
 		}
-	}
-	
-	@Override
-	public boolean usesMode() {
-		return false;
-	}
-	
-	@Override
-	public boolean usesShape() {
-		return false;
-	}
-
-	@Override
-	public List<ToolState> getCreativeMenuStates() {
-		return List.of(ToolState.of(this).withRadius(16));
 	}
 }

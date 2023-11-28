@@ -17,6 +17,7 @@ public class BlockPalette {
 					Entry.CODEC.listOf().fieldOf("entries").forGetter(bp -> bp.entries)
 			)
 			.apply(instance, BlockPalette::new));
+	public static final BlockPalette DEFAULT = new BlockPalette(Blocks.STONE.getDefaultState());
 	
 	private List<Entry> entries = new ArrayList<>();
 

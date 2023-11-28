@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.client.MinecraftClient;
@@ -38,24 +37,31 @@ import me.andre111.voxedit.renderer.EditorRenderer;
 import me.andre111.voxedit.renderer.HudRenderer;
 import me.andre111.voxedit.renderer.SelectionRenderer;
 import me.andre111.voxedit.renderer.ToolRenderer;
+import me.andre111.voxedit.tool.ConfiguredTool;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.ToolBlend;
 import me.andre111.voxedit.tool.ToolBrush;
 import me.andre111.voxedit.tool.ToolFill;
 import me.andre111.voxedit.tool.ToolFlatten;
+import me.andre111.voxedit.tool.ToolPlace;
 import me.andre111.voxedit.tool.ToolSmooth;
+import me.andre111.voxedit.tool.config.ToolConfig;
+import me.andre111.voxedit.tool.config.ToolConfigBrush;
 
 public class VoxEdit implements ModInitializer, ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("voxedit");
     
-    public static final RegistryKey<Registry<Tool>> TOOL_REGISTRY_KEY = RegistryKey.ofRegistry(new Identifier("voxedit", "tool"));
-    public static final Registry<Tool> TOOL_REGISTRY = new SimpleRegistry<Tool>(TOOL_REGISTRY_KEY, Lifecycle.stable());
+    public static final RegistryKey<Registry<Tool<?, ?>>> TOOL_REGISTRY_KEY = RegistryKey.ofRegistry(new Identifier("voxedit", "tool"));
+    public static final Registry<Tool<?, ?>> TOOL_REGISTRY = new SimpleRegistry<Tool<?, ?>>(TOOL_REGISTRY_KEY, Lifecycle.stable());
     
-    public static final Tool TOOL_BRUSH = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "brush"), new ToolBrush());
-    public static final Tool TOOL_SMOOTH = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "smooth"), new ToolSmooth());
-    public static final Tool TOOL_FILL = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "fill"), new ToolFill());
-    public static final Tool TOOL_FLATTEN = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "flatten"), new ToolFlatten());
-    public static final Tool TOOL_BLEND = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "blend"), new ToolBlend());
+    public static final ToolBrush TOOL_BRUSH = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "brush"), new ToolBrush());
+    public static final ToolSmooth TOOL_SMOOTH = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "smooth"), new ToolSmooth());
+    public static final ToolFill TOOL_FILL = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "fill"), new ToolFill());
+    public static final ToolFlatten TOOL_FLATTEN = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "flatten"), new ToolFlatten());
+    public static final ToolBlend TOOL_BLEND = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "blend"), new ToolBlend());
+    public static final ToolPlace TOOL_PLACE = Registry.register(TOOL_REGISTRY, new Identifier("voxedit", "place"), new ToolPlace());
+    
+	public static final ConfiguredTool<?, ?> DEFAULT_TOOL = new ConfiguredTool<>(TOOL_BRUSH, new ToolConfigBrush());
     
     public static final ToolItem TOOL_ITEM = Registry.register(Registries.ITEM, new Identifier("voxedit", "tool"), new ToolItem());
     public static final EditorItem EDITOR_ITEM = Registry.register(Registries.ITEM, new Identifier("voxedit", "editor"), new EditorItem());
@@ -74,6 +80,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
     	Networking.init();
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void onInitializeClient() {
 		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_ITEM, new ToolRenderer());
@@ -84,9 +91,10 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 			if(group.getType() == ItemGroup.Type.CATEGORY && entries.shouldShowOpRestrictedItems()) {
 				boolean hasCB = entries.getDisplayStacks().stream().filter(stack -> stack.getItem() == Items.COMMAND_BLOCK).findAny().isPresent();
 				if(hasCB) {
-					for(Tool tool : TOOL_REGISTRY) {
-						for(ToolState state : tool.getCreativeMenuStates()) {
-							entries.add(TOOL_ITEM.getStackWith(state));
+					for(Tool<?, ?> tool : TOOL_REGISTRY) {
+						entries.add(TOOL_ITEM.getStackWith(new ConfiguredTool(tool, tool.getDefaultConfig())));
+						for(ToolConfig config : tool.getAdditionalCreativeMenuConfigs()) {
+							entries.add(TOOL_ITEM.getStackWith(new ConfiguredTool(tool, config)));
 						}
 					}
 					entries.add(EDITOR_ITEM.getDefaultStack());
@@ -111,37 +119,34 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
     		}
     		return false;
     	});
-    	ServerEntityEvents.EQUIPMENT_CHANGE.register((livingEntity, equipmentSlot, previous, next) -> {
-    		
-    	});
 	}
 	
 	public static void tickClient() {
 		ClientState.ticks++;
 		ClientState.player = MinecraftClient.getInstance().player;
 		
-		ToolState oldActive = ClientState.active;
+		ConfiguredTool<?, ?> oldActive = ClientState.active;
 		BlockHitResult oldTarget = ClientState.target;
 		ClientState.active = null;
 		ItemStack stack = ClientState.player.getMainHandStack();
 		if(stack.getItem() instanceof ToolItem toolItem) {
-			ClientState.active = ToolItem.readState(stack);
+			ClientState.active = ToolItem.readTool(stack);
 		}
 		
 		if(ClientState.active != null) {
 			if(!ClientState.active.equals(oldActive)) { HudRenderer.getToolSettingsScreen().rebuild(); ClientState.positions = null; }
 			if(MinecraftClient.getInstance().currentScreen != null) return;
 			
-			ClientState.target = getTargetOf(ClientState.player, ClientState.active);
+			ClientState.target = getTargetOf(ClientState.player, ClientState.active.config());
 			if(oldTarget == null || !Objects.equal(ClientState.target.getBlockPos(), oldTarget.getBlockPos()) || !Objects.equal(ClientState.target.getSide(), oldTarget.getSide())) {
 				ClientState.positions = null;
 			}
 			
 			if(INCREASE_RADIUS.wasPressed()) {
-				Networking.clientSendToolState(ClientState.active.withRadius(Math.min(ClientState.active.radius()+1, 16)));
+				ClientState.sendConfigChange(ClientState.active.config().withRadius(Math.min(ClientState.active.config().radius()+1, 16)));
 			}
 			if(DECREASE_RADIUS.wasPressed()) {
-				Networking.clientSendToolState(ClientState.active.withRadius(Math.max(1, ClientState.active.radius()-1)));
+				ClientState.sendConfigChange(ClientState.active.config().withRadius(Math.max(1, ClientState.active.config().radius()-1)));
 			}
 			if(OPEN_MENU.wasPressed()) {
 				MinecraftClient.getInstance().setScreen(HudRenderer.getToolSettingsScreen());
@@ -156,19 +161,20 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 		}
 	}
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static void render(MatrixStack matrices, float frame) {
 		if(ClientState.active != null && ClientState.target != null) {
 			if(ClientState.ticks % 200 == 0 || ClientState.positions == null) {
 				ClientState.ticks++; // just increase the value to avoid recalculation in further frames during same tick
-				ClientState.positions = ClientState.active.tool().getBlockPositions(MinecraftClient.getInstance().world, ClientState.target, ClientState.active);
+				ClientState.positions = ((Tool) ClientState.active.tool()).getBlockPositions(MinecraftClient.getInstance().world, ClientState.target, ClientState.active.config());
 			}
             
             SelectionRenderer.render(ClientState.positions, matrices, frame);
 		}
 	}
 	
-	public static BlockHitResult getTargetOf(Entity e, ToolState state) {
-		HitResult result = e.raycast(64, 0, state.targetFluids());
+	public static BlockHitResult getTargetOf(Entity e, ToolConfig config) {
+		HitResult result = e.raycast(64, 0, config.targetFluids());
 		if(result instanceof BlockHitResult blockHit) {
 			return blockHit;
 		}

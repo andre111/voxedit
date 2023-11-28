@@ -7,6 +7,7 @@
     "voxedit.tool.voxedit.fill": "Fill",
     "voxedit.tool.voxedit.flatten": "Flatten",
     "voxedit.tool.voxedit.smooth": "Smooth",
+    "voxedit.tool.voxedit.place": "Place",
     
     "key.category.voxedit": "VoxEdit",
     "key.voxedit.decreaseRadius": "Decrease Tool Radius",

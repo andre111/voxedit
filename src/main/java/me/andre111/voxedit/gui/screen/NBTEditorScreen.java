@@ -55,8 +55,8 @@ public class NBTEditorScreen extends Screen {
 	private ButtonWidget copyButton;
 	private ButtonWidget pasteButton;
 
-	private ButtonWidget renameButton;
 	private ButtonWidget editButton;
+	private ButtonWidget renameButton;
 	private ButtonWidget deleteButton;
 	
 	private List<AddNBTElementButtonWidget> addButtons;
@@ -96,16 +96,6 @@ public class NBTEditorScreen extends Screen {
 		
 		buttonContainer.add(new EmptyWidget(3, 0));
 
-		renameButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Rename"), (button) -> {
-			if(selected != null && selected.hasName) {
-				NbtCompound parent = (NbtCompound) selected.parent;
-				InputScreen.getString(this, Text.of("Enter new Name:"), selected.key, (newName) -> {
-					parent.remove(selected.key);
-					parent.put(newName, selected.element);
-					reload();
-				});
-			}
-		}).tooltip(Tooltip.of(Text.of("Rename Tag"))).size(buttonSize, 20).build()));
 		editButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Edit"), (button) -> {
 			if(selected != null) {
 				if(selected.element instanceof NbtByte nbtByte) {
@@ -125,6 +115,16 @@ public class NBTEditorScreen extends Screen {
 				}
 			}
 		}).tooltip(Tooltip.of(Text.of("Edit Value"))).size(buttonSize, 20).build()));
+		renameButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Rename"), (button) -> {
+			if(selected != null && selected.hasName) {
+				NbtCompound parent = (NbtCompound) selected.parent;
+				InputScreen.getString(this, Text.of("Enter new Name:"), selected.key, (newName) -> {
+					parent.remove(selected.key);
+					parent.put(newName, selected.element);
+					reload();
+				});
+			}
+		}).tooltip(Tooltip.of(Text.of("Rename Tag"))).size(buttonSize, 20).build()));
 		deleteButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Delete"), (button) -> {
 			replaceSelected(null);
 		}).tooltip(Tooltip.of(Text.of("Delete Tag"))).size(buttonSize, 20).build()));
@@ -218,8 +218,8 @@ public class NBTEditorScreen extends Screen {
 		copyButton.active = selected == null || selected.element instanceof NbtCompound;
 		pasteButton.active = CAN_ADD_COMPOUND.test(selected != null ? selected.element : root) && getClipboardCompound() != null;
 
-		renameButton.active = selected != null && selected.hasName;
 		editButton.active = selected != null && (selected.element instanceof AbstractNbtNumber || selected.element instanceof NbtString);
+		renameButton.active = selected != null && selected.hasName;
 		deleteButton.active = selected != null;
 		
 		for(var addButton : addButtons) addButton.active = addButton.canAddTo.test(selected != null ? selected.element : root);

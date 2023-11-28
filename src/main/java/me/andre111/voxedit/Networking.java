@@ -1,12 +1,18 @@
 package me.andre111.voxedit;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import com.mojang.datafixers.util.Pair;
 
 import me.andre111.voxedit.editor.Undo;
 import me.andre111.voxedit.gui.screen.NBTEditorScreen;
+import me.andre111.voxedit.tool.ConfiguredTool;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -16,6 +22,8 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.EntityEquipmentUpdateS2CPacket;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
@@ -28,10 +36,10 @@ public class Networking {
 			if(!player.isCreative()) return;
 			
     		NbtCompound tag = buf.readNbt();
-    		ToolState state = ToolState.CODEC.decode(NbtOps.INSTANCE, tag).result().get().getFirst();
+    		ConfiguredTool<?, ?> tool = ConfiguredTool.CODEC.decode(NbtOps.INSTANCE, tag).result().get().getFirst();
     		ItemStack stack = player.getMainHandStack();
     		if(stack.getItem() instanceof ToolItem) {
-    			ToolItem.storeState(stack, state);
+    			ToolItem.storeTool(stack, tool);
     			
     			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
     			responseSender.sendPacket(new EntityEquipmentUpdateS2CPacket(player.getId(), list));
@@ -68,7 +76,25 @@ public class Networking {
 			}
 			ServerState.NBTEDITOR_TARGETS.remove(player.getUuid());
 		});
-		
+
+		ServerPlayNetworking.registerGlobalReceiver(new Identifier("voxedit:request_registry_entries"), (server, player, handler, buf, responseSender) -> {
+			if(!player.isCreative()) return;
+			
+			int id = buf.readInt();
+			RegistryKey<? extends Registry<?>> registryKey = buf.readRegistryRefKey();
+			var registry = server.getRegistryManager().getOptional(registryKey);
+
+			PacketByteBuf responseBuf = PacketByteBufs.create();
+			responseBuf.writeInt(id);
+			if(registry.isPresent()) {
+				Set<Identifier> registryEntries = registry.get().getIds();
+				responseBuf.writeInt(registryEntries.size());
+				for(Identifier entry : registryEntries) responseBuf.writeIdentifier(entry);
+			} else {
+				responseBuf.writeInt(0);
+			}
+			ServerPlayNetworking.send(player, new Identifier("voxedit:registry_entries"), responseBuf);
+		});
 		
 		ClientPlayNetworking.registerGlobalReceiver(new Identifier("voxedit:feedback"), (client, handler, buf, responseSender) -> {
 			
@@ -77,11 +103,21 @@ public class Networking {
 		ClientPlayNetworking.registerGlobalReceiver(new Identifier("voxedit:nbteditor"), (client, handler, buf, responseSender) -> {
 			client.execute(() -> client.setScreen(new NBTEditorScreen(buf.readNbt())));
 		});
+		
+		ClientPlayNetworking.registerGlobalReceiver(new Identifier("voxedit:registry_entries"), (client, handler, buf, responseSender) -> {
+			CompletableFuture<List<Identifier>> request = clientRegistryRequests.remove(buf.readInt());
+			if(request != null) {
+				int count = buf.readInt();
+				List<Identifier> entries  = new ArrayList<>();
+				for(int i=0; i<count; i++) entries.add(buf.readIdentifier());
+				request.complete(entries);
+			}
+		});
 	}
 	
-	public static void clientSendToolState(ToolState state) {
+	public static void clientSendTool(ConfiguredTool<?, ?> tool) {
 		PacketByteBuf buf = PacketByteBufs.create();
-		buf.writeNbt(ToolState.CODEC.encodeStart(NbtOps.INSTANCE, state).result().get());
+		buf.writeNbt(ConfiguredTool.CODEC.encodeStart(NbtOps.INSTANCE, tool).result().get());
 		ClientPlayNetworking.send(new Identifier("voxedit:set_tool_state"), buf);
 	}
 	
@@ -100,6 +136,21 @@ public class Networking {
 			buf.writeNbt(compound);
 		}
 		ClientPlayNetworking.send(new Identifier("voxedit:nbteditor"), buf);
+	}
+	
+	private static int clientNextRegistryRequestID = 0;
+	private static Map<Integer, CompletableFuture<List<Identifier>>> clientRegistryRequests = new HashMap<>();
+	public static CompletableFuture<List<Identifier>> clientGetServerRegistryEntries(RegistryKey<? extends Registry<?>> registryKey) {
+		int id = clientNextRegistryRequestID;
+		CompletableFuture<List<Identifier>> future = new CompletableFuture<>();
+		clientRegistryRequests.put(id, future);
+		
+		PacketByteBuf buf = PacketByteBufs.create();
+		buf.writeInt(id);
+		buf.writeRegistryKey(registryKey);
+		ClientPlayNetworking.send(new Identifier("voxedit:request_registry_entries"), buf);
+		
+		return future;
 	}
 	
 	public static void serverSendOpenNBTEditor(ServerPlayerEntity player, NbtCompound root, Consumer<NbtCompound> editTarget) {

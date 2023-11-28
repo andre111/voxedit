@@ -3,10 +3,10 @@ package me.andre111.voxedit.renderer;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 
+import me.andre111.voxedit.BlockPalette;
 import me.andre111.voxedit.ToolItem;
-import me.andre111.voxedit.ToolState;
 import me.andre111.voxedit.gui.Textures;
-import me.andre111.voxedit.tool.Tool;
+import me.andre111.voxedit.tool.ConfiguredTool;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry.DynamicItemRenderer;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
@@ -16,6 +16,7 @@ import net.minecraft.client.render.VertexConsumerProvider.Immediate;
 import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
+import net.minecraft.text.Text;
 
 public class ToolRenderer implements DynamicItemRenderer {
 	private static final MatrixStack.Entry BLOCK_POSE;
@@ -36,34 +37,31 @@ public class ToolRenderer implements DynamicItemRenderer {
 		context.getMatrices().translate(matrices.peek().getPositionMatrix().m30(), matrices.peek().getPositionMatrix().m31(), matrices.peek().getPositionMatrix().m32());
         context.drawGuiTexture(Textures.TOOL, 0, -16, 16, 16);
 		
-		ToolState state = ToolItem.readState(stack);
-		Tool tool = state.tool();
+		ConfiguredTool<?, ?> tc = ToolItem.readTool(stack);
 		
 		// render information
 		context.getMatrices().push();
 		context.getMatrices().translate(1, 1 - 16, 0);
 		context.getMatrices().scale(0.35f, 0.35f, 0.35f);
 		int textY = 0;
-		if(true) { context.drawText(MinecraftClient.getInstance().textRenderer, tool.asText(), 0, textY, 0xFFFFFF, true); textY += 10; }
-		if(tool.usesMode()) { context.drawText(MinecraftClient.getInstance().textRenderer, limit(state.mode().name(), 7), 0, textY, 0xFFFFFF, true); textY += 10; }
-		if(tool.usesShape()) { context.drawText(MinecraftClient.getInstance().textRenderer, limit(state.shape().name(), 7), 0, textY, 0xFFFFFF, true); textY += 10; }
-		if(tool.usesRadius()) { context.drawText(MinecraftClient.getInstance().textRenderer, state.radius()+"", 0, textY, 0xFFFFFF, true); textY += 10; }
+		context.drawText(MinecraftClient.getInstance().textRenderer, tc.tool().asText(), 0, textY, 0xFFFFFF, true); 
+		textY += 10;
+		for(Text text : tc.config().getIconTexts()) {
+			context.drawText(MinecraftClient.getInstance().textRenderer, text, 0, textY, 0xFFFFFF, true); 
+			textY += 10;
+		}
 		context.getMatrices().pop();
 		
 		// render palette
-		if(tool.usesBlockPalette()) {
+		BlockPalette palette = tc.config().getIconBlocks();
+		if(palette != null) {
 			matrices.push();
 			context.getMatrices().translate(0, 0, 200);
 			matrices.multiplyPositionMatrix(BLOCK_POSE.getPositionMatrix());
-			int blockStateIndex = (int) ((System.currentTimeMillis()) / (1000 * 2)) % state.palette().size();
-			BlockState blockState = state.palette().get(blockStateIndex);
+			int blockStateIndex = (int) ((System.currentTimeMillis()) / (1000 * 2)) % palette.size();
+			BlockState blockState = palette.get(blockStateIndex);
 			MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(blockState, matrices, vertexConsumers, light, overlay);
 			matrices.pop();
 		}
-	}
-	
-	private String limit(String str, int maxLength) {
-		if(str.length() < maxLength) return str;
-		return str.substring(0, maxLength);
 	}
 }

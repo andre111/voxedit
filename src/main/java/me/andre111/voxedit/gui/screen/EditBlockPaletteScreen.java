@@ -164,8 +164,10 @@ public class EditBlockPaletteScreen extends Screen {
 				stateWidget.setX(getX());
 				stateWidget.setY(getY());
 				
-				weightWidget.setX(getX()+getWidth()-weightWidget.getWidth());
-				weightWidget.setY(getY());
+				if(weightWidget != null) {
+					weightWidget.setX(getX()+getWidth()-weightWidget.getWidth());
+					weightWidget.setY(getY());
+				}
 			}
 
 			@Override
