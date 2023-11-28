@@ -1,7 +1,9 @@
 package me.andre111.voxedit.gui.screen;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -18,7 +20,6 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.gui.widget.DirectionalLayoutWidget;
 import net.minecraft.client.gui.widget.DirectionalLayoutWidget.DisplayAxis;
 import net.minecraft.client.gui.widget.EmptyWidget;
@@ -48,6 +49,8 @@ import net.minecraft.util.Identifier;
 public class NBTEditorScreen extends Screen {
 	private final NbtCompound root;
 	
+	private boolean initialised;
+	
 	private ButtonWidget cutButton;
 	private ButtonWidget copyButton;
 	private ButtonWidget pasteButton;
@@ -65,10 +68,14 @@ public class NBTEditorScreen extends Screen {
 	public NBTEditorScreen(NbtCompound root) {
 		super(Text.of("NBT Editor"));
 		this.root = root;
+		this.initialised = false;
 	}
 
 	@Override
 	protected void init() {
+		if(initialised) return;
+		initialised = true;
+		
 		DirectionalLayoutWidget buttonContainer = new DirectionalLayoutWidget(0, 2, DisplayAxis.HORIZONTAL);
 		buttonContainer.spacing(2);
 		
@@ -155,12 +162,15 @@ public class NBTEditorScreen extends Screen {
         }).dimensions(width / 2 - 155, height - 20-2, 150, 20).build());
         
         addDrawableChild(ButtonWidget.builder(ScreenTexts.CANCEL, button -> {
-        	Networking.clientSendNBTEditorResult(null);
            	close();
         }).dimensions(width / 2 + 5, height - 20-2, 150, 20).build());
 		
 		updateButtons();
 	}
+
+	@Override
+    protected void initTabNavigation() {
+    }
 	
 	@SuppressWarnings("unchecked")
 	private void replaceSelected(NbtElement newElement) {
@@ -182,7 +192,6 @@ public class NBTEditorScreen extends Screen {
 	
 	private void reload() {
 		//TODO: try to restore selection if possible
-		//TODO: do the same to the expanded / collapsed state
 		selected = null;
 		rootList.reload();
 	}
@@ -292,22 +301,38 @@ public class NBTEditorScreen extends Screen {
 		}
 		
 		public void reload() {
+			double scroll = getScrollAmount();
+			
+			Map<String, NBTEditorListEntry> oldEntries = new HashMap<>();
+			for(NBTEditorListEntry entry : children()) oldEntries.put(entry.key, entry);
 			clearEntries();
+			
 			if(compoundOrList instanceof NbtCompound compound) {
-				compound.getKeys().stream().sorted().forEach(key ->
-					addEntry(new NBTEditorListEntry(getWidth(), key, true, compoundOrList, compound.get(key)))
-				);
+				compound.getKeys().stream().sorted().forEach(key -> {
+					if(oldEntries.containsKey(key) && oldEntries.get(key).parent == compoundOrList && oldEntries.get(key).element == compound.get(key)) {
+						addEntry(oldEntries.get(key).reload());
+					} else {
+						addEntry(new NBTEditorListEntry(getWidth(), key, true, compoundOrList, compound.get(key)));
+					}
+				});
 			} else if(compoundOrList instanceof AbstractNbtList<?> list) {
 				for(int i=0; i<list.size(); i++) {
-					addEntry(new NBTEditorListEntry(getWidth(), i+"", false, compoundOrList, list.get(i)));
+					String key = i+"";
+					if(oldEntries.containsKey(key) && oldEntries.get(key).parent == compoundOrList && oldEntries.get(key).element == list.get(i)) {
+						addEntry(oldEntries.get(key).reload());
+					} else {
+						addEntry(new NBTEditorListEntry(getWidth(), key, false, compoundOrList, list.get(i)));
+					}
 				}
 			}
+			
+			setScrollAmount(scroll);
 		}
 	}
 
 	@Environment(value=EnvType.CLIENT)
 	private class NBTEditorListEntry extends ModListWidget.Entry<NBTEditorListEntry> {
-		private List<ClickableWidget> children = new ArrayList<>();
+		private List<NBTEditorList> children = new ArrayList<>();
 		
 		private String key;
 		private OrderedText displayText;
@@ -339,7 +364,14 @@ public class NBTEditorScreen extends Screen {
 			);
 		}
 		
+		private NBTEditorListEntry reload() {
+			updateDisplayText();
+			for(NBTEditorList child : children) child.reload();
+			return this;
+		}
+		
 		private void setExpanded(boolean expanded) {
+			System.out.println(key+" "+expanded);
 			this.expanded = expanded;
 			rootList.refreshPositions();
 		}
@@ -368,7 +400,7 @@ public class NBTEditorScreen extends Screen {
 			context.drawText(textRenderer, displayText, getX()+10, getY(), -1, false);
 			
 			if(expanded) {
-				for(ClickableWidget child : children) {
+				for(NBTEditorList child : children) {
 					child.render(context, mouseX, mouseY, tickDelta);
 				}
 			}
@@ -387,18 +419,17 @@ public class NBTEditorScreen extends Screen {
 		public int getHeight() {
 			int height = 11;
 			if(expanded) {
-				for(ClickableWidget child : children) height += child.getHeight();
+				for(NBTEditorList child : children) height += child.getHeight();
 			}
 			return height;
 		}
-	    
-	    @Override
-	    public void refreshPositions() {
-	    	for(ClickableWidget child : children) {
+
+		@Override
+		public void positionChildren() {
+	    	for(NBTEditorList child : children) {
 	    		child.setPosition(getX()+10, getY()+11);
 	    	}
-	    	super.refreshPositions();
-	    }
+		}
 
 		@Override
 		protected void appendClickableNarrations(NarrationMessageBuilder builder) {

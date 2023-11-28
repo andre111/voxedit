@@ -160,14 +160,19 @@ public class EditBlockPaletteScreen extends Screen {
 			}
 
 			@Override
-			protected void renderWidget(DrawContext context, int mouseX, int mouseY, float tickDelta) {
+			public void positionChildren() {
 				stateWidget.setX(getX());
 				stateWidget.setY(getY());
+				
+				weightWidget.setX(getX()+getWidth()-weightWidget.getWidth());
+				weightWidget.setY(getY());
+			}
+
+			@Override
+			protected void renderWidget(DrawContext context, int mouseX, int mouseY, float tickDelta) {
 				stateWidget.render(context, mouseX, mouseY, tickDelta);
 				
 				if(weightWidget != null) {
-					weightWidget.setX(getX()+getWidth()-weightWidget.getWidth());
-					weightWidget.setY(getY());
 					weightWidget.render(context, mouseX, mouseY, tickDelta);
 				}
 			}

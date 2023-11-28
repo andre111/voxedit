@@ -437,7 +437,15 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.gui.widget.Mod
 				if(child instanceof Widget widget) consumer.accept(widget);
 			}
 		}
+		
+		@Override
+		public void refreshPositions() {
+			positionChildren();
+			LayoutWidget.super.refreshPositions();
+		}
         
         public abstract int getHeight();
+        
+        public abstract void positionChildren();
     }
 }
