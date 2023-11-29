@@ -22,6 +22,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.SimpleRegistry;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -69,6 +70,8 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
     
     public static final KeyBinding INCREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.increaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_UP, "key.category.voxedit"));
     public static final KeyBinding DECREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.decreaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_DOWN, "key.category.voxedit"));
+    public static final KeyBinding INCREASE_SPEED = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.increaseSpeed", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_KP_ADD, "key.category.voxedit"));
+    public static final KeyBinding DECREASE_SPEED = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.decreaseSpeed", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_KP_SUBTRACT, "key.category.voxedit"));
     public static final KeyBinding UNDO = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.undo", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_Z, "key.category.voxedit"));
     public static final KeyBinding REDO = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.redo", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_Y, "key.category.voxedit"));
     public static final KeyBinding OPEN_MENU = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.openMenu", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.category.voxedit"));
@@ -152,6 +155,14 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 			}
 			if(DECREASE_RADIUS.wasPressed()) {
 				ClientState.sendConfigChange(ClientState.active.selected().config().withRadius(Math.max(1, ClientState.active.selected().config().radius()-1)));
+			}
+			if(INCREASE_SPEED.wasPressed()) {
+				ClientState.cameraSpeed = Math.min(ClientState.cameraSpeed+1, 10f);
+				MinecraftClient.getInstance().getMessageHandler().onGameMessage(Text.of("Camera Speed: "+ClientState.cameraSpeed), true);
+			}
+			if(DECREASE_SPEED.wasPressed()) {
+				ClientState.cameraSpeed = Math.max(1f, ClientState.cameraSpeed-1);
+				MinecraftClient.getInstance().getMessageHandler().onGameMessage(Text.of("Camera Speed: "+ClientState.cameraSpeed), true);
 			}
 			if(OPEN_MENU.wasPressed()) {
 				if(Screen.hasControlDown()) MinecraftClient.getInstance().setScreen(new ToolSelectionScreen(ClientState.active));

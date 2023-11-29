@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import me.andre111.voxedit.Util;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -18,7 +19,7 @@ public abstract class MixinEntity {
 
 	@Inject(method = "move", at = @At("HEAD"))
     public void move(MovementType movementType, Vec3d movement, CallbackInfo ci) {
-		if((Object) this instanceof PlayerEntity player && player.isCreative() && player.getAbilities().flying) {
+		if((Object) this instanceof PlayerEntity player && Util.shouldUseCustomControlls(player)) {
 			noClip = true;
 		}
 	}

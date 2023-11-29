@@ -20,6 +20,8 @@ public class ClientState {
 	public static int undoSize;
 	public static int undoIndex;
 	
+	public static float cameraSpeed = 2f;
+	
 	@SuppressWarnings("unchecked")
 	public static <TC extends ToolConfig, T extends Tool<TC, T>> void sendConfigChange(TC newConfig) {
 		if(active == null) return;
