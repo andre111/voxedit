@@ -11,7 +11,7 @@ import me.andre111.voxedit.tool.util.Mode;
 import me.andre111.voxedit.tool.util.Shape;
 import net.minecraft.text.Text;
 
-public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mode, Shape shape, int radius, boolean targetFluids) implements ToolConfig {
+public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mode, Shape shape, int radius, boolean checkCanPlace, boolean targetFluids) implements ToolConfig {
 	public static final Codec<ToolConfigBrush> CODEC = RecordCodecBuilder.create(instance -> instance
 			.group(
 					BlockPalette.CODEC.optionalFieldOf("palette", BlockPalette.DEFAULT).forGetter(ts -> ts.palette),
@@ -19,6 +19,7 @@ public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mo
 					Codec.STRING.optionalFieldOf("mode", Mode.SOLID.name()).xmap(str -> Mode.valueOf(str), mode -> mode.name()).forGetter(ts -> ts.mode),
 					Codec.STRING.optionalFieldOf("shape", Shape.SPHERE.name()).xmap(str -> Shape.valueOf(str), shape -> shape.name()).forGetter(ts -> ts.shape),
 					Codec.INT.optionalFieldOf("radius", 4).forGetter(ts -> ts.radius),
+					Codec.BOOL.optionalFieldOf("checkCanPlace", false).forGetter(ts -> ts.checkCanPlace),
 					Codec.BOOL.optionalFieldOf("targetFluids", false).forGetter(ts -> ts.targetFluids)
 					)
 			.apply(instance, ToolConfigBrush::new));
@@ -38,7 +39,10 @@ public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mo
 					ToolConfigBrush::withShape),
 			ToolSetting.intRange(Text.of("Radius"), 1, 16,
 					ToolConfigBrush::radius, 
-					ToolConfigBrush::withRadius)
+					ToolConfigBrush::withRadius),
+			ToolSetting.bool(Text.of("Check valid"),
+					ToolConfigBrush::checkCanPlace, 
+					ToolConfigBrush::withCheckCanPlace)
 			);
 
 	@Override
@@ -57,30 +61,34 @@ public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mo
 	}
 
 	public ToolConfigBrush() {
-		this(BlockPalette.DEFAULT, new BlockPalette(), Mode.SOLID, Shape.SPHERE, 4, false);
+		this(BlockPalette.DEFAULT, new BlockPalette(), Mode.SOLID, Shape.SPHERE, 4, false, false);
 	}
 
 	public ToolConfigBrush withPalette(BlockPalette palette) {
-		return new ToolConfigBrush(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolConfigBrush(palette, filter, mode, shape, radius, checkCanPlace, targetFluids);
 	}
 
 	public ToolConfigBrush withFilter(BlockPalette filter) {
-		return new ToolConfigBrush(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolConfigBrush(palette, filter, mode, shape, radius, checkCanPlace, targetFluids);
 	}
 
 	public ToolConfigBrush withMode(Mode mode) {
-		return new ToolConfigBrush(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolConfigBrush(palette, filter, mode, shape, radius, checkCanPlace, targetFluids);
 	}
 
 	public ToolConfigBrush withShape(Shape shape) {
-		return new ToolConfigBrush(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolConfigBrush(palette, filter, mode, shape, radius, checkCanPlace, targetFluids);
 	}
 
 	public ToolConfigBrush withRadius(int radius) {
-		return new ToolConfigBrush(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolConfigBrush(palette, filter, mode, shape, radius, checkCanPlace, targetFluids);
+	}
+
+	public ToolConfigBrush withCheckCanPlace(boolean checkCanPlace) {
+		return new ToolConfigBrush(palette, filter, mode, shape, radius, checkCanPlace, targetFluids);
 	}
 
 	public ToolConfigBrush withTargetFluids(boolean targetFluids) {
-		return new ToolConfigBrush(palette, filter, mode, shape, radius, targetFluids);
+		return new ToolConfigBrush(palette, filter, mode, shape, radius, checkCanPlace, targetFluids);
 	}
 }

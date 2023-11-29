@@ -9,6 +9,7 @@ import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
 import me.andre111.voxedit.tool.config.ToolConfigBrush;
 import me.andre111.voxedit.tool.util.Defaults;
 import me.andre111.voxedit.tool.util.Mode;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Util;
@@ -24,7 +25,8 @@ public class ToolBrush extends Tool<ToolConfigBrush, ToolBrush> {
 	@Override
 	public void rightClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigBrush config, Set<BlockPos> positions) {
 		for(BlockPos pos : positions) {
-			world.setBlockState(pos, config.palette().getRandom(world.getRandom()), 0);
+			BlockState state = config.palette().getRandom(world.getRandom());
+			if(!config.checkCanPlace() || state.canPlaceAt(world, pos)) world.setBlockState(pos, state, 0);
 		}
 	}
 

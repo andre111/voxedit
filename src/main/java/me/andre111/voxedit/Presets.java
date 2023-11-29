@@ -34,6 +34,7 @@ public class Presets {
 					)));
 			list.add(VoxEdit.TOOL_BRUSH.getWith(VoxEdit.TOOL_BRUSH.getDefaultConfig()
 					.withMode(Mode.SCATTER)
+					.withCheckCanPlace(true)
 					.withPalette(BlockPalette.builder()
 							.add(Blocks.AIR, 30)
 							.add(Blocks.STONE_BUTTON.getDefaultState().with(ButtonBlock.FACE, BlockFace.FLOOR).with(ButtonBlock.FACING, Direction.NORTH), 1)
@@ -54,6 +55,7 @@ public class Presets {
 			list.add(VoxEdit.TOOL_BRUSH.getWith(VoxEdit.TOOL_BRUSH.getDefaultConfig()
 					.withMode(Mode.SCATTER)
 					.withRadius(6)
+					.withCheckCanPlace(true)
 					.withPalette(BlockPalette.builder()
 							.add(Blocks.AIR, 32)
 							.add(Blocks.SHORT_GRASS, 8)

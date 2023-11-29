@@ -19,6 +19,7 @@ import net.minecraft.client.gui.widget.DirectionalLayoutWidget;
 import net.minecraft.client.gui.widget.DirectionalLayoutWidget.DisplayAxis;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
+import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -48,6 +49,10 @@ public abstract class ToolSetting<V, TC extends ToolConfig> {
 	
 	public static <TC extends ToolConfig> TSBlockPalette<TC> blockPalette(Text title, boolean includeProperties, boolean showWeights, Function<TC, BlockPalette> reader, BiFunction<TC, BlockPalette, TC> writer) {
 		return new TSBlockPalette<>(title, includeProperties, showWeights, reader, writer);
+	}
+	
+	public static <TC extends ToolConfig> TSBoolean<TC> bool(Text title, Function<TC, Boolean> reader, BiFunction<TC, Boolean, TC> writer) {
+		return new TSBoolean<>(title, reader, writer);
 	}
 	
 	public static <TC extends ToolConfig, E extends Enum<E>> TSEnum<TC, E> ofEnum(Text title, Function<E, Text> toText, E[] values, Function<TC, E> reader, BiFunction<TC, E, TC> writer) {
@@ -93,6 +98,25 @@ public abstract class ToolSetting<V, TC extends ToolConfig> {
 		@Override
 		public void reload() {
 			display.setValue(read());
+		}
+	}
+	public static class TSBoolean<TC extends ToolConfig> extends ToolSetting<Boolean, TC> {
+		private CyclingButtonWidget<Boolean> button;
+		
+		public TSBoolean(Text title, Function<TC, Boolean> reader, BiFunction<TC, Boolean, TC> writer) {
+			super(title, reader, writer);
+		}
+		
+		@Override
+		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
+			return List.of(button = CyclingButtonWidget.<Boolean>builder(value -> value ? ScreenTexts.ON : ScreenTexts.OFF).values(new Boolean[] { true, false }).initially(read()).build(x, y, width, height, title, (b, value) -> {
+	            write(value);
+	        }));
+		}
+		
+		@Override
+		public void reload() {
+			button.setValue(read());
 		}
 	}
 	public static class TSEnum<TC extends ToolConfig, E extends Enum<E>> extends ToolSetting<E, TC> {
