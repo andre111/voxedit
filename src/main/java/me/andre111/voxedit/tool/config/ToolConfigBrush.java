@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2023 André Schweiger
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package me.andre111.voxedit.tool.config;
 
 import java.util.List;
@@ -5,10 +20,9 @@ import java.util.List;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import me.andre111.voxedit.BlockPalette;
-import me.andre111.voxedit.gui.screen.ToolSetting;
-import me.andre111.voxedit.tool.util.Mode;
-import me.andre111.voxedit.tool.util.Shape;
+import me.andre111.voxedit.tool.data.BlockPalette;
+import me.andre111.voxedit.tool.data.Mode;
+import me.andre111.voxedit.tool.data.Shape;
 import net.minecraft.text.Text;
 
 public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mode, Shape shape, int radius, boolean checkCanPlace, boolean targetFluids) implements ToolConfig {
@@ -23,32 +37,6 @@ public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mo
 					Codec.BOOL.optionalFieldOf("targetFluids", false).forGetter(ts -> ts.targetFluids)
 					)
 			.apply(instance, ToolConfigBrush::new));
-
-	private static List<? extends ToolSetting<?, ?>> SETTINGS = List.of(
-			ToolSetting.blockPalette(Text.of("Edit Palette"), true, true,
-					ToolConfigBrush::palette, 
-					ToolConfigBrush::withPalette),
-			ToolSetting.blockPalette(Text.of("Edit Filter"),  false, false,
-					ToolConfigBrush::filter, 
-					ToolConfigBrush::withFilter),
-			ToolSetting.ofEnum(Text.of("Mode"), Mode::asText, Mode.values(), 
-					ToolConfigBrush::mode, 
-					ToolConfigBrush::withMode),
-			ToolSetting.ofEnum(Text.of("Shape"), Shape::asText, Shape.values(), 
-					ToolConfigBrush::shape, 
-					ToolConfigBrush::withShape),
-			ToolSetting.intRange(Text.of("Radius"), 1, 16,
-					ToolConfigBrush::radius, 
-					ToolConfigBrush::withRadius),
-			ToolSetting.bool(Text.of("Check valid"),
-					ToolConfigBrush::checkCanPlace, 
-					ToolConfigBrush::withCheckCanPlace)
-			);
-
-	@Override
-	public List<? extends ToolSetting<?, ?>> getSettings() {
-		return SETTINGS;
-	}
 
 	@Override
 	public  List<Text> getIconTexts() {

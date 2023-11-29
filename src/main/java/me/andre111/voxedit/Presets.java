@@ -1,8 +1,25 @@
+/*
+ * Copyright (c) 2023 André Schweiger
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package me.andre111.voxedit;
 
 import java.util.ArrayList;
 
-import me.andre111.voxedit.tool.util.Mode;
+import me.andre111.voxedit.item.ToolItem;
+import me.andre111.voxedit.tool.data.BlockPalette;
+import me.andre111.voxedit.tool.data.Mode;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ButtonBlock;
 import net.minecraft.block.enums.BlockFace;
@@ -67,7 +84,7 @@ public class Presets {
 			list.add(VoxEdit.TOOL_PLACE.getDefault());
 		}), 0);
 		
-		ItemStack stack = VoxEdit.TOOL_ITEM.getStackWith(andre111);
+		ItemStack stack = VoxEdit.ITEM_TOOL.getStackWith(andre111);
 		stack.setCustomName(Text.of("andre111s Presets").copy().setStyle(Style.EMPTY.withItalic(false).withBold(true).withColor(Formatting.GOLD)));
 		andre111Stack = stack;
 	}

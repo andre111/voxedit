@@ -1,5 +1,6 @@
 plugins {
 	id 'fabric-loom' version '1.4-SNAPSHOT'
+	id 'org.cadixdev.licenser' version '0.6.1'
 	id 'maven-publish'
 }
 
@@ -48,10 +49,17 @@ java {
 	targetCompatibility = JavaVersion.VERSION_17
 }
 
-jar {
-	from("LICENSE") {
-		rename { "${it}_${project.base.archivesName.get()}"}
-	}
+license {
+	charset "UTF-8"
+	newLine false
+    
+	header project.file('HEADER.txt')
+	include '**/*.java'
+    
+    properties {
+        name = "André Schweiger"
+        year = 2023
+    }
 }
 
 // configure the maven publication

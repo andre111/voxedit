@@ -1,14 +1,29 @@
+/*
+ * Copyright (c) 2023 André Schweiger
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package me.andre111.voxedit.tool;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import me.andre111.voxedit.BlockPalette;
 import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
 import me.andre111.voxedit.tool.config.ToolConfigBrush;
-import me.andre111.voxedit.tool.util.Defaults;
-import me.andre111.voxedit.tool.util.Mode;
+import me.andre111.voxedit.tool.data.BlockPalette;
+import me.andre111.voxedit.tool.data.Selection;
+import me.andre111.voxedit.tool.data.Mode;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
@@ -39,7 +54,7 @@ public class ToolBrush extends Tool<ToolConfigBrush, ToolBrush> {
 
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigBrush config) {
-		return Defaults.getBlockPositions(world, target, config.radius(), config.shape(), config.mode().testPredicate, config.filter());
+		return Selection.getBlockPositions(world, target, config.radius(), config.shape(), config.mode().testPredicate, config.filter());
 	}
 
 	public List<ToolConfigBrush> getAdditionalCreativeMenuConfigs() {

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2023 André Schweiger
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package me.andre111.voxedit.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -6,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import me.andre111.voxedit.Util;
+import me.andre111.voxedit.VoxEditUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -19,7 +34,7 @@ public abstract class MixinEntity {
 
 	@Inject(method = "move", at = @At("HEAD"))
     public void move(MovementType movementType, Vec3d movement, CallbackInfo ci) {
-		if((Object) this instanceof PlayerEntity player && Util.shouldUseCustomControlls(player)) {
+		if((Object) this instanceof PlayerEntity player && VoxEditUtil.shouldUseCustomControls(player)) {
 			noClip = true;
 		}
 	}

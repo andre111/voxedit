@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2023 André Schweiger
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package me.andre111.voxedit.tool.config;
 
 import java.util.List;
@@ -5,9 +20,8 @@ import java.util.List;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import me.andre111.voxedit.BlockPalette;
-import me.andre111.voxedit.gui.screen.ToolSetting;
-import me.andre111.voxedit.tool.util.Shape;
+import me.andre111.voxedit.tool.data.BlockPalette;
+import me.andre111.voxedit.tool.data.Shape;
 import net.minecraft.text.Text;
 
 public record ToolConfigFlatten(BlockPalette palette, Shape shape, int radius, boolean targetFluids) implements ToolConfig {
@@ -19,23 +33,6 @@ public record ToolConfigFlatten(BlockPalette palette, Shape shape, int radius, b
 					Codec.BOOL.optionalFieldOf("targetFluids", false).forGetter(ts -> ts.targetFluids)
 					)
 			.apply(instance, ToolConfigFlatten::new));
-
-	private static List<? extends ToolSetting<?, ?>> SETTINGS = List.of(
-			ToolSetting.blockPalette(Text.of("Edit Palette"), true, true,
-					ToolConfigFlatten::palette, 
-					ToolConfigFlatten::withPalette),
-			ToolSetting.ofEnum(Text.of("Shape"), Shape::asText, Shape.values(), 
-					ToolConfigFlatten::shape, 
-					ToolConfigFlatten::withShape),
-			ToolSetting.intRange(Text.of("Radius"), 1, 16,
-					ToolConfigFlatten::radius, 
-					ToolConfigFlatten::withRadius)
-			);
-
-	@Override
-	public List<? extends ToolSetting<?, ?>> getSettings() {
-		return SETTINGS;
-	}
 
 	@Override
 	public  List<Text> getIconTexts() {
