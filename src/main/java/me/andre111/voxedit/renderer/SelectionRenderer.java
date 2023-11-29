@@ -22,8 +22,8 @@ public class SelectionRenderer {
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         Vec3d camPos = camera.getPos();
 
-        float expand = 0.01f;
-        float one = 1 + expand * 2;
+        float expand = 0;
+        float one = 1;
         
         // render outlines
         VertexConsumer lineConsumer = consumer.getBuffer(RenderLayer.getLines());
@@ -106,6 +106,9 @@ public class SelectionRenderer {
             }
         }
         consumer.drawCurrentLayer();
+        
+        expand = 0.001f;
+        one = 1 + expand * 2;
         
         float alpha = 0.15f;
         VertexConsumer quadConsumer = consumer.getBuffer(RenderLayer.getDebugQuads());

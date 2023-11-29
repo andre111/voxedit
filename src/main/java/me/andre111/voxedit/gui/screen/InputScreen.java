@@ -1,5 +1,6 @@
 package me.andre111.voxedit.gui.screen;
 
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -7,6 +8,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.CyclingButtonWidget;
 import net.minecraft.client.gui.widget.GridWidget;
 import net.minecraft.client.gui.widget.SimplePositioningWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
@@ -65,6 +67,12 @@ public class InputScreen extends Screen {
         input.setText(value);
         
         create(parent, title, () -> callback.accept(input.getText()), (adder) -> adder.add(input, 2)).setFocused(input);
+    }
+    
+    public static <T> void getSelector(Screen parent, Text title, Text label, T value, List<T> values, Function<T, Text> toText, Consumer<T> callback) {
+    	CyclingButtonWidget<T> button = CyclingButtonWidget.builder(toText).values(values).initially(value).build(0, 0, 204, 20, label, (b, v) -> {});
+        
+        create(parent, title, () -> callback.accept(button.getValue()), (adder) -> adder.add(button, 2)).setFocused(button);
     }
     
     private static InputScreen create(Screen parent, Text title, Runnable callback, ContentCreator creator) {

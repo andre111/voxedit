@@ -32,14 +32,26 @@ import net.minecraft.world.World;
 
 public class Networking {
 	public static void init() {
-		ServerPlayNetworking.registerGlobalReceiver(new Identifier("voxedit:set_tool_state"), (server, player, handler, buf, responseSender) -> {
+		ServerPlayNetworking.registerGlobalReceiver(new Identifier("voxedit:set_tool"), (server, player, handler, buf, responseSender) -> {
 			if(!player.isCreative()) return;
 			
     		NbtCompound tag = buf.readNbt();
     		ConfiguredTool<?, ?> tool = ConfiguredTool.CODEC.decode(NbtOps.INSTANCE, tag).result().get().getFirst();
     		ItemStack stack = player.getMainHandStack();
     		if(stack.getItem() instanceof ToolItem) {
-    			ToolItem.storeTool(stack, tool);
+    			ToolItem.storeToolData(stack, ToolItem.readToolData(stack).replaceSelected(tool));
+    			
+    			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
+    			responseSender.sendPacket(new EntityEquipmentUpdateS2CPacket(player.getId(), list));
+    		}
+    	});
+		ServerPlayNetworking.registerGlobalReceiver(new Identifier("voxedit:select_tool"), (server, player, handler, buf, responseSender) -> {
+			if(!player.isCreative()) return;
+			
+			int index = buf.readInt();
+    		ItemStack stack = player.getMainHandStack();
+    		if(stack.getItem() instanceof ToolItem) {
+    			ToolItem.storeToolData(stack, ToolItem.readToolData(stack).select(index));
     			
     			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
     			responseSender.sendPacket(new EntityEquipmentUpdateS2CPacket(player.getId(), list));
@@ -115,10 +127,16 @@ public class Networking {
 		});
 	}
 	
-	public static void clientSendTool(ConfiguredTool<?, ?> tool) {
+	public static void clientSendToolChange(ConfiguredTool<?, ?> tool) {
 		PacketByteBuf buf = PacketByteBufs.create();
 		buf.writeNbt(ConfiguredTool.CODEC.encodeStart(NbtOps.INSTANCE, tool).result().get());
-		ClientPlayNetworking.send(new Identifier("voxedit:set_tool_state"), buf);
+		ClientPlayNetworking.send(new Identifier("voxedit:set_tool"), buf);
+	}
+	
+	public static void clientSendSelectTool(int index) {
+		PacketByteBuf buf = PacketByteBufs.create();
+		buf.writeInt(index);
+		ClientPlayNetworking.send(new Identifier("voxedit:select_tool"), buf);
 	}
 	
 	public static void clientSendCommand(Command command) {

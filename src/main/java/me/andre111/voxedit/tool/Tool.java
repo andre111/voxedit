@@ -32,6 +32,17 @@ public abstract class Tool<TC extends ToolConfig, T extends Tool<TC, T>> {
     public final TC getDefaultConfig() {
     	return defaultConfig;
     }
+    
+    @SuppressWarnings("unchecked")
+	public final ConfiguredTool<TC, T> getDefault() {
+    	return new ConfiguredTool<TC, T>((T) this, defaultConfig);
+    }
+
+    
+    @SuppressWarnings("unchecked")
+	public final ConfiguredTool<TC, T> getWith(TC config) {
+    	return new ConfiguredTool<TC, T>((T) this, config);
+    }
 	
 	public final Identifier id() {
 		return VoxEdit.TOOL_REGISTRY.getId(this);

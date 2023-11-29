@@ -33,6 +33,7 @@ import org.spongepowered.include.com.google.common.base.Objects;
 
 import com.mojang.serialization.Lifecycle;
 
+import me.andre111.voxedit.gui.screen.ToolSelectionScreen;
 import me.andre111.voxedit.renderer.EditorRenderer;
 import me.andre111.voxedit.renderer.HudRenderer;
 import me.andre111.voxedit.renderer.SelectionRenderer;
@@ -83,7 +84,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void onInitializeClient() {
-		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_ITEM, new ToolRenderer());
+		BuiltinItemRendererRegistry.INSTANCE.register(TOOL_ITEM, ToolRenderer.INSTANCE);
 		BuiltinItemRendererRegistry.INSTANCE.register(EDITOR_ITEM, new EditorRenderer());
 		HudRenderer.init();
 		
@@ -92,7 +93,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 				boolean hasCB = entries.getDisplayStacks().stream().filter(stack -> stack.getItem() == Items.COMMAND_BLOCK).findAny().isPresent();
 				if(hasCB) {
 					for(Tool<?, ?> tool : TOOL_REGISTRY) {
-						entries.add(TOOL_ITEM.getStackWith(new ConfiguredTool(tool, tool.getDefaultConfig())));
+						entries.add(TOOL_ITEM.getStackWith(tool.getDefault()));
 						for(ToolConfig config : tool.getAdditionalCreativeMenuConfigs()) {
 							entries.add(TOOL_ITEM.getStackWith(new ConfiguredTool(tool, config)));
 						}
@@ -125,31 +126,35 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 		ClientState.ticks++;
 		ClientState.player = MinecraftClient.getInstance().player;
 		
-		ConfiguredTool<?, ?> oldActive = ClientState.active;
+		ToolItem.Data oldActive = ClientState.active;
 		BlockHitResult oldTarget = ClientState.target;
 		ClientState.active = null;
 		ItemStack stack = ClientState.player.getMainHandStack();
 		if(stack.getItem() instanceof ToolItem toolItem) {
-			ClientState.active = ToolItem.readTool(stack);
+			ClientState.active = ToolItem.readToolData(stack);
 		}
 		
 		if(ClientState.active != null) {
-			if(!ClientState.active.equals(oldActive)) { HudRenderer.getToolSettingsScreen().rebuild(); ClientState.positions = null; }
+			if(oldActive == null || !ClientState.active.selected().equals(oldActive.selected())) { 
+				HudRenderer.getToolSettingsScreen().rebuild(); 
+				ClientState.positions = null; 
+			}
 			if(MinecraftClient.getInstance().currentScreen != null) return;
 			
-			ClientState.target = getTargetOf(ClientState.player, ClientState.active.config());
+			ClientState.target = getTargetOf(ClientState.player, ClientState.active.selected().config());
 			if(oldTarget == null || !Objects.equal(ClientState.target.getBlockPos(), oldTarget.getBlockPos()) || !Objects.equal(ClientState.target.getSide(), oldTarget.getSide())) {
 				ClientState.positions = null;
 			}
 			
 			if(INCREASE_RADIUS.wasPressed()) {
-				ClientState.sendConfigChange(ClientState.active.config().withRadius(Math.min(ClientState.active.config().radius()+1, 16)));
+				ClientState.sendConfigChange(ClientState.active.selected().config().withRadius(Math.min(ClientState.active.selected().config().radius()+1, 16)));
 			}
 			if(DECREASE_RADIUS.wasPressed()) {
-				ClientState.sendConfigChange(ClientState.active.config().withRadius(Math.max(1, ClientState.active.config().radius()-1)));
+				ClientState.sendConfigChange(ClientState.active.selected().config().withRadius(Math.max(1, ClientState.active.selected().config().radius()-1)));
 			}
 			if(OPEN_MENU.wasPressed()) {
-				MinecraftClient.getInstance().setScreen(HudRenderer.getToolSettingsScreen());
+				if(Screen.hasControlDown()) MinecraftClient.getInstance().setScreen(new ToolSelectionScreen(ClientState.active));
+				else MinecraftClient.getInstance().setScreen(HudRenderer.getToolSettingsScreen());
 			}
 		}
 		
@@ -166,7 +171,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 		if(ClientState.active != null && ClientState.target != null) {
 			if(ClientState.ticks % 200 == 0 || ClientState.positions == null) {
 				ClientState.ticks++; // just increase the value to avoid recalculation in further frames during same tick
-				ClientState.positions = ((Tool) ClientState.active.tool()).getBlockPositions(MinecraftClient.getInstance().world, ClientState.target, ClientState.active.config());
+				ClientState.positions = ((Tool) ClientState.active.selected().tool()).getBlockPositions(MinecraftClient.getInstance().world, ClientState.target, ClientState.active.selected().config());
 			}
             
             SelectionRenderer.render(ClientState.positions, matrices, frame);

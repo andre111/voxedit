@@ -35,12 +35,12 @@ public abstract class ToolSetting<V, TC extends ToolConfig> {
 	
 	@SuppressWarnings("unchecked")
 	protected V read() {
-		return reader.apply((TC) ClientState.active.config());
+		return reader.apply((TC) ClientState.active.selected().config());
 	}
 	
 	@SuppressWarnings("unchecked")
 	protected void write(V value) {
-		ClientState.sendConfigChange(writer.apply((TC) ClientState.active.config(), value));
+		ClientState.sendConfigChange(writer.apply((TC) ClientState.active.selected().config(), value));
 	}
 	
 	public abstract List<ClickableWidget> create(Screen screen, int x, int y, int width, int height);

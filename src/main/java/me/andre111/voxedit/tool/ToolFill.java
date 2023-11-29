@@ -9,6 +9,7 @@ import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
 import me.andre111.voxedit.tool.config.ToolConfigFill;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -29,6 +30,9 @@ public class ToolFill extends Tool<ToolConfigFill, ToolFill> {
 
 	@Override
 	public void leftClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigFill config, Set<BlockPos> positions) {
+		for(BlockPos pos : positions) {
+			world.setBlockState(pos, Blocks.AIR.getDefaultState(), 0);
+		}
 	}
 
 	@Override

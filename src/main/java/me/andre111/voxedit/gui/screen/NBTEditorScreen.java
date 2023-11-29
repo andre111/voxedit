@@ -371,7 +371,6 @@ public class NBTEditorScreen extends Screen {
 		}
 		
 		private void setExpanded(boolean expanded) {
-			System.out.println(key+" "+expanded);
 			this.expanded = expanded;
 			rootList.refreshPositions();
 		}
