@@ -18,11 +18,14 @@ package me.andre111.voxedit.tool.config;
 import java.util.List;
 
 import me.andre111.voxedit.tool.data.BlockPalette;
+import me.andre111.voxedit.tool.data.ToolSetting;
 import net.minecraft.text.Text;
 
-public interface ToolConfig {
+public interface ToolConfig<TC extends ToolConfig<TC>> {
+	public List<ToolSetting<?, TC>> getSettings();
+	
 	public int radius();
-	public ToolConfig withRadius(int radius);
+	public ToolConfig<TC> withRadius(int radius);
 	
 	public default boolean targetFluids() {
 		return false;

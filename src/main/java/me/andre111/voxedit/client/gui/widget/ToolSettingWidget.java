@@ -16,13 +16,13 @@
 package me.andre111.voxedit.client.gui.widget;
 
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import me.andre111.voxedit.client.ClientState;
 import me.andre111.voxedit.client.gui.screen.EditBlockPaletteScreen;
+import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.tool.config.ToolConfig;
 import me.andre111.voxedit.tool.data.BlockPalette;
+import me.andre111.voxedit.tool.data.ToolSetting;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -30,65 +30,105 @@ import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.gui.widget.CyclingButtonWidget;
 import net.minecraft.client.gui.widget.DirectionalLayoutWidget;
 import net.minecraft.client.gui.widget.DirectionalLayoutWidget.DisplayAxis;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.screen.ScreenTexts;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
-public abstract class ToolSettingWidget<V, TC extends ToolConfig> {
-	protected final Text title;
-	protected final Function<TC, V> reader;
-	protected final BiFunction<TC, V, TC> writer;
+public abstract class ToolSettingWidget<V, TC extends ToolConfig<TC>, TS extends ToolSetting<V, TC>> {
+	protected final TS setting;
 	
-	public ToolSettingWidget(Text title, Function<TC, V> reader, BiFunction<TC, V, TC> writer) {
-		this.title = title;
-		this.reader = reader;
-		this.writer = writer;
+	public ToolSettingWidget(TS setting) {
+		this.setting = setting;
 	}
 	
 	@SuppressWarnings("unchecked")
 	protected V read() {
-		return reader.apply((TC) ClientState.active.selected().config());
+		return setting.reader().apply((TC) ClientState.active.selected().config());
 	}
 	
 	@SuppressWarnings("unchecked")
 	protected void write(V value) {
-		ClientState.sendConfigChange(writer.apply((TC) ClientState.active.selected().config(), value));
+		ClientNetworking.setSelectedConfig(setting.writer().apply((TC) ClientState.active.selected().config(), value));
 	}
 	
 	public abstract List<ClickableWidget> create(Screen screen, int x, int y, int width, int height);
 	public abstract void reload();
 	
-	public static <TC extends ToolConfig> TSBlockPalette<TC> blockPalette(Text title, boolean includeProperties, boolean showWeights, Function<TC, BlockPalette> reader, BiFunction<TC, BlockPalette, TC> writer) {
-		return new TSBlockPalette<>(title, includeProperties, showWeights, reader, writer);
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static ToolSettingWidget of(ToolSetting<?, ?> setting) {
+		if(setting instanceof ToolSetting.Bool boolSetting) return new Bool<>(boolSetting);
+		if(setting instanceof ToolSetting.EnumValue enumSetting) return new EnumValue<>(enumSetting);
+		if(setting instanceof ToolSetting.Int intSetting) return new Int<>(intSetting);
+		if(setting instanceof ToolSetting.TSBlockPalette paletteSetting) return new TSBlockPalette<>(paletteSetting);
+		if(setting instanceof ToolSetting.TSIdentifier identifierSetting) return new TSIdentifier<>(identifierSetting);
+		return null;
 	}
 	
-	public static <TC extends ToolConfig> TSBoolean<TC> bool(Text title, Function<TC, Boolean> reader, BiFunction<TC, Boolean, TC> writer) {
-		return new TSBoolean<>(title, reader, writer);
+	public static class Bool<TC extends ToolConfig<TC>> extends ToolSettingWidget<Boolean, TC, ToolSetting.Bool<TC>> {
+		private CyclingButtonWidget<Boolean> button;
+		
+		public Bool(ToolSetting.Bool<TC> setting) {
+			super(setting);
+		}
+		
+		@Override
+		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
+			return List.of(button = CyclingButtonWidget.<Boolean>builder(value -> value ? ScreenTexts.ON : ScreenTexts.OFF).values(new Boolean[] { true, false }).initially(read()).build(x, y, width, height, setting.label(), (b, value) -> {
+	            write(value);
+	        }));
+		}
+		
+		@Override
+		public void reload() {
+			button.setValue(read());
+		}
 	}
 	
-	public static <TC extends ToolConfig, E extends Enum<E>> TSEnum<TC, E> ofEnum(Text title, Function<E, Text> toText, E[] values, Function<TC, E> reader, BiFunction<TC, E, TC> writer) {
-		return new TSEnum<>(title, toText, values, reader, writer);
+	public static class EnumValue<TC extends ToolConfig<TC>, E extends Enum<E>> extends ToolSettingWidget<E, TC, ToolSetting.EnumValue<E, TC>> {
+		private CyclingButtonWidget<E> button;
+		
+		public EnumValue(ToolSetting.EnumValue<E, TC> setting) {
+			super(setting);
+		}
+		
+		@Override
+		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
+			return List.of(button = CyclingButtonWidget.builder(setting.toText()).values(setting.values()).initially(read()).build(x, y, width, height, setting.label(), (b, value) -> {
+	            write(value);
+	        }));
+		}
+		
+		@Override
+		public void reload() {
+			button.setValue(read());
+		}
 	}
 	
-	public static <TC extends ToolConfig> TSIntRange<TC> intRange(Text title, int min, int max, Function<TC, Integer> reader, BiFunction<TC, Integer, TC> writer) {
-		return new TSIntRange<>(title, min, max, reader, writer);
+	public static class Int<TC extends ToolConfig<TC>> extends ToolSettingWidget<Integer, TC, ToolSetting.Int<TC>> {
+		private IntSliderWidget slider;
+		
+		public Int(ToolSetting.Int<TC> setting) {
+			super(setting);
+		}
+		
+		@Override
+		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
+			return List.of(slider = new IntSliderWidget(x, y, width, height, setting.label(), setting.min(), setting.max(), read(), (value) -> {
+				write(value);
+			}));
+		}
+		
+		@Override
+		public void reload() {
+			slider.setIntValue(read());
+		}
 	}
 	
-	public static <TC extends ToolConfig, T> TSIdentifier<TC, T> identifier(Text title, RegistryKey<? extends Registry<T>> registryKey, Function<TC, Identifier> reader, BiFunction<TC, Identifier, TC> writer) {
-		return new TSIdentifier<>(title, registryKey, reader, writer);
-	}
 
-	public static class TSBlockPalette<TC extends ToolConfig> extends ToolSettingWidget<BlockPalette, TC> {
-		private final boolean includeProperties;
-		private final boolean showWeights;
+	public static class TSBlockPalette<TC extends ToolConfig<TC>> extends ToolSettingWidget<BlockPalette, TC, ToolSetting.TSBlockPalette<TC>> {
 		private BlockPaletteDisplayWidget display;
 		
-		public TSBlockPalette(Text title, boolean includeProperties, boolean showWeights, Function<TC, BlockPalette> reader, BiFunction<TC, BlockPalette, TC> writer) {
-			super(title, reader, writer);
-			this.includeProperties = includeProperties;
-			this.showWeights = showWeights;
+		public TSBlockPalette(ToolSetting.TSBlockPalette<TC> setting) {
+			super(setting);
 		}
 		
 		@Override
@@ -97,8 +137,8 @@ public abstract class ToolSettingWidget<V, TC extends ToolConfig> {
 			container.spacing(2);
 
 			List<ClickableWidget> elements = List.of(
-					container.add(ButtonWidget.builder(title, (button) -> {
-						MinecraftClient.getInstance().setScreen(new EditBlockPaletteScreen(screen, title, 0, includeProperties, showWeights, read(), palette -> {
+					container.add(ButtonWidget.builder(setting.label(), (button) -> {
+						MinecraftClient.getInstance().setScreen(new EditBlockPaletteScreen(screen, setting.label(), 0, setting.includeProperties(), setting.showWeights(), read(), palette -> {
 							write(palette);
 						}));
 					}).size(width-22, height).build()),
@@ -113,83 +153,17 @@ public abstract class ToolSettingWidget<V, TC extends ToolConfig> {
 			display.setValue(read());
 		}
 	}
-	public static class TSBoolean<TC extends ToolConfig> extends ToolSettingWidget<Boolean, TC> {
-		private CyclingButtonWidget<Boolean> button;
-		
-		public TSBoolean(Text title, Function<TC, Boolean> reader, BiFunction<TC, Boolean, TC> writer) {
-			super(title, reader, writer);
-		}
-		
-		@Override
-		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
-			return List.of(button = CyclingButtonWidget.<Boolean>builder(value -> value ? ScreenTexts.ON : ScreenTexts.OFF).values(new Boolean[] { true, false }).initially(read()).build(x, y, width, height, title, (b, value) -> {
-	            write(value);
-	        }));
-		}
-		
-		@Override
-		public void reload() {
-			button.setValue(read());
-		}
-	}
-	public static class TSEnum<TC extends ToolConfig, E extends Enum<E>> extends ToolSettingWidget<E, TC> {
-		private final Function<E, Text> toText;
-		private final E[] values;
-		private CyclingButtonWidget<E> button;
-		
-		public TSEnum(Text title, Function<E, Text> toText, E[] values, Function<TC, E> reader, BiFunction<TC, E, TC> writer) {
-			super(title, reader, writer);
-			this.toText = toText;
-			this.values = values;
-		}
-		
-		@Override
-		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
-			return List.of(button = CyclingButtonWidget.builder(toText).values(values).initially(read()).build(x, y, width, height, title, (b, value) -> {
-	            write(value);
-	        }));
-		}
-		
-		@Override
-		public void reload() {
-			button.setValue(read());
-		}
-	}
-	public static class TSIntRange<TC extends ToolConfig> extends ToolSettingWidget<Integer, TC> {
-		private final int min;
-		private final int max;
-		private IntSliderWidget slider;
-		
-		public TSIntRange(Text title, int min, int max, Function<TC, Integer> reader, BiFunction<TC, Integer, TC> writer) {
-			super(title, reader, writer);
-			this.min = min;
-			this.max = max;
-		}
-		
-		@Override
-		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
-			return List.of(slider = new IntSliderWidget(x, y, width, height, title, min, max, read(), (value) -> {
-				write(value);
-			}));
-		}
-		
-		@Override
-		public void reload() {
-			slider.setIntValue(read());
-		}
-	}
-	public static class TSIdentifier<TC extends ToolConfig, T> extends ToolSettingWidget<Identifier, TC> {
-		private final RegistryKey<? extends Registry<T>> registryKey;
+	
+	public static class TSIdentifier<TC extends ToolConfig<TC>, T> extends ToolSettingWidget<Identifier, TC, ToolSetting.TSIdentifier<TC, T>> {
 		private RegistryEntryWidget<T> input;
 		
-		public TSIdentifier(Text title, RegistryKey<? extends Registry<T>> registryKey, Function<TC, Identifier> reader, BiFunction<TC, Identifier, TC> writer) {
-			super(title, reader, writer);
-			this.registryKey = registryKey;
+		public TSIdentifier(ToolSetting.TSIdentifier<TC, T> setting) {
+			super(setting);
 		}
 		
 		@Override
 		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
-			return List.of(input = new RegistryEntryWidget<T>(MinecraftClient.getInstance().textRenderer, x, y, width, height, registryKey, read(), (value) -> {
+			return List.of(input = new RegistryEntryWidget<T>(MinecraftClient.getInstance().textRenderer, x, y, width, height, setting.registryKey(), read(), (value) -> {
 				write(value);
 			}));
 		}

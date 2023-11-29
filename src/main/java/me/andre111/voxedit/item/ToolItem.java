@@ -64,7 +64,7 @@ public final class ToolItem extends Item implements VoxEditItem {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private <TC extends ToolConfig, T extends Tool<TC, T>> boolean use(ServerWorld serverWorld, PlayerEntity player, Hand hand, boolean rightClick) {
+	private <TC extends ToolConfig<TC>, T extends Tool<TC, T>> boolean use(ServerWorld serverWorld, PlayerEntity player, Hand hand, boolean rightClick) {
 		Data data = readToolData(player.getStackInHand(hand));
 		if(data == null) return false;
 		

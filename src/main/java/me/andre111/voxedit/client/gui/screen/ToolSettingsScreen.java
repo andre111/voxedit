@@ -15,10 +15,10 @@
  */
 package me.andre111.voxedit.client.gui.screen;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import me.andre111.voxedit.VoxEdit;
-import me.andre111.voxedit.VoxEditClient;
 import me.andre111.voxedit.client.ClientState;
 import me.andre111.voxedit.client.gui.widget.ToolSettingWidget;
 import me.andre111.voxedit.client.network.ClientNetworking;
@@ -40,7 +40,7 @@ public class ToolSettingsScreen extends Screen {
 	private int padding = 2;
 	
 	private TextWidget toolName;
-	private List<? extends ToolSettingWidget<?, ?>> toolSettings;
+	private List<ToolSettingWidget<?, ?, ?>> toolSettingWidgets;
 	private Tool<?, ?> lastTool = null;
 
 	public ToolSettingsScreen() {
@@ -69,7 +69,7 @@ public class ToolSettingsScreen extends Screen {
 		toolName.setMessage(name);
 		
 		// reload settings
-		for(var setting : toolSettings) {
+		for(var setting : toolSettingWidgets) {
 			setting.reload();
 		}
 	}
@@ -81,8 +81,11 @@ public class ToolSettingsScreen extends Screen {
 		contentHeight = 8+12;
 		if(ClientState.active == null) return;
 
-		toolSettings = VoxEditClient.TOOL_SETTING_REGISTRY.get(ClientState.active.selected().tool().id()).getSettings();
-		contentHeight += (toolSettings.size()+1) * 22;
+		toolSettingWidgets = new ArrayList<>();
+		for(var toolSetting : ClientState.active.selected().config().getSettings()) {
+			toolSettingWidgets.add(ToolSettingWidget.of(toolSetting));
+		}
+		contentHeight += (toolSettingWidgets.size()+1) * 22;
 		
 		int x = 2+padding;
 		int y = (height-contentHeight-padding*2) / 2;
@@ -103,7 +106,7 @@ public class ToolSettingsScreen extends Screen {
 		currentY += 22;
 		
 		// tool settings
-		for(var setting : toolSettings) {
+		for(var setting : toolSettingWidgets) {
 			for(var e : setting.create(this, x, currentY, contentWidth, 20)) {
 				addDrawableChild(e);
 			}

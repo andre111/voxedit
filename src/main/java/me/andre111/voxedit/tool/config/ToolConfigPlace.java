@@ -20,10 +20,12 @@ import java.util.List;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import me.andre111.voxedit.tool.data.ToolSetting;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
-public record ToolConfigPlace(Identifier feature, int tries, boolean targetFluids) implements ToolConfig {
+public record ToolConfigPlace(Identifier feature, int tries, boolean targetFluids) implements ToolConfig<ToolConfigPlace> {
 	public static final Codec<ToolConfigPlace> CODEC = RecordCodecBuilder.create(instance -> instance
 		.group(
 				Identifier.CODEC.optionalFieldOf("feature", new Identifier("minecraft", "oak")).forGetter(tc -> tc.feature),
@@ -31,6 +33,19 @@ public record ToolConfigPlace(Identifier feature, int tries, boolean targetFluid
 				Codec.BOOL.optionalFieldOf("targetFluids", false).forGetter(ts -> ts.targetFluids)
 		)
 		.apply(instance, ToolConfigPlace::new));
+	private static List<ToolSetting<?, ToolConfigPlace>> SETTINGS = List.of(
+			ToolSetting.identifier(Text.of("Feature"), RegistryKeys.CONFIGURED_FEATURE, 
+					ToolConfigPlace::feature, 
+					ToolConfigPlace::withFeature),
+			ToolSetting.integer(Text.of("Tries"), 1, 10,
+					ToolConfigPlace::tries, 
+					ToolConfigPlace::withTries)
+			);
+
+	@Override
+	public List<ToolSetting<?, ToolConfigPlace>> getSettings() {
+		return SETTINGS;
+	}
 
 	@Override
 	public int radius() {
@@ -38,7 +53,7 @@ public record ToolConfigPlace(Identifier feature, int tries, boolean targetFluid
 	}
 	
 	@Override
-	public ToolConfig withRadius(int radius) {
+	public ToolConfigPlace withRadius(int radius) {
 		return this;
 	}
 

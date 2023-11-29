@@ -22,9 +22,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.client.ClientState;
 import me.andre111.voxedit.client.gui.screen.NBTEditorScreen;
 import me.andre111.voxedit.network.Command;
 import me.andre111.voxedit.tool.ConfiguredTool;
+import me.andre111.voxedit.tool.config.ToolConfig;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -55,6 +57,15 @@ public class ClientNetworking {
 				request.complete(entries);
 			}
 		});
+	}
+	
+
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static void setSelectedConfig(ToolConfig<?> toolConfig) {
+		if(ClientState.active == null) return;
+		if(!ClientState.active.selected().config().getClass().isAssignableFrom(toolConfig.getClass())) return;
+		ClientNetworking.setTool(new ConfiguredTool(ClientState.active.selected().tool(), toolConfig));
 	}
 	
 	public static void setTool(ConfiguredTool<?, ?> tool) {

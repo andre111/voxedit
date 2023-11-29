@@ -21,9 +21,10 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import me.andre111.voxedit.tool.data.BlockPalette;
+import me.andre111.voxedit.tool.data.ToolSetting;
 import net.minecraft.text.Text;
 
-public record ToolConfigFill(BlockPalette palette, BlockPalette filter, int radius, boolean targetFluids) implements ToolConfig {
+public record ToolConfigFill(BlockPalette palette, BlockPalette filter, int radius, boolean targetFluids) implements ToolConfig<ToolConfigFill> {
 	public static final Codec<ToolConfigFill> CODEC = RecordCodecBuilder.create(instance -> instance
 			.group(
 					BlockPalette.CODEC.optionalFieldOf("palette", BlockPalette.DEFAULT).forGetter(ts -> ts.palette),
@@ -32,6 +33,22 @@ public record ToolConfigFill(BlockPalette palette, BlockPalette filter, int radi
 					Codec.BOOL.optionalFieldOf("targetFluids", false).forGetter(ts -> ts.targetFluids)
 					)
 			.apply(instance, ToolConfigFill::new));
+	private static List<ToolSetting<?, ToolConfigFill>> SETTINGS = List.of(
+			ToolSetting.blockPalette(Text.of("Edit Palette"), true, true,
+					ToolConfigFill::palette, 
+					ToolConfigFill::withPalette),
+			ToolSetting.blockPalette(Text.of("Edit Filter"),  false, false,
+					ToolConfigFill::filter, 
+					ToolConfigFill::withFilter),
+			ToolSetting.integer(Text.of("Radius"), 1, 16,
+					ToolConfigFill::radius, 
+					ToolConfigFill::withRadius)
+			);
+
+	@Override
+	public List<ToolSetting<?, ToolConfigFill>> getSettings() {
+		return SETTINGS;
+	}
 
 	@Override
 	public  List<Text> getIconTexts() {

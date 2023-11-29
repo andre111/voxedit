@@ -18,8 +18,6 @@ package me.andre111.voxedit;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.include.com.google.common.base.Objects;
 
-import com.mojang.serialization.Lifecycle;
-
 import me.andre111.voxedit.client.ClientState;
 import me.andre111.voxedit.client.gui.screen.ToolSelectionScreen;
 import me.andre111.voxedit.client.network.ClientNetworking;
@@ -27,13 +25,6 @@ import me.andre111.voxedit.client.renderer.EditorRenderer;
 import me.andre111.voxedit.client.renderer.HudRenderer;
 import me.andre111.voxedit.client.renderer.SelectionRenderer;
 import me.andre111.voxedit.client.renderer.ToolRenderer;
-import me.andre111.voxedit.client.tool.ToolSettings;
-import me.andre111.voxedit.client.tool.ToolSettingsBlend;
-import me.andre111.voxedit.client.tool.ToolSettingsBrush;
-import me.andre111.voxedit.client.tool.ToolSettingsFill;
-import me.andre111.voxedit.client.tool.ToolSettingsFlatten;
-import me.andre111.voxedit.client.tool.ToolSettingsPlace;
-import me.andre111.voxedit.client.tool.ToolSettingsSmooth;
 import me.andre111.voxedit.item.ToolItem;
 import me.andre111.voxedit.item.VoxEditItem;
 import me.andre111.voxedit.network.Command;
@@ -58,25 +49,11 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.SimpleRegistry;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.BlockHitResult;
 
 @Environment(value=EnvType.CLIENT)
 public class VoxEditClient implements ClientModInitializer {
-	public static final RegistryKey<Registry<ToolSettings>> TOOL_SETTING_REGISTRY_KEY = RegistryKey.ofRegistry(VoxEdit.id("tool_setting"));
-    public static final Registry<ToolSettings> TOOL_SETTING_REGISTRY = new SimpleRegistry<ToolSettings>(TOOL_SETTING_REGISTRY_KEY, Lifecycle.stable());
-    static {
-    	Registry.register(TOOL_SETTING_REGISTRY, VoxEdit.TOOL_BLEND.id(), new ToolSettingsBlend());
-    	Registry.register(TOOL_SETTING_REGISTRY, VoxEdit.TOOL_BRUSH.id(), new ToolSettingsBrush());
-    	Registry.register(TOOL_SETTING_REGISTRY, VoxEdit.TOOL_FILL.id(), new ToolSettingsFill());
-    	Registry.register(TOOL_SETTING_REGISTRY, VoxEdit.TOOL_FLATTEN.id(), new ToolSettingsFlatten());
-    	Registry.register(TOOL_SETTING_REGISTRY, VoxEdit.TOOL_PLACE.id(), new ToolSettingsPlace());
-    	Registry.register(TOOL_SETTING_REGISTRY, VoxEdit.TOOL_SMOOTH.id(), new ToolSettingsSmooth());
-    }
-    
 	public static final KeyBinding INCREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.increaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_UP, "key.category.voxedit"));
     public static final KeyBinding DECREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.decreaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_DOWN, "key.category.voxedit"));
     public static final KeyBinding INCREASE_SPEED = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.increaseSpeed", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_KP_ADD, "key.category.voxedit"));
@@ -156,10 +133,10 @@ public class VoxEditClient implements ClientModInitializer {
 			}
 			
 			if(INCREASE_RADIUS.wasPressed()) {
-				ClientState.sendConfigChange(ClientState.active.selected().config().withRadius(Math.min(ClientState.active.selected().config().radius()+1, 16)));
+				ClientNetworking.setSelectedConfig(ClientState.active.selected().config().withRadius(Math.min(ClientState.active.selected().config().radius()+1, 16)));
 			}
 			if(DECREASE_RADIUS.wasPressed()) {
-				ClientState.sendConfigChange(ClientState.active.selected().config().withRadius(Math.max(1, ClientState.active.selected().config().radius()-1)));
+				ClientNetworking.setSelectedConfig(ClientState.active.selected().config().withRadius(Math.max(1, ClientState.active.selected().config().radius()-1)));
 			}
 			if(INCREASE_SPEED.wasPressed()) {
 				ClientState.cameraSpeed = Math.min(ClientState.cameraSpeed+1, 10f);

@@ -30,7 +30,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 
-public abstract class Tool<TC extends ToolConfig, T extends Tool<TC, T>> {
+public abstract class Tool<TC extends ToolConfig<TC>, T extends Tool<TC, T>> {
 	private final Codec<ConfiguredTool<TC, T>> codec;
 	private final TC defaultConfig;
 

@@ -17,11 +17,7 @@ package me.andre111.voxedit.client;
 
 import java.util.Set;
 
-import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.item.ToolItem;
-import me.andre111.voxedit.tool.ConfiguredTool;
-import me.andre111.voxedit.tool.Tool;
-import me.andre111.voxedit.tool.config.ToolConfig;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -37,11 +33,4 @@ public class ClientState {
 	public static Set<BlockPos> positions;
 	
 	public static float cameraSpeed = 2f;
-	
-	@SuppressWarnings("unchecked")
-	public static <TC extends ToolConfig, T extends Tool<TC, T>> void sendConfigChange(TC newConfig) {
-		if(active == null) return;
-		if(!active.selected().config().getClass().isAssignableFrom(newConfig.getClass())) return;
-		ClientNetworking.setTool(new ConfiguredTool<TC, T>((T) active.selected().tool(), newConfig));
-	}
 }
