@@ -82,6 +82,12 @@ public final class ToolItem extends Item {
 		return stack;
 	}
 	
+	public ItemStack getStackWith(Data data) {
+		ItemStack stack = super.getDefaultStack();
+		storeToolData(stack, data);
+		return stack;
+	}
+	
 	public static Data readToolData(ItemStack stack) {
 		var dataResult = Data.CODEC.decode(NbtOps.INSTANCE, stack.getOrCreateSubNbt("voxedit"));
 		if(dataResult.result().isPresent()) {
@@ -109,7 +115,7 @@ public final class ToolItem extends Item {
 			tools.add(tool);
 			selected = 0;
 		}
-		private Data(List<ConfiguredTool<?, ?>> tools, int selected) {
+		public Data(List<ConfiguredTool<?, ?>> tools, int selected) {
 			this.tools = new ArrayList<>(tools);
 			this.selected = selected;
 		}

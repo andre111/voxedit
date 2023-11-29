@@ -18,7 +18,7 @@ public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mo
 					BlockPalette.CODEC.optionalFieldOf("filter", new BlockPalette()).forGetter(ts -> ts.filter),
 					Codec.STRING.optionalFieldOf("mode", Mode.SOLID.name()).xmap(str -> Mode.valueOf(str), mode -> mode.name()).forGetter(ts -> ts.mode),
 					Codec.STRING.optionalFieldOf("shape", Shape.SPHERE.name()).xmap(str -> Shape.valueOf(str), shape -> shape.name()).forGetter(ts -> ts.shape),
-					Codec.INT.optionalFieldOf("radius", 3).forGetter(ts -> ts.radius),
+					Codec.INT.optionalFieldOf("radius", 4).forGetter(ts -> ts.radius),
 					Codec.BOOL.optionalFieldOf("targetFluids", false).forGetter(ts -> ts.targetFluids)
 					)
 			.apply(instance, ToolConfigBrush::new));
@@ -57,7 +57,7 @@ public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mo
 	}
 
 	public ToolConfigBrush() {
-		this(BlockPalette.DEFAULT, new BlockPalette(), Mode.SOLID, Shape.SPHERE, 3, false);
+		this(BlockPalette.DEFAULT, new BlockPalette(), Mode.SOLID, Shape.SPHERE, 4, false);
 	}
 
 	public ToolConfigBrush withPalette(BlockPalette palette) {

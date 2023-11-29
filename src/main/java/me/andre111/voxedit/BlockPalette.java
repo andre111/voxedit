@@ -74,6 +74,10 @@ public class BlockPalette {
 		return false;
 	}
 	
+	public static Builder builder() {
+		return new Builder();
+	}
+	
 	public static record Entry(BlockState state, int weight) {
 		private static final Codec<Entry> CODEC = RecordCodecBuilder.create(instance -> instance
 				.group(
@@ -81,5 +85,30 @@ public class BlockPalette {
 						Codec.INT.fieldOf("weight").forGetter(e -> e.weight)
 				)
 				.apply(instance, Entry::new));
+	}
+	
+	public static class Builder {
+		private List<Entry> entries = new ArrayList<>();
+		
+		public Builder add(Block block) {
+			return add(block, 1);
+		}
+		
+		public Builder add(Block block, int weight) {
+			return add(block.getDefaultState(), weight);
+		}
+		
+		public Builder add(BlockState state) {
+			return add(state, 1);
+		}
+		
+		public Builder add(BlockState state, int weight) {
+			entries.add(new Entry(state, weight));
+			return this;
+		}
+		
+		public BlockPalette build() {
+			return new BlockPalette(new ArrayList<>(entries));
+		}
 	}
 }

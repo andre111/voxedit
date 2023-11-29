@@ -98,6 +98,7 @@ public class VoxEdit implements ModInitializer, ClientModInitializer {
 							entries.add(TOOL_ITEM.getStackWith(new ConfiguredTool(tool, config)));
 						}
 					}
+					entries.add(Presets.andre111Stack);
 					entries.add(EDITOR_ITEM.getDefaultStack());
 				}
 			}
