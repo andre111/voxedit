@@ -17,30 +17,54 @@ package me.andre111.voxedit.editor.action;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.util.Clearable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-//TODO: store and restore blockentities!
-//TODO: somehow make other blocks not update/drop as items?
 public class SetBlockAction extends EditAction {
 	private final BlockPos pos;
-	private final BlockState oldState;
 	private final BlockState newState;
+	private final BlockState oldState;
+	private final NbtCompound oldNbt;
 
 	public SetBlockAction(World world, BlockPos pos, BlockState newState) {
 		this.pos = pos;
-		this.oldState = world.getBlockState(pos);
 		this.newState = newState;
+		
+		this.oldState = world.getBlockState(pos);
+		if(world.getBlockEntity(pos) != null) {
+			this.oldNbt = world.getBlockEntity(pos).createNbtWithId();
+		} else {
+			this.oldNbt = null;
+		}
 	}
 
 	@Override
 	public int undo(World world) {
+		// if had block entity -> first set block without be to ensure it is newly created
+		if(oldNbt != null) {
+            Clearable.clear(world.getBlockEntity(pos)); // do not drop anything
+            world.setBlockState(pos, Blocks.BARRIER.getDefaultState(), Block.NO_REDRAW | Block.FORCE_STATE);
+		}
+		
+		// set block back
 		world.setBlockState(pos, oldState, Block.NOTIFY_LISTENERS | Block.SKIP_DROPS, 0);
+		
+		// restore be from stored nbt
+		if(oldNbt != null && world.getBlockEntity(pos) != null) {
+			world.getBlockEntity(pos).readNbt(oldNbt);
+		}
+		
 		return 1;
 	}
 	
 	@Override
 	public int redo(World world) {
+		if(world.getBlockEntity(pos) != null) {
+			Clearable.clear(world.getBlockEntity(pos));
+		}
 		world.setBlockState(pos, newState, Block.NOTIFY_LISTENERS | Block.SKIP_DROPS, 0);
 		return 1;
 	}

@@ -53,7 +53,7 @@ public class ToolSettings<TC extends ToolConfig<TC>> {
 		}
 		
 		public <E> Builder<TC> fixedValues(Text title, E[] values, Function<E, Text> toText, Function<TC, E> reader, BiFunction<TC, E, TC> writer) {
-			settings.add(new ToolSetting.FixedValues<E, TC>(title, values, toText, reader, writer));
+			settings.add(new ToolSetting.FixedValues<>(title, values, toText, reader, writer));
 			return this;
 		}
 		
