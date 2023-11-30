@@ -56,7 +56,7 @@ public abstract class ToolSettingWidget<V, TC extends ToolConfig<TC>, TS extends
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static ToolSettingWidget of(ToolSetting<?, ?> setting) {
 		if(setting instanceof ToolSetting.Bool boolSetting) return new Bool<>(boolSetting);
-		if(setting instanceof ToolSetting.EnumValue enumSetting) return new EnumValue<>(enumSetting);
+		if(setting instanceof ToolSetting.FixedValues enumSetting) return new FixedValues<>(enumSetting);
 		if(setting instanceof ToolSetting.Int intSetting) return new Int<>(intSetting);
 		if(setting instanceof ToolSetting.TSBlockPalette paletteSetting) return new TSBlockPalette<>(paletteSetting);
 		if(setting instanceof ToolSetting.TSIdentifier identifierSetting) return new TSIdentifier<>(identifierSetting);
@@ -83,10 +83,10 @@ public abstract class ToolSettingWidget<V, TC extends ToolConfig<TC>, TS extends
 		}
 	}
 	
-	public static class EnumValue<TC extends ToolConfig<TC>, E extends Enum<E>> extends ToolSettingWidget<E, TC, ToolSetting.EnumValue<E, TC>> {
+	public static class FixedValues<TC extends ToolConfig<TC>, E> extends ToolSettingWidget<E, TC, ToolSetting.FixedValues<E, TC>> {
 		private CyclingButtonWidget<E> button;
 		
-		public EnumValue(ToolSetting.EnumValue<E, TC> setting) {
+		public FixedValues(ToolSetting.FixedValues<E, TC> setting) {
 			super(setting);
 		}
 		

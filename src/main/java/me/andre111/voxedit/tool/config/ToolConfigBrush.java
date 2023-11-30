@@ -23,7 +23,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import me.andre111.voxedit.tool.data.BlockPalette;
 import me.andre111.voxedit.tool.data.Mode;
 import me.andre111.voxedit.tool.data.Shape;
-import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.tool.data.ToolSettings;
 import net.minecraft.text.Text;
 
 public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mode, Shape shape, int radius, boolean checkCanPlace, boolean targetFluids) implements ToolConfig<ToolConfigBrush> {
@@ -38,29 +38,16 @@ public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mo
 					Codec.BOOL.optionalFieldOf("targetFluids", false).forGetter(ts -> ts.targetFluids)
 					)
 			.apply(instance, ToolConfigBrush::new));
-	private static List<ToolSetting<?, ToolConfigBrush>> SETTINGS = List.of(
-			ToolSetting.blockPalette(Text.of("Edit Palette"), true, true,
-					ToolConfigBrush::palette, 
-					ToolConfigBrush::withPalette),
-			ToolSetting.blockPalette(Text.of("Edit Filter"),  false, false,
-					ToolConfigBrush::filter, 
-					ToolConfigBrush::withFilter),
-			ToolSetting.enumValue(Text.of("Mode"), Mode.values(), Mode::asText, 
-					ToolConfigBrush::mode, 
-					ToolConfigBrush::withMode),
-			ToolSetting.enumValue(Text.of("Shape"), Shape.values(), Shape::asText, 
-					ToolConfigBrush::shape, 
-					ToolConfigBrush::withShape),
-			ToolSetting.integer(Text.of("Radius"), 1, 16,
-					ToolConfigBrush::radius, 
-					ToolConfigBrush::withRadius),
-			ToolSetting.bool(Text.of("Check valid"),
-					ToolConfigBrush::checkCanPlace, 
-					ToolConfigBrush::withCheckCanPlace)
-			);
+	private static final ToolSettings<ToolConfigBrush> SETTINGS = ToolSettings.create(instance -> instance
+			.blockPalette(Text.of("Edit Palette"), true, true, ToolConfigBrush::palette, ToolConfigBrush::withPalette)
+			.blockPalette(Text.of("Edit Filter"),  false, false, ToolConfigBrush::filter, ToolConfigBrush::withFilter)
+			.fixedValues(Text.of("Mode"), Mode.values(), Mode::asText, ToolConfigBrush::mode, ToolConfigBrush::withMode)
+			.fixedValues(Text.of("Shape"), Shape.values(), Shape::asText, ToolConfigBrush::shape, ToolConfigBrush::withShape)
+			.integer(Text.of("Radius"), 1, 16, ToolConfigBrush::radius, ToolConfigBrush::withRadius)
+			.bool(Text.of("Check valid"), ToolConfigBrush::checkCanPlace, ToolConfigBrush::withCheckCanPlace));
 
 	@Override
-	public List<ToolSetting<?, ToolConfigBrush>> getSettings() {
+	public ToolSettings<ToolConfigBrush> settings() {
 		return SETTINGS;
 	}
 
@@ -68,7 +55,7 @@ public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mo
 	public  List<Text> getIconTexts() {
 		return List.of(mode.asText(), shape.asText(), Text.of(radius+""));
 	}
-	
+
 	@Override
 	public BlockPalette getIconBlocks() {
 		return palette;

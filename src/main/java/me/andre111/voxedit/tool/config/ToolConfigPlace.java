@@ -20,7 +20,7 @@ import java.util.List;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.tool.data.ToolSettings;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -33,17 +33,12 @@ public record ToolConfigPlace(Identifier feature, int tries, boolean targetFluid
 				Codec.BOOL.optionalFieldOf("targetFluids", false).forGetter(ts -> ts.targetFluids)
 		)
 		.apply(instance, ToolConfigPlace::new));
-	private static List<ToolSetting<?, ToolConfigPlace>> SETTINGS = List.of(
-			ToolSetting.identifier(Text.of("Feature"), RegistryKeys.CONFIGURED_FEATURE, 
-					ToolConfigPlace::feature, 
-					ToolConfigPlace::withFeature),
-			ToolSetting.integer(Text.of("Tries"), 1, 10,
-					ToolConfigPlace::tries, 
-					ToolConfigPlace::withTries)
-			);
+	private static final ToolSettings<ToolConfigPlace> SETTINGS = ToolSettings.create(instance -> instance
+			.identifier(Text.of("Feature"), RegistryKeys.CONFIGURED_FEATURE, ToolConfigPlace::feature, ToolConfigPlace::withFeature)
+			.integer(Text.of("Tries"), 1, 10, ToolConfigPlace::tries, ToolConfigPlace::withTries));
 
 	@Override
-	public List<ToolSetting<?, ToolConfigPlace>> getSettings() {
+	public ToolSettings<ToolConfigPlace> settings() {
 		return SETTINGS;
 	}
 

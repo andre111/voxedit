@@ -22,7 +22,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import me.andre111.voxedit.tool.data.BlockPalette;
 import me.andre111.voxedit.tool.data.Shape;
-import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.tool.data.ToolSettings;
 import net.minecraft.text.Text;
 
 public record ToolConfigBlend(BlockPalette filter, Shape shape, int radius, boolean targetFluids) implements ToolConfig<ToolConfigBlend> {
@@ -34,20 +34,13 @@ public record ToolConfigBlend(BlockPalette filter, Shape shape, int radius, bool
 					Codec.BOOL.optionalFieldOf("targetFluids", false).forGetter(ts -> ts.targetFluids)
 					)
 			.apply(instance, ToolConfigBlend::new));
-	private static List<ToolSetting<?, ToolConfigBlend>> SETTINGS = List.of(
-			ToolSetting.blockPalette(Text.of("Edit Filter"), false, false,
-					ToolConfigBlend::filter, 
-					ToolConfigBlend::withFilter),
-			ToolSetting.enumValue(Text.of("Shape"), Shape.values(), Shape::asText, 
-					ToolConfigBlend::shape, 
-					ToolConfigBlend::withShape),
-			ToolSetting.integer(Text.of("Radius"), 1, 16,
-					ToolConfigBlend::radius, 
-					ToolConfigBlend::withRadius)
-			);
+	private static final ToolSettings<ToolConfigBlend> SETTINGS = ToolSettings.create(instance -> instance
+			.blockPalette(Text.of("Edit Filter"), false, false, ToolConfigBlend::filter, ToolConfigBlend::withFilter)
+			.fixedValues(Text.of("Shape"), Shape.values(), Shape::asText, ToolConfigBlend::shape, ToolConfigBlend::withShape)
+			.integer(Text.of("Radius"), 1, 16, ToolConfigBlend::radius, ToolConfigBlend::withRadius));
 
 	@Override
-	public List<ToolSetting<?, ToolConfigBlend>> getSettings() {
+	public ToolSettings<ToolConfigBlend> settings() {
 		return SETTINGS;
 	}
 

@@ -47,36 +47,16 @@ public sealed abstract class ToolSetting<V, TC extends ToolConfig<TC>> {
 		return writer;
 	}
 	
-	public static <TC extends ToolConfig<TC>> Bool<TC> bool(Text title, Function<TC, Boolean> reader, BiFunction<TC, Boolean, TC> writer) {
-		return new Bool<>(title, reader, writer);
-	}
-	
-	public static <E extends Enum<E>, TC extends ToolConfig<TC>> EnumValue<E, TC> enumValue(Text title, E[] values, Function<E, Text> toText, Function<TC, E> reader, BiFunction<TC, E, TC> writer) {
-		return new EnumValue<>(title, values, toText, reader, writer);
-	}
-	
-	public static <TC extends ToolConfig<TC>> Int<TC> integer(Text title, int min, int max, Function<TC, Integer> reader, BiFunction<TC, Integer, TC> writer) {
-		return new Int<>(title, min, max, reader, writer);
-	}
-	
-	public static <TC extends ToolConfig<TC>> TSBlockPalette<TC> blockPalette(Text title, boolean includeProperties, boolean showWeights, Function<TC, BlockPalette> reader, BiFunction<TC, BlockPalette, TC> writer) {
-		return new TSBlockPalette<>(title, includeProperties, showWeights, reader, writer);
-	}
-	
-	public static <TC extends ToolConfig<TC>, T> TSIdentifier<TC, T> identifier(Text title, RegistryKey<? extends Registry<T>> registryKey, Function<TC, Identifier> reader, BiFunction<TC, Identifier, TC> writer) {
-		return new TSIdentifier<>(title, registryKey, reader, writer);
-	}
-	
 	public static final class Bool<TC extends ToolConfig<TC>> extends ToolSetting<Boolean, TC> {
-		private Bool(Text label, Function<TC, Boolean> reader, BiFunction<TC, Boolean, TC> writer) {
+		public Bool(Text label, Function<TC, Boolean> reader, BiFunction<TC, Boolean, TC> writer) {
 			super(label, reader, writer);
 		}
 	}
 	
-	public static final class EnumValue<E extends Enum<E>, TC extends ToolConfig<TC>> extends ToolSetting<E, TC> {
+	public static final class FixedValues<E, TC extends ToolConfig<TC>> extends ToolSetting<E, TC> {
 		private final E[] values;
 		private final Function<E, Text> toText;
-		private EnumValue(Text label, E[] values, Function<E, Text> toText, Function<TC, E> reader, BiFunction<TC, E, TC> writer) {
+		public FixedValues(Text label, E[] values, Function<E, Text> toText, Function<TC, E> reader, BiFunction<TC, E, TC> writer) {
 			super(label, reader, writer);
 			this.values = values;
 			this.toText = toText;
@@ -94,7 +74,7 @@ public sealed abstract class ToolSetting<V, TC extends ToolConfig<TC>> {
 	public static final class Int<TC extends ToolConfig<TC>> extends ToolSetting<Integer, TC> {
 		private final int min;
 		private final int max;
-		private Int(Text label, int min, int max, Function<TC, Integer> reader, BiFunction<TC, Integer, TC> writer) {
+		public Int(Text label, int min, int max, Function<TC, Integer> reader, BiFunction<TC, Integer, TC> writer) {
 			super(label, reader, writer);
 			this.min = min;
 			this.max = max;

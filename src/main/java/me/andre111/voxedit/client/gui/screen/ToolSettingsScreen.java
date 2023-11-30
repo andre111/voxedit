@@ -82,7 +82,7 @@ public class ToolSettingsScreen extends Screen {
 		if(ClientState.active == null) return;
 
 		toolSettingWidgets = new ArrayList<>();
-		for(var toolSetting : ClientState.active.selected().config().getSettings()) {
+		for(var toolSetting : ClientState.active.selected().config().settings().get()) {
 			toolSettingWidgets.add(ToolSettingWidget.of(toolSetting));
 		}
 		contentHeight += (toolSettingWidgets.size()+1) * 22;

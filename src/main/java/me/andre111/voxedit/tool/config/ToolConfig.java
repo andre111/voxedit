@@ -18,11 +18,11 @@ package me.andre111.voxedit.tool.config;
 import java.util.List;
 
 import me.andre111.voxedit.tool.data.BlockPalette;
-import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.tool.data.ToolSettings;
 import net.minecraft.text.Text;
 
 public interface ToolConfig<TC extends ToolConfig<TC>> {
-	public List<ToolSetting<?, TC>> getSettings();
+	public ToolSettings<TC> settings();
 	
 	public int radius();
 	public ToolConfig<TC> withRadius(int radius);

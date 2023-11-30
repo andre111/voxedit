@@ -22,7 +22,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import me.andre111.voxedit.tool.data.BlockPalette;
 import me.andre111.voxedit.tool.data.Shape;
-import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.tool.data.ToolSettings;
 import net.minecraft.text.Text;
 
 public record ToolConfigSmooth(BlockPalette filter, Shape shape, int radius, boolean targetFluids) implements ToolConfig<ToolConfigSmooth> {
@@ -34,20 +34,13 @@ public record ToolConfigSmooth(BlockPalette filter, Shape shape, int radius, boo
 					Codec.BOOL.optionalFieldOf("targetFluids", false).forGetter(ts -> ts.targetFluids)
 					)
 			.apply(instance, ToolConfigSmooth::new));
-	private static List<ToolSetting<?, ToolConfigSmooth>> SETTINGS = List.of(
-			ToolSetting.blockPalette(Text.of("Edit Filter"),  false, false,
-					ToolConfigSmooth::filter, 
-					ToolConfigSmooth::withFilter),
-			ToolSetting.enumValue(Text.of("Shape"), Shape.values(), Shape::asText, 
-					ToolConfigSmooth::shape, 
-					ToolConfigSmooth::withShape),
-			ToolSetting.integer(Text.of("Radius"), 1, 16,
-					ToolConfigSmooth::radius, 
-					ToolConfigSmooth::withRadius)
-			);
+	private static final ToolSettings<ToolConfigSmooth> SETTINGS = ToolSettings.create(instance -> instance
+			.blockPalette(Text.of("Edit Filter"), false, false, ToolConfigSmooth::filter, ToolConfigSmooth::withFilter)
+			.fixedValues(Text.of("Shape"), Shape.values(), Shape::asText, ToolConfigSmooth::shape, ToolConfigSmooth::withShape)
+			.integer(Text.of("Radius"), 1, 16, ToolConfigSmooth::radius, ToolConfigSmooth::withRadius));
 
 	@Override
-	public List<ToolSetting<?, ToolConfigSmooth>> getSettings() {
+	public ToolSettings<ToolConfigSmooth> settings() {
 		return SETTINGS;
 	}
 
