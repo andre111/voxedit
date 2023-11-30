@@ -47,7 +47,7 @@ public enum Shape {
 	}
 	
 	public Text asText() {
-		return Text.of(name());
+		return Text.translatable("voxedit.shape."+name().toLowerCase());
 	}
 	
 	public static interface OffsetPredicate {

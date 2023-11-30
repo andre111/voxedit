@@ -46,7 +46,7 @@ public enum Mode {
 	}
 	
 	public Text asText() {
-		return Text.of(name());
+		return Text.translatable("voxedit.mode."+name().toLowerCase());
 	}
 	
 	public static interface TestPredicate {

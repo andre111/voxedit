@@ -35,9 +35,9 @@ public record ToolConfigBlend(BlockPalette filter, Shape shape, int radius, bool
 					)
 			.apply(instance, ToolConfigBlend::new));
 	private static final ToolSettings<ToolConfigBlend> SETTINGS = ToolSettings.create(instance -> instance
-			.blockPalette(Text.of("Edit Filter"), false, false, ToolConfigBlend::filter, ToolConfigBlend::withFilter)
-			.fixedValues(Text.of("Shape"), Shape.values(), Shape::asText, ToolConfigBlend::shape, ToolConfigBlend::withShape)
-			.integer(Text.of("Radius"), 1, 16, ToolConfigBlend::radius, ToolConfigBlend::withRadius));
+			.blockPalette(Text.translatable("voxedit.tool.settings.filter"), false, false, ToolConfigBlend::filter, ToolConfigBlend::withFilter)
+			.fixedValues(Text.translatable("voxedit.shape"), Shape.values(), Shape::asText, ToolConfigBlend::shape, ToolConfigBlend::withShape)
+			.integer(Text.translatable("voxedit.tool.settings.radius"), 1, 16, ToolConfigBlend::radius, ToolConfigBlend::withRadius));
 
 	@Override
 	public ToolSettings<ToolConfigBlend> settings() {

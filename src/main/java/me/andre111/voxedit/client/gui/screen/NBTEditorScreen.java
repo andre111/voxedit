@@ -81,7 +81,7 @@ public class NBTEditorScreen extends Screen {
 	private boolean doNotChangeSelection;
 
 	public NBTEditorScreen(NbtCompound root) {
-		super(Text.of("NBT Editor"));
+		super(Text.translatable("voxedit.screen.nbtEditor"));
 		this.root = root;
 		this.initialised = false;
 	}
@@ -94,77 +94,76 @@ public class NBTEditorScreen extends Screen {
 		DirectionalLayoutWidget buttonContainer = new DirectionalLayoutWidget(0, 2, DisplayAxis.HORIZONTAL);
 		buttonContainer.spacing(2);
 		
-		int buttonSize = 20;
-		cutButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Cut"), (button) -> {
+		cutButton = buttonContainer.add(addDrawableChild(new IconButtonWidget(Text.translatable("voxedit.screen.nbtEditor.action.cut"), Textures.EDITOR_CUT, (button) -> {
 			if(selected != null) {
 				client.keyboard.setClipboard(selected.element.asString());
 				replaceSelected(null);
 			}
-		}).tooltip(Tooltip.of(Text.of("Cut Tag"))).size(buttonSize, 20).build()));
-		copyButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Copy"), (button) -> {
+		})));
+		copyButton = buttonContainer.add(addDrawableChild(new IconButtonWidget(Text.translatable("voxedit.screen.nbtEditor.action.copy"), Textures.EDITOR_COPY, (button) -> {
 			client.keyboard.setClipboard(selected != null ? selected.element.asString() : root.asString());
-		}).tooltip(Tooltip.of(Text.of("Copy Tag"))).size(buttonSize, 20).build()));
-		pasteButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Paste"), (button) -> {
+		})));
+		pasteButton = buttonContainer.add(addDrawableChild(new IconButtonWidget(Text.translatable("voxedit.screen.nbtEditor.action.paste"), Textures.EDITOR_PASTE, (button) -> {
 			NbtCompound compound = getClipboardCompound();
 			if(compound != null) addElement(CAN_ADD_COMPOUND, () -> compound);
-		}).tooltip(Tooltip.of(Text.of("Paste Tag"))).size(buttonSize, 20).build()));
+		})));
 		
 		buttonContainer.add(new EmptyWidget(3, 0));
 
-		editButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Edit"), (button) -> {
+		editButton = buttonContainer.add(addDrawableChild(new IconButtonWidget(Text.translatable("voxedit.screen.nbtEditor.action.edit"), Textures.EDITOR_EDIT, (button) -> {
 			if(selected != null) {
 				if(selected.element instanceof NbtByte nbtByte) {
-					InputScreen.getNumber(this, Text.of("Modify value: "), nbtByte.byteValue(), Byte::parseByte, (newValue) -> replaceSelected(NbtByte.of(newValue)));
+					InputScreen.getNumber(this, Text.translatable("voxedit.screen.nbtEditor.input.value"), nbtByte.byteValue(), Byte::parseByte, (newValue) -> replaceSelected(NbtByte.of(newValue)));
 				} else if(selected.element instanceof NbtShort nbtShort) {
-					InputScreen.getNumber(this, Text.of("Modify value: "), nbtShort.shortValue(), Short::parseShort, (newValue) -> replaceSelected(NbtShort.of(newValue)));
+					InputScreen.getNumber(this, Text.translatable("voxedit.screen.nbtEditor.input.value"), nbtShort.shortValue(), Short::parseShort, (newValue) -> replaceSelected(NbtShort.of(newValue)));
 				} else if(selected.element instanceof NbtInt nbtInt) {
-					InputScreen.getNumber(this, Text.of("Modify value: "), nbtInt.intValue(), Integer::parseInt, (newValue) -> replaceSelected(NbtInt.of(newValue)));
+					InputScreen.getNumber(this, Text.translatable("voxedit.screen.nbtEditor.input.value"), nbtInt.intValue(), Integer::parseInt, (newValue) -> replaceSelected(NbtInt.of(newValue)));
 				} else if(selected.element instanceof NbtLong nbtLong) {
-					InputScreen.getNumber(this, Text.of("Modify value: "), nbtLong.longValue(), Long::parseLong, (newValue) -> replaceSelected(NbtLong.of(newValue)));
+					InputScreen.getNumber(this, Text.translatable("voxedit.screen.nbtEditor.input.value"), nbtLong.longValue(), Long::parseLong, (newValue) -> replaceSelected(NbtLong.of(newValue)));
 				} else if(selected.element instanceof NbtFloat nbtFloat) {
-					InputScreen.getNumber(this, Text.of("Modify value: "), nbtFloat.floatValue(), Float::parseFloat, (newValue) -> replaceSelected(NbtFloat.of(newValue)));
+					InputScreen.getNumber(this, Text.translatable("voxedit.screen.nbtEditor.input.value"), nbtFloat.floatValue(), Float::parseFloat, (newValue) -> replaceSelected(NbtFloat.of(newValue)));
 				} else if(selected.element instanceof NbtDouble nbtDouble) {
-					InputScreen.getNumber(this, Text.of("Modify value: "), nbtDouble.doubleValue(), Double::parseDouble, (newValue) -> replaceSelected(NbtDouble.of(newValue)));
+					InputScreen.getNumber(this, Text.translatable("voxedit.screen.nbtEditor.input.value"), nbtDouble.doubleValue(), Double::parseDouble, (newValue) -> replaceSelected(NbtDouble.of(newValue)));
 				} else if(selected.element instanceof NbtString nbtString) {
-					InputScreen.getString(this, Text.of("Modify value: "), nbtString.asString(), (newValue) -> replaceSelected(NbtString.of(newValue)));
+					InputScreen.getString(this, Text.translatable("voxedit.screen.nbtEditor.input.value"), nbtString.asString(), (newValue) -> replaceSelected(NbtString.of(newValue)));
 				}
 			}
-		}).tooltip(Tooltip.of(Text.of("Edit Value"))).size(buttonSize, 20).build()));
-		renameButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Rename"), (button) -> {
+		})));
+		renameButton = buttonContainer.add(addDrawableChild(new IconButtonWidget(Text.translatable("voxedit.screen.nbtEditor.action.rename"), Textures.EDITOR_RENAME, (button) -> {
 			if(selected != null && selected.hasName) {
 				NbtCompound parent = (NbtCompound) selected.parent;
-				InputScreen.getString(this, Text.of("Enter new Name:"), selected.key, (newName) -> {
+				InputScreen.getString(this, Text.translatable("voxedit.screen.nbtEditor.input.tagName"), selected.key, (newName) -> {
 					parent.remove(selected.key);
 					parent.put(newName, selected.element);
 					reload();
 				});
 			}
-		}).tooltip(Tooltip.of(Text.of("Rename Tag"))).size(buttonSize, 20).build()));
-		deleteButton = buttonContainer.add(addDrawableChild(ButtonWidget.builder(Text.of("Delete"), (button) -> {
+		})));
+		deleteButton = buttonContainer.add(addDrawableChild(new IconButtonWidget(Text.translatable("voxedit.screen.nbtEditor.action.delete"), Textures.EDITOR_DELETE, (button) -> {
 			replaceSelected(null);
-		}).tooltip(Tooltip.of(Text.of("Delete Tag"))).size(buttonSize, 20).build()));
+		})));
 
 		buttonContainer.add(new EmptyWidget(3, 0));
 		
 		addButtons = new ArrayList<>();
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add Byte Tag"), Textures.NBT_BYTE, getCanAddPredicate(NbtElement.BYTE_TYPE), () -> NbtByte.of((byte) 0)))));
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add Short Tag"), Textures.NBT_SHORT, getCanAddPredicate(NbtElement.SHORT_TYPE), () -> NbtShort.of((short) 0)))));
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add Int Tag"), Textures.NBT_INT, getCanAddPredicate(NbtElement.INT_TYPE), () -> NbtInt.of(0)))));
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add Long Tag"), Textures.NBT_LONG, getCanAddPredicate(NbtElement.LONG_TYPE), () -> NbtLong.of(0)))));
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add Float Tag"), Textures.NBT_FLOAT, getCanAddPredicate(NbtElement.FLOAT_TYPE), () -> NbtFloat.of(0)))));
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add Double Tag"), Textures.NBT_DOUBLE, getCanAddPredicate(NbtElement.DOUBLE_TYPE), () -> NbtDouble.of(0)))));
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add String Tag"), Textures.NBT_STRING, getCanAddPredicate(NbtElement.STRING_TYPE), () -> NbtString.of("")))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("byte", Textures.NBT_BYTE, getCanAddPredicate(NbtElement.BYTE_TYPE), () -> NbtByte.of((byte) 0)))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("short", Textures.NBT_SHORT, getCanAddPredicate(NbtElement.SHORT_TYPE), () -> NbtShort.of((short) 0)))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("int", Textures.NBT_INT, getCanAddPredicate(NbtElement.INT_TYPE), () -> NbtInt.of(0)))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("long", Textures.NBT_LONG, getCanAddPredicate(NbtElement.LONG_TYPE), () -> NbtLong.of(0)))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("float", Textures.NBT_FLOAT, getCanAddPredicate(NbtElement.FLOAT_TYPE), () -> NbtFloat.of(0)))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("double", Textures.NBT_DOUBLE, getCanAddPredicate(NbtElement.DOUBLE_TYPE), () -> NbtDouble.of(0)))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("string", Textures.NBT_STRING, getCanAddPredicate(NbtElement.STRING_TYPE), () -> NbtString.of("")))));
 		
 		buttonContainer.add(new EmptyWidget(3, 0));
 		
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add Byte Array Tag"), Textures.NBT_ARRAY, getCanAddPredicate(NbtElement.BYTE_ARRAY_TYPE), () -> new NbtByteArray(new byte[] {})))));
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add Int Array Tag"), Textures.NBT_ARRAY, getCanAddPredicate(NbtElement.INT_ARRAY_TYPE), () -> new NbtIntArray(new int[] {})))));
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add Long Array Tag"), Textures.NBT_ARRAY, getCanAddPredicate(NbtElement.LONG_ARRAY_TYPE), () -> new NbtLongArray(new long[] {})))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("byteArray", Textures.NBT_ARRAY, getCanAddPredicate(NbtElement.BYTE_ARRAY_TYPE), () -> new NbtByteArray(new byte[] {})))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("intArray", Textures.NBT_ARRAY, getCanAddPredicate(NbtElement.INT_ARRAY_TYPE), () -> new NbtIntArray(new int[] {})))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("longArray", Textures.NBT_ARRAY, getCanAddPredicate(NbtElement.LONG_ARRAY_TYPE), () -> new NbtLongArray(new long[] {})))));
 		
 		buttonContainer.add(new EmptyWidget(3, 0));
 		
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add List Tag"), Textures.NBT_LIST, getCanAddPredicate(NbtElement.LIST_TYPE), () -> new NbtList()))));
-		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget(Text.of("Add Compound Tag"), Textures.NBT_COMPOUND, getCanAddPredicate(NbtElement.COMPOUND_TYPE), () -> new NbtCompound()))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("list", Textures.NBT_LIST, getCanAddPredicate(NbtElement.LIST_TYPE), () -> new NbtList()))));
+		addButtons.add(buttonContainer.add(addDrawableChild(new AddNBTElementButtonWidget("compound", Textures.NBT_COMPOUND, getCanAddPredicate(NbtElement.COMPOUND_TYPE), () -> new NbtCompound()))));
 		
 		buttonContainer.refreshPositions();
 		buttonContainer.setX((width-buttonContainer.getWidth())/2);
@@ -245,7 +244,7 @@ public class NBTEditorScreen extends Screen {
 		NbtElement parent = selected != null ? selected.element : root;
 		if(canAddTo.test(parent)) {
 			if(parent instanceof NbtCompound compound) {
-				InputScreen.getString(this, Text.of("Enter Tag Name:"), "", (tagName) -> {
+				InputScreen.getString(this, Text.translatable("voxedit.screen.nbtEditor.input.tagName"), "", (tagName) -> {
 					if(!compound.contains(tagName)) {
 						compound.put(tagName, creator.get());
 						reload();
@@ -285,16 +284,13 @@ public class NBTEditorScreen extends Screen {
 		super.close();
 		ClientNetworking.sendNBTEditorResult(null);
 	}
-
+	
 	@Environment(value=EnvType.CLIENT)
-	private class AddNBTElementButtonWidget extends ButtonWidget {
+	private class IconButtonWidget extends ButtonWidget {
 		private final Identifier icon;
-		private final Predicate<NbtElement> canAddTo;
-		
-		protected AddNBTElementButtonWidget(Text tooltip, Identifier icon, Predicate<NbtElement> canAddTo, Supplier<NbtElement> creator) {
-			super(0, 0, 20, 20, Text.empty(), (b) -> NBTEditorScreen.this.addElement(canAddTo, creator), (s) -> Text.empty().copy());
+		protected IconButtonWidget(Text tooltip, Identifier icon, PressAction action) {
+			super(0, 0, 20, 20, Text.empty(), action, (s) -> Text.empty().copy());
 			this.icon = icon;
-			this.canAddTo = canAddTo;
 			setTooltip(Tooltip.of(tooltip));
 		}
 
@@ -303,6 +299,16 @@ public class NBTEditorScreen extends Screen {
 	    	super.renderWidget(context, mouseX, mouseY, delta);
 	    	context.drawGuiTexture(icon, getX()+(getWidth()-8)/2, getY()+(getHeight()-8)/2, 8, 8);
 	    }
+	}
+
+	@Environment(value=EnvType.CLIENT)
+	private class AddNBTElementButtonWidget extends IconButtonWidget {
+		private final Predicate<NbtElement> canAddTo;
+		
+		protected AddNBTElementButtonWidget(String type, Identifier icon, Predicate<NbtElement> canAddTo, Supplier<NbtElement> creator) {
+			super(Text.translatable("voxedit.screen.nbtEditor.action.add."+type), icon, (b) -> NBTEditorScreen.this.addElement(canAddTo, creator));
+			this.canAddTo = canAddTo;
+		}
 	}
 
 	@Environment(value=EnvType.CLIENT)

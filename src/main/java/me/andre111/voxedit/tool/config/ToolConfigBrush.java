@@ -39,12 +39,12 @@ public record ToolConfigBrush(BlockPalette palette, BlockPalette filter, Mode mo
 					)
 			.apply(instance, ToolConfigBrush::new));
 	private static final ToolSettings<ToolConfigBrush> SETTINGS = ToolSettings.create(instance -> instance
-			.blockPalette(Text.of("Edit Palette"), true, true, ToolConfigBrush::palette, ToolConfigBrush::withPalette)
-			.blockPalette(Text.of("Edit Filter"),  false, false, ToolConfigBrush::filter, ToolConfigBrush::withFilter)
-			.fixedValues(Text.of("Mode"), Mode.values(), Mode::asText, ToolConfigBrush::mode, ToolConfigBrush::withMode)
-			.fixedValues(Text.of("Shape"), Shape.values(), Shape::asText, ToolConfigBrush::shape, ToolConfigBrush::withShape)
-			.integer(Text.of("Radius"), 1, 16, ToolConfigBrush::radius, ToolConfigBrush::withRadius)
-			.bool(Text.of("Check valid"), ToolConfigBrush::checkCanPlace, ToolConfigBrush::withCheckCanPlace));
+			.blockPalette(Text.translatable("voxedit.tool.settings.palette"), true, true, ToolConfigBrush::palette, ToolConfigBrush::withPalette)
+			.blockPalette(Text.translatable("voxedit.tool.settings.filter"),  false, false, ToolConfigBrush::filter, ToolConfigBrush::withFilter)
+			.fixedValues(Text.translatable("voxedit.mode"), Mode.values(), Mode::asText, ToolConfigBrush::mode, ToolConfigBrush::withMode)
+			.fixedValues(Text.translatable("voxedit.shape"), Shape.values(), Shape::asText, ToolConfigBrush::shape, ToolConfigBrush::withShape)
+			.integer(Text.translatable("voxedit.tool.settings.radius"), 1, 16, ToolConfigBrush::radius, ToolConfigBrush::withRadius)
+			.bool(Text.translatable("voxedit.tool.settings.checkValid"), ToolConfigBrush::checkCanPlace, ToolConfigBrush::withCheckCanPlace));
 
 	@Override
 	public ToolSettings<ToolConfigBrush> settings() {

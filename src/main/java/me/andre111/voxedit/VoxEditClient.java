@@ -140,11 +140,11 @@ public class VoxEditClient implements ClientModInitializer {
 			}
 			if(INCREASE_SPEED.wasPressed()) {
 				ClientState.cameraSpeed = Math.min(ClientState.cameraSpeed+1, 10f);
-				MinecraftClient.getInstance().getMessageHandler().onGameMessage(Text.of("Camera Speed: "+ClientState.cameraSpeed), true);
+				MinecraftClient.getInstance().getMessageHandler().onGameMessage(Text.translatable("voxedit.feedback.cameraSpeed", ClientState.cameraSpeed), true);
 			}
 			if(DECREASE_SPEED.wasPressed()) {
 				ClientState.cameraSpeed = Math.max(1f, ClientState.cameraSpeed-1);
-				MinecraftClient.getInstance().getMessageHandler().onGameMessage(Text.of("Camera Speed: "+ClientState.cameraSpeed), true);
+				MinecraftClient.getInstance().getMessageHandler().onGameMessage(Text.translatable("voxedit.feedback.cameraSpeed", ClientState.cameraSpeed), true);
 			}
 			if(OPEN_MENU.wasPressed()) {
 				if(Screen.hasControlDown()) MinecraftClient.getInstance().setScreen(new ToolSelectionScreen(ClientState.active));

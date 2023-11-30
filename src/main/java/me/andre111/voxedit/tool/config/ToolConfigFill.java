@@ -34,9 +34,9 @@ public record ToolConfigFill(BlockPalette palette, BlockPalette filter, int radi
 					)
 			.apply(instance, ToolConfigFill::new));
 	private static final ToolSettings<ToolConfigFill> SETTINGS = ToolSettings.create(instance -> instance
-			.blockPalette(Text.of("Edit Palette"), true, true, ToolConfigFill::palette, ToolConfigFill::withPalette)
-			.blockPalette(Text.of("Edit Filter"),  false, false, ToolConfigFill::filter, ToolConfigFill::withFilter)
-			.integer(Text.of("Radius"), 1, 16, ToolConfigFill::radius, ToolConfigFill::withRadius));
+			.blockPalette(Text.translatable("voxedit.tool.settings.palette"), true, true, ToolConfigFill::palette, ToolConfigFill::withPalette)
+			.blockPalette(Text.translatable("voxedit.tool.settings.filter"),  false, false, ToolConfigFill::filter, ToolConfigFill::withFilter)
+			.integer(Text.translatable("voxedit.tool.settings.radius"), 1, 16, ToolConfigFill::radius, ToolConfigFill::withRadius));
 
 	@Override
 	public ToolSettings<ToolConfigFill> settings() {

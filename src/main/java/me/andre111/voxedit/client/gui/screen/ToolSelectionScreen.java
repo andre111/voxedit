@@ -38,6 +38,7 @@ import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.util.NarratorManager;
 import net.minecraft.item.ItemStack;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Formatting;
@@ -56,8 +57,8 @@ public class ToolSelectionScreen extends Screen {
     private static final int BUTTONS_PER_ROW = 6;
     private static final int MAX_ROWS = 2;
     
-    private static final Text SELECT_NEXT_TEXT = Text.of("[ ").copy().append(Text.keybind("key.voxedit.openMenu")).append(" ] ").formatted(Formatting.AQUA).append(Text.of("Next").copy().formatted(Formatting.WHITE));
-    private static final Text NEW_TOOL_TEXT = Text.of("Add New Tool");
+    private static final Text SELECT_NEXT_TEXT = Text.translatable("voxedit.screen.selectTool.next", Text.keybind("key.voxedit.openMenu").setStyle(Style.EMPTY.withColor(Formatting.AQUA)));
+    private static final Text NEW_TOOL_TEXT = Text.translatable("voxedit.screen.selectTool.new");
 
     private int lastMouseX;
     private int lastMouseY;

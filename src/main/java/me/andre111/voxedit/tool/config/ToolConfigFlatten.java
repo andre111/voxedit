@@ -35,9 +35,9 @@ public record ToolConfigFlatten(BlockPalette palette, Shape shape, int radius, b
 					)
 			.apply(instance, ToolConfigFlatten::new));
 	private static final ToolSettings< ToolConfigFlatten> SETTINGS = ToolSettings.create(instance -> instance
-			.blockPalette(Text.of("Edit Palette"), true, true, ToolConfigFlatten::palette, ToolConfigFlatten::withPalette)
-			.fixedValues(Text.of("Shape"), Shape.values(), Shape::asText, ToolConfigFlatten::shape, ToolConfigFlatten::withShape)
-			.integer(Text.of("Radius"), 1, 16, ToolConfigFlatten::radius, ToolConfigFlatten::withRadius));
+			.blockPalette(Text.translatable("voxedit.tool.settings.palette"), true, true, ToolConfigFlatten::palette, ToolConfigFlatten::withPalette)
+			.fixedValues(Text.translatable("voxedit.shape"), Shape.values(), Shape::asText, ToolConfigFlatten::shape, ToolConfigFlatten::withShape)
+			.integer(Text.translatable("voxedit.tool.settings.radius"), 1, 16, ToolConfigFlatten::radius, ToolConfigFlatten::withRadius));
 
 	@Override
 	public ToolSettings<ToolConfigFlatten> settings() {

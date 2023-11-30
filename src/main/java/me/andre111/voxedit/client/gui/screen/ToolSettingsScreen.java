@@ -44,7 +44,7 @@ public class ToolSettingsScreen extends Screen {
 	private Tool<?, ?> lastTool = null;
 
 	public ToolSettingsScreen() {
-		super(Text.of("Tool Settings"));
+		super(Text.translatable("voxedit.screen.toolSettings"));
 		rebuild();
 	}
 	
@@ -62,7 +62,7 @@ public class ToolSettingsScreen extends Screen {
 		if(ClientState.active == null) return;
 
 		// (re)load name display
-		MutableText name = Text.of("Tool: ").copy().append(ClientState.active.selected().tool().asText());
+		MutableText name = Text.translatable("voxedit.tool").copy().append(": ").append(ClientState.active.selected().tool().asText());
 		if(ClientState.active.size() > 1) {
 			name = name.append(" ("+(ClientState.active.selectedIndex()+1)+"/"+ClientState.active.size()+")");
 		}
@@ -92,14 +92,14 @@ public class ToolSettingsScreen extends Screen {
 		
 		// title
 		int currentY = y;
-		addDrawableChild(new TextWidget(x, currentY, contentWidth, 14, Text.of("Tool Settings"), textRenderer).alignCenter());
+		addDrawableChild(new TextWidget(x, currentY, contentWidth, 14, Text.translatable("voxedit.screen.toolSettings"), textRenderer).alignCenter());
 		currentY += 12;
-		addDrawableChild(toolName = new TextWidget(x, currentY, contentWidth, 14, Text.of(""), textRenderer).alignCenter());
+		addDrawableChild(toolName = new TextWidget(x, currentY, contentWidth, 14, Text.empty(), textRenderer).alignCenter());
 		currentY += 12;
 		
 		// change tool button
-		addDrawableChild(ButtonWidget.builder(Text.of("Change Tool"), (button) -> {
-			InputScreen.getSelector(this, Text.of("Change Tool - Will reset other settings!"), Text.of("Tool"), ClientState.active.selected().tool(), VoxEdit.TOOL_REGISTRY.stream().toList(), Tool::asText, (newTool) -> {
+		addDrawableChild(ButtonWidget.builder(Text.translatable("voxedit.screen.toolSettings.changeTool"), (button) -> {
+			InputScreen.getSelector(this, Text.translatable("voxedit.screen.toolSettings.changeToolTitle"), Text.translatable("voxedit.tool"), ClientState.active.selected().tool(), VoxEdit.TOOL_REGISTRY.stream().toList(), Tool::asText, (newTool) -> {
 				ClientNetworking.setTool(newTool.getDefault());
 			});
 		}).dimensions(x, currentY, contentWidth, 20).build());

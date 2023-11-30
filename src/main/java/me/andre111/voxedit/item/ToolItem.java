@@ -76,7 +76,7 @@ public final class ToolItem extends Item implements VoxEditItem {
 		
 		Set<BlockPos> positions = tool.tool().getBlockPositions(serverWorld, target, tool.config());
 		if(positions.isEmpty()) {
-			player.sendMessage(Text.of("No valid positions"), true);
+			player.sendMessage(Text.translatable("voxedit.feedback.noTarget"), true);
 			return false;
 		}
 		

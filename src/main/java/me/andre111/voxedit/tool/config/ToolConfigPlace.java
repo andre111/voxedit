@@ -34,8 +34,8 @@ public record ToolConfigPlace(Identifier feature, int tries, boolean targetFluid
 		)
 		.apply(instance, ToolConfigPlace::new));
 	private static final ToolSettings<ToolConfigPlace> SETTINGS = ToolSettings.create(instance -> instance
-			.identifier(Text.of("Feature"), RegistryKeys.CONFIGURED_FEATURE, ToolConfigPlace::feature, ToolConfigPlace::withFeature)
-			.integer(Text.of("Tries"), 1, 10, ToolConfigPlace::tries, ToolConfigPlace::withTries));
+			.identifier(Text.translatable("voxedit.tool.settings.feature"), RegistryKeys.CONFIGURED_FEATURE, ToolConfigPlace::feature, ToolConfigPlace::withFeature)
+			.integer(Text.translatable("voxedit.tool.settings.tries"), 1, 10, ToolConfigPlace::tries, ToolConfigPlace::withTries));
 
 	@Override
 	public ToolSettings<ToolConfigPlace> settings() {

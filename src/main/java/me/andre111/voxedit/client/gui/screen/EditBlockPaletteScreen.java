@@ -60,7 +60,7 @@ public class EditBlockPaletteScreen extends Screen {
     @Override
     protected void init() {
     	paletteWidget = addDrawableChild(new BlockPaletteListWidget());
-    	removeEntryButton = addDrawableChild(ButtonWidget.builder(Text.of("Remove Entry"), button -> {
+    	removeEntryButton = addDrawableChild(ButtonWidget.builder(Text.translatable("voxedit.screen.blockPalette.remove"), button -> {
             if (!hasEntrySelected()) return;
             if(palette.size() <= minSize) return;
             
@@ -74,7 +74,7 @@ public class EditBlockPaletteScreen extends Screen {
             updateRemoveEntryButton();
         }).dimensions(width / 2 - 155, height - 52, 150, 20).build());
     	
-    	addDrawableChild(ButtonWidget.builder(Text.of("Add Entry"), button -> {
+    	addDrawableChild(ButtonWidget.builder(Text.translatable("voxedit.screen.blockPalette.add"), button -> {
             List<BlockPalette.Entry> list = palette.getEntries();
             list.add(new BlockPalette.Entry(Blocks.STONE.getDefaultState(), 1));
             
@@ -162,7 +162,7 @@ public class EditBlockPaletteScreen extends Screen {
 				children.add(stateWidget);
 				
 				if(showWeights) {
-					weightWidget = new IntSliderWidget(0, 0, 100, 20, Text.of("Weight"), 1, 32, paletteEntry.weight(), (weight) -> {
+					weightWidget = new IntSliderWidget(0, 0, 100, 20, Text.translatable("voxedit.screen.blockPalette.weight"), 1, 32, paletteEntry.weight(), (weight) -> {
 						BlockPalette.Entry oldEntry = palette.getEntry(index);
 						palette.setEntry(index, new BlockPalette.Entry(oldEntry.state(), weight));
 					});

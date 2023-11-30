@@ -35,9 +35,9 @@ public record ToolConfigSmooth(BlockPalette filter, Shape shape, int radius, boo
 					)
 			.apply(instance, ToolConfigSmooth::new));
 	private static final ToolSettings<ToolConfigSmooth> SETTINGS = ToolSettings.create(instance -> instance
-			.blockPalette(Text.of("Edit Filter"), false, false, ToolConfigSmooth::filter, ToolConfigSmooth::withFilter)
-			.fixedValues(Text.of("Shape"), Shape.values(), Shape::asText, ToolConfigSmooth::shape, ToolConfigSmooth::withShape)
-			.integer(Text.of("Radius"), 1, 16, ToolConfigSmooth::radius, ToolConfigSmooth::withRadius));
+			.blockPalette(Text.translatable("voxedit.tool.settings.filter"), false, false, ToolConfigSmooth::filter, ToolConfigSmooth::withFilter)
+			.fixedValues(Text.translatable("voxedit.shape"), Shape.values(), Shape::asText, ToolConfigSmooth::shape, ToolConfigSmooth::withShape)
+			.integer(Text.translatable("voxedit.tool.settings.radius"), 1, 16, ToolConfigSmooth::radius, ToolConfigSmooth::withRadius));
 
 	@Override
 	public ToolSettings<ToolConfigSmooth> settings() {
