@@ -54,7 +54,7 @@ public class ClientNetworking {
 				int count = buf.readInt();
 				List<Identifier> entries  = new ArrayList<>();
 				for(int i=0; i<count; i++) entries.add(buf.readIdentifier());
-				request.complete(entries);
+				client.execute(() -> request.complete(entries));
 			}
 		});
 	}

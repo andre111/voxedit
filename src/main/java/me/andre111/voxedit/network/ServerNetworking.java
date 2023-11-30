@@ -54,59 +54,77 @@ public class ServerNetworking {
 			
     		NbtCompound tag = buf.readNbt();
     		ConfiguredTool<?, ?> tool = ConfiguredTool.CODEC.decode(NbtOps.INSTANCE, tag).result().get().getFirst();
-    		ItemStack stack = player.getMainHandStack();
-    		if(stack.getItem() instanceof ToolItem) {
-    			ToolItem.storeToolData(stack, ToolItem.readToolData(stack).replaceSelected(tool));
-    			
-    			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
-    			responseSender.sendPacket(new EntityEquipmentUpdateS2CPacket(player.getId(), list));
-    		}
+    		
+			server.execute(() -> {
+	    		ItemStack stack = player.getMainHandStack();
+	    		if(stack.getItem() instanceof ToolItem) {
+	    			ToolItem.storeToolData(stack, ToolItem.readToolData(stack).replaceSelected(tool));
+	    			
+	    			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
+	    			responseSender.sendPacket(new EntityEquipmentUpdateS2CPacket(player.getId(), list));
+	    		}
+			});
     	});
 		
 		ServerPlayNetworking.registerGlobalReceiver(VoxEdit.id("select_tool"), (server, player, handler, buf, responseSender) -> {
 			if(!player.isCreative()) return;
 			
 			int index = buf.readInt();
-    		ItemStack stack = player.getMainHandStack();
-    		if(stack.getItem() instanceof ToolItem) {
-    			ToolItem.storeToolData(stack, ToolItem.readToolData(stack).select(index));
-    			
-    			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
-    			responseSender.sendPacket(new EntityEquipmentUpdateS2CPacket(player.getId(), list));
-    		}
+
+			server.execute(() -> {
+	    		ItemStack stack = player.getMainHandStack();
+	    		if(stack.getItem() instanceof ToolItem) {
+	    			ToolItem.storeToolData(stack, ToolItem.readToolData(stack).select(index));
+	    			
+	    			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
+	    			responseSender.sendPacket(new EntityEquipmentUpdateS2CPacket(player.getId(), list));
+	    		}
+			});
     	});
 		
 		ServerPlayNetworking.registerGlobalReceiver(VoxEdit.id("command"), (server, player, handler, buf, responseSender) -> {
 			if(!player.isCreative()) return;
 			
-			World world = player.getWorld();
 			Command command = Command.valueOf(buf.readString());
-			switch(command) {
-			case UNDO:
-				int undoCount = Undo.of(player, world).undo(world);
-				if(undoCount > 0) player.sendMessage(Text.of("Undone "+undoCount+" block changes."), true);
-				break;
-			case REDO:
-				int redoCount = Undo.of(player, world).redo(world);
-				if(redoCount > 0) player.sendMessage(Text.of("Redone "+redoCount+" block changes."), true);
-				break;
-			case LEFT_CLICK:
-				ItemStack stack = player.getMainHandStack();
-	    		if(stack.getItem() instanceof VoxEditItem item) {
-					//TODO: verify attack cooldown
-					item.leftClicked(world, player, Hand.MAIN_HAND);
+			
+			server.execute(() -> {
+				World world = player.getWorld();
+				switch(command) {
+				case UNDO:
+					int undoCount = Undo.of(player, world).undo(world);
+					if(undoCount > 0) player.sendMessage(Text.of("Undone "+undoCount+" block changes."), true);
+					break;
+				case REDO:
+					int redoCount = Undo.of(player, world).redo(world);
+					if(redoCount > 0) player.sendMessage(Text.of("Redone "+redoCount+" block changes."), true);
+					break;
+				case LEFT_CLICK:
+					ItemStack stack = player.getMainHandStack();
+		    		if(stack.getItem() instanceof VoxEditItem item) {
+						//TODO: verify attack cooldown
+						item.leftClicked(world, player, Hand.MAIN_HAND);
+					}
+					break;
 				}
-				break;
-			}
+			});
 		});
 		
 		ServerPlayNetworking.registerGlobalReceiver(VoxEdit.id("nbteditor"), (server, player, handler, buf, responseSender) -> {
 			if(!player.isCreative()) return;
 			if(!nbtEditorTargets.containsKey(player.getUuid())) return;
-			if(buf.readBoolean()) {
-				nbtEditorTargets.get(player.getUuid()).accept(buf.readNbt());
+			
+			boolean applied = buf.readBoolean();
+			if(!applied) {
+				nbtEditorTargets.remove(player.getUuid());
+				return;
 			}
-			nbtEditorTargets.remove(player.getUuid());
+			
+			NbtCompound nbt = buf.readNbt();
+
+			server.execute(() -> {
+				nbtEditorTargets.get(player.getUuid()).accept(nbt);
+				nbtEditorTargets.remove(player.getUuid());
+			});
 		});
 
 		ServerPlayNetworking.registerGlobalReceiver(VoxEdit.id("request_registry_ids"), (server, player, handler, buf, responseSender) -> {
@@ -114,18 +132,22 @@ public class ServerNetworking {
 			
 			int id = buf.readInt();
 			RegistryKey<? extends Registry<?>> registryKey = buf.readRegistryRefKey();
-			var registry = server.getRegistryManager().getOptional(registryKey);
+			
 
-			PacketByteBuf responseBuf = PacketByteBufs.create();
-			responseBuf.writeInt(id);
-			if(registry.isPresent()) {
-				Set<Identifier> registryIDs = registry.get().getIds();
-				responseBuf.writeInt(registryIDs.size());
-				for(Identifier registryID : registryIDs) responseBuf.writeIdentifier(registryID);
-			} else {
-				responseBuf.writeInt(0);
-			}
-			ServerPlayNetworking.send(player, VoxEdit.id("registry_ids"), responseBuf);
+			server.execute(() -> {
+				var registry = server.getRegistryManager().getOptional(registryKey);
+				
+				PacketByteBuf responseBuf = PacketByteBufs.create();
+				responseBuf.writeInt(id);
+				if(registry.isPresent()) {
+					Set<Identifier> registryIDs = registry.get().getIds();
+					responseBuf.writeInt(registryIDs.size());
+					for(Identifier registryID : registryIDs) responseBuf.writeIdentifier(registryID);
+				} else {
+					responseBuf.writeInt(0);
+				}
+				ServerPlayNetworking.send(player, VoxEdit.id("registry_ids"), responseBuf);
+			});
 		});
 	}
 	
