@@ -22,14 +22,17 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 import me.andre111.voxedit.editor.action.EditAction;
+import me.andre111.voxedit.editor.action.ModifyBlockEntityAction;
 import me.andre111.voxedit.editor.action.SetBlockAction;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.entry.RegistryEntry;
@@ -65,20 +68,30 @@ public class UndoRecordingStructureWorldAccess implements StructureWorldAccess {
 	private final Undo undo;
 	private final List<EditAction> actions;
 	private final Map<BlockPos, BlockState> changedBlockStates;
+	private final Map<BlockPos, ModifiedBlockEntity> changedBlockEntities;
 	
 	public UndoRecordingStructureWorldAccess(ServerWorld world, Undo undo) {
 		this.world = world;
 		this.undo = undo;
 		this.actions = new ArrayList<>();
 		this.changedBlockStates = new HashMap<>();
+		this.changedBlockEntities = new HashMap<>();
 	}
 
-	public int apply() {
-		if(actions.isEmpty()) return 0;
-		int count = 0;
-		for(EditAction action : actions) count += action.redo(world);
+	public EditStats apply() {
+		EditStats result = new EditStats();
+		
+		for(var e : changedBlockEntities.entrySet()) {
+			EditAction action = e.getValue().asAction(e.getKey());
+			if(action != null) actions.add(action);
+		}
+		if(actions.isEmpty()) return result;
+		
+		for(EditAction action : actions) {
+			action.redo(world, result);
+		}
 		undo.push(new UndoState(actions));
-		return count;
+		return result;
 	}
 
 	@Override
@@ -220,7 +233,16 @@ public class UndoRecordingStructureWorldAccess implements StructureWorldAccess {
 
 	@Override
 	public BlockEntity getBlockEntity(BlockPos pos) {
-		return world.getBlockEntity(pos);
+		if(changedBlockEntities.containsKey(pos)) {
+			return changedBlockEntities.get(pos).be;
+		}
+		
+		BlockEntity oldBe = world.getBlockEntity(pos);
+		if(oldBe == null) return null;
+		
+		BlockEntity newBe = BlockEntity.createFromNbt(pos, getBlockState(pos), oldBe.createNbtWithIdentifyingData());
+		changedBlockEntities.put(pos, new ModifiedBlockEntity(newBe));
+		return newBe;
 	}
 
 	@Override
@@ -254,11 +276,17 @@ public class UndoRecordingStructureWorldAccess implements StructureWorldAccess {
 
 	@Override
 	public boolean setBlockState(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
-		if(getBlockState(pos).equals(state)) return true;
+		if(getBlockState(pos) == state) return true;
+		if(changedBlockEntities.containsKey(pos)) changedBlockEntities.remove(pos);
 		
 		BlockPos immutablePos = pos.toImmutable();
 		actions.add(new SetBlockAction(world, immutablePos, state));
 		changedBlockStates.put(immutablePos, state);
+		
+		if(state.hasBlockEntity()) {
+			changedBlockEntities.put(pos, new ModifiedBlockEntity(((BlockEntityProvider) state.getBlock()).createBlockEntity(pos, state)));
+		}
+		
 		return true;
 	}
 
@@ -279,4 +307,19 @@ public class UndoRecordingStructureWorldAccess implements StructureWorldAccess {
 		return world.getSeed();
 	}
 
+	private static class ModifiedBlockEntity {
+		private final BlockEntity be;
+		private final NbtCompound oldNbt;
+		
+		private ModifiedBlockEntity(BlockEntity be) {
+			this.be = be;
+			this.oldNbt = be.createNbtWithId();
+		}
+		
+		private EditAction asAction(BlockPos pos) {
+			NbtCompound newNbt = be.createNbtWithId();
+			if(newNbt.equals(oldNbt)) return null;
+			return new ModifyBlockEntityAction(pos, oldNbt, newNbt);
+		}
+	}
 }

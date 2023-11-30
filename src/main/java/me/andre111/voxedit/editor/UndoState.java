@@ -27,18 +27,18 @@ public class UndoState {
 		this.actions = List.copyOf(actions);
 	}
 	
-	public int undo(World world) {
-		int count = 0;
+	public EditStats undo(World world) {
+		EditStats stats = new EditStats();
 		for(int i=actions.size()-1; i>=0; i--) {
-			count += actions.get(i).undo(world);
+			actions.get(i).undo(world, stats);
 		}
-		return count;
+		return stats;
 	}
-	public int redo(World world) {
-		int count = 0;
+	public EditStats redo(World world) {
+		EditStats stats = new EditStats();
 		for(int i=0; i<actions.size(); i++) {
-			count += actions.get(i).redo(world);
+			actions.get(i).redo(world, stats);
 		}
-		return count;
+		return stats;
 	}
 }

@@ -15,6 +15,7 @@
  */
 package me.andre111.voxedit.editor.action;
 
+import me.andre111.voxedit.editor.EditStats;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -42,14 +43,14 @@ public class SetBlockAction extends EditAction {
 	}
 
 	@Override
-	public int undo(World world) {
+	public void undo(World world, EditStats stats) {
 		// if had block entity -> first set block without be to ensure it is newly created
 		if(oldNbt != null) {
             Clearable.clear(world.getBlockEntity(pos)); // do not drop anything
             world.setBlockState(pos, Blocks.BARRIER.getDefaultState(), Block.NO_REDRAW | Block.FORCE_STATE);
 		}
 		
-		// set block back
+		// restore blockstate
 		world.setBlockState(pos, oldState, Block.NOTIFY_LISTENERS | Block.SKIP_DROPS, 0);
 		
 		// restore be from stored nbt
@@ -57,15 +58,15 @@ public class SetBlockAction extends EditAction {
 			world.getBlockEntity(pos).readNbt(oldNbt);
 		}
 		
-		return 1;
+		stats.changedBlock();
 	}
 	
 	@Override
-	public int redo(World world) {
+	public void redo(World world, EditStats stats) {
 		if(world.getBlockEntity(pos) != null) {
 			Clearable.clear(world.getBlockEntity(pos));
 		}
 		world.setBlockState(pos, newState, Block.NOTIFY_LISTENERS | Block.SKIP_DROPS, 0);
-		return 1;
+		stats.changedBlock();
 	}
 }

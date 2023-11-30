@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.editor.action;
+package me.andre111.voxedit.editor;
 
-import me.andre111.voxedit.editor.EditStats;
-import net.minecraft.world.World;
-
-public abstract class EditAction {
-	public abstract void undo(World world, EditStats stats);
-	public abstract void redo(World world, EditStats stats);
+public enum EditType {
+	PERFORM,
+	UNDO,
+	REDO;
 }

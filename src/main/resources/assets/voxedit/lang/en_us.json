@@ -9,6 +9,16 @@
     "voxedit.tool.voxedit.smooth": "Smooth",
     "voxedit.tool.voxedit.place": "Place",
     
+    "voxedit.action.perform": "%s",
+    "voxedit.action.undo": "Undo:%s",
+    "voxedit.action.redo": "Redo:%s",
+    "voxedit.edit.block": "1 Block Change",
+    "voxedit.edit.block.multiple": "%s Block Changes",
+    "voxedit.edit.blockEntity": "1 Block Entity Change",
+    "voxedit.edit.blockEntity.multiple": "%s Block Entity Changes",
+    "voxedit.edit.entity": "1 Entity Change",
+    "voxedit.edit.entity.multiple": "%s Entity Changes",
+    
     "key.category.voxedit": "VoxEdit",
     "key.voxedit.decreaseRadius": "Tool Radius Decrease",
     "key.voxedit.increaseRadius": "Tool Radius Increase",

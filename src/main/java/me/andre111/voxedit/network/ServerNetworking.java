@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import com.mojang.datafixers.util.Pair;
 
 import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.editor.EditType;
 import me.andre111.voxedit.editor.Undo;
 import me.andre111.voxedit.item.ToolItem;
 import me.andre111.voxedit.item.VoxEditItem;
@@ -40,7 +41,6 @@ import net.minecraft.network.packet.s2c.play.EntityEquipmentUpdateS2CPacket;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
@@ -91,12 +91,10 @@ public class ServerNetworking {
 				World world = player.getWorld();
 				switch(command) {
 				case UNDO:
-					int undoCount = Undo.of(player, world).undo(world);
-					if(undoCount > 0) player.sendMessage(Text.of("Undone "+undoCount+" block changes."), true);
+					Undo.of(player, world).undo(world).inform(player, EditType.UNDO);
 					break;
 				case REDO:
-					int redoCount = Undo.of(player, world).redo(world);
-					if(redoCount > 0) player.sendMessage(Text.of("Redone "+redoCount+" block changes."), true);
+					Undo.of(player, world).redo(world).inform(player, EditType.REDO);
 					break;
 				case LEFT_CLICK:
 					ItemStack stack = player.getMainHandStack();

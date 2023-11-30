@@ -23,6 +23,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.editor.EditType;
+import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.editor.Editor;
 import me.andre111.voxedit.tool.ConfiguredTool;
 import me.andre111.voxedit.tool.Tool;
@@ -78,13 +80,13 @@ public final class ToolItem extends Item implements VoxEditItem {
 			return false;
 		}
 		
-		int count = 0;
+		EditStats result = EditStats.EMPTY;
 		if(rightClick) {
-			count = Editor.undoable(player, serverWorld, (editable) -> tool.tool().rightClick(editable, player, target, tool.config(), positions));
+			result = Editor.undoable(player, serverWorld, (editable) -> tool.tool().rightClick(editable, player, target, tool.config(), positions));
 		} else {
-			count = Editor.undoable(player, serverWorld, (editable) -> tool.tool().leftClick(editable, player, target, tool.config(), positions));
+			result = Editor.undoable(player, serverWorld, (editable) -> tool.tool().leftClick(editable, player, target, tool.config(), positions));
 		}
-		if(count > 0) player.sendMessage(Text.of("Set "+count+" blocks"), true);
+		result.inform(player, EditType.PERFORM);
 		
 		return true;
 	}

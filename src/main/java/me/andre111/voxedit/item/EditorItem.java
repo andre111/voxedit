@@ -15,8 +15,9 @@
  */
 package me.andre111.voxedit.item;
 
-import java.util.UUID;
-
+import me.andre111.voxedit.editor.EditType;
+import me.andre111.voxedit.editor.Editor;
+import me.andre111.voxedit.editor.action.ModifyEntityAction;
 import me.andre111.voxedit.network.ServerNetworking;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.LivingEntity;
@@ -26,10 +27,10 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 public class EditorItem extends Item implements VoxEditItem {
 	public EditorItem() {
@@ -38,15 +39,18 @@ public class EditorItem extends Item implements VoxEditItem {
 	
 	@Override
     public ActionResult useOnBlock(ItemUsageContext context) {
-		World world = context.getWorld();
-    	if(!world.isClient) {
+    	if(!context.getWorld().isClient && context.getWorld() instanceof ServerWorld world) {
     		BlockPos targetPos = context.getBlockPos();
     		BlockEntity entity = world.getBlockEntity(targetPos);
     		if(entity != null) {
+    			NbtCompound oldNbt = entity.createNbtWithId();
     			ServerNetworking.serverSendOpenNBTEditor((ServerPlayerEntity) context.getPlayer(), entity.createNbt(), (nbt) -> {
-    				entity.readNbt(nbt);
-    				entity.markDirty();
-	    		    //world.updateListeners(context.getBlockPos(), blockState, blockState, Block.NOTIFY_ALL);
+    				if(nbt.equals(oldNbt)) return;
+    				
+    				Editor.undoable(context.getPlayer(), world, (editable) -> {
+    					BlockEntity newBe = editable.getBlockEntity(targetPos);
+    					if(newBe != null) newBe.readNbt(nbt);
+    				}).inform(context.getPlayer(), EditType.PERFORM);
     			});
     			return ActionResult.SUCCESS;
     		}
@@ -57,11 +61,12 @@ public class EditorItem extends Item implements VoxEditItem {
 
 	@Override
     public ActionResult useOnEntity(ItemStack stack, PlayerEntity player, LivingEntity entity, Hand hand) {
-		if(!player.getWorld().isClient) {
-			ServerNetworking.serverSendOpenNBTEditor((ServerPlayerEntity) player, entity.writeNbt(new NbtCompound()), (nbt) -> {
-		        UUID uuid = entity.getUuid();
-		        entity.readNbt(nbt);
-		        entity.setUuid(uuid);
+		if(!entity.getWorld().isClient && entity.getWorld() instanceof ServerWorld world) {
+			NbtCompound oldNbt = entity.writeNbt(new NbtCompound());
+			ServerNetworking.serverSendOpenNBTEditor((ServerPlayerEntity) player, oldNbt, (nbt) -> {
+				if(nbt.equals(oldNbt)) return;
+				
+				Editor.undoableAction(player, world, new ModifyEntityAction(entity.getId(), oldNbt, nbt)).inform(player, EditType.PERFORM);
 			});
 			return ActionResult.SUCCESS;
 		}
