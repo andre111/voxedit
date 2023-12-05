@@ -1,0 +1,45 @@
+name: Publish on GitHub, CurseForge & Modrinth
+on: [workflow_dispatch]
+
+env:
+  JAVA_VERSION: 17 
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Environment Variables
+        run: env
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: "temurin"
+          java-version: ${{env.JAVA_VERSION}}
+
+      - name: Make Gradle Wrapper Executable
+        if: ${{ runner.os != 'Windows' }}
+        run: chmod +x ./gradlew
+
+      - name: Build
+        run: ./gradlew clean build
+        
+      - uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: AANobbMI
+          modrinth-token: ${{ secrets.PUBLISH_MODRINTH_TOKEN }}
+
+          curseforge-id: 394468
+          curseforge-token: ${{ secrets.PUBLISH_CURSEFORGE_TOKEN }}
+
+          github-token: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
+          
+          changelog-file: CHANGELOG.md

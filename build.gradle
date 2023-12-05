@@ -12,10 +12,6 @@ base {
 }
 
 repositories {
-	maven {
-		name = 'ParchmentMC'
-		url = 'https://maven.parchmentmc.org'
-	}
 }
 
 dependencies {
@@ -26,6 +22,17 @@ dependencies {
 	
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+        	modid {
+            		sourceSet sourceSets.main
+            		sourceSet sourceSets.client
+        	}
+	}
+ }
 
 processResources {
 	inputs.property "version", project.version

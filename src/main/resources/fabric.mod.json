@@ -16,16 +16,20 @@
 			"me.andre111.voxedit.VoxEdit"
 		],
 		"client": [
-			"me.andre111.voxedit.VoxEditClient"
+			"me.andre111.voxedit.client.VoxEditClient"
 		]
 	},
 	"mixins": [
-		"voxedit.mixins.json"
+		"voxedit.mixins.json",
+		{
+			"config": "voxedit.client.mixins.json",
+			"environment": "client"
+		}
 	],
 	"depends": {
 		"fabricloader": ">=0.14.24",
         "fabric-api": ">=0.91.1+1.20.3",
-		"minecraft": "*",
+		"minecraft": ">=1.20.3",
 		"java": ">=17"
 	},
 	"suggests": {}

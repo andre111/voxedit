@@ -19,7 +19,7 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import me.andre111.voxedit.VoxEdit;
-import me.andre111.voxedit.VoxEditClient;
+import me.andre111.voxedit.client.VoxEditClient;
 import me.andre111.voxedit.client.gui.Textures;
 import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.client.renderer.ToolRenderer;

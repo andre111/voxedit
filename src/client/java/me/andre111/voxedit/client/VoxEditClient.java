@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit;
+package me.andre111.voxedit.client;
 
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.include.com.google.common.base.Objects;
 
-import me.andre111.voxedit.client.ClientState;
+import me.andre111.voxedit.Presets;
+import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.gui.screen.ToolSelectionScreen;
 import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.client.renderer.EditorRenderer;
