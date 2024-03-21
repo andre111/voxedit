@@ -22,7 +22,7 @@ import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.VoxEditClient;
 import me.andre111.voxedit.client.gui.Textures;
 import me.andre111.voxedit.client.network.ClientNetworking;
-import me.andre111.voxedit.client.renderer.ToolRenderer;
+import me.andre111.voxedit.client.renderer.item.ToolRenderer;
 import me.andre111.voxedit.item.ToolItem;
 import me.andre111.voxedit.tool.ConfiguredTool;
 

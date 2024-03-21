@@ -29,11 +29,10 @@ import me.andre111.voxedit.editor.Editor;
 import me.andre111.voxedit.tool.ConfiguredTool;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.config.ToolConfig;
-import me.andre111.voxedit.tool.data.Selection;
+import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
@@ -44,7 +43,7 @@ import net.minecraft.world.World;
 
 public final class ToolItem extends Item implements VoxEditItem {
 	public ToolItem() {
-		super(new Item.Settings().maxCount(1));
+		super(new Item.Settings().maxCount(1).component(VoxEdit.DATA_COMPONENT, new Data(VoxEdit.DEFAULT_TOOL)));
 	}
 	
 	@Override
@@ -67,11 +66,11 @@ public final class ToolItem extends Item implements VoxEditItem {
 	
 	@SuppressWarnings("unchecked")
 	private <TC extends ToolConfig<TC>, T extends Tool<TC, T>> boolean use(ServerWorld serverWorld, PlayerEntity player, Hand hand, boolean rightClick) {
-		Data data = readToolData(player.getStackInHand(hand));
+		Data data = player.getStackInHand(hand).get(VoxEdit.DATA_COMPONENT);
 		if(data == null) return false;
 		
 		ConfiguredTool<TC, T> tool = (ConfiguredTool<TC, T>) data.selected();
-		BlockHitResult target = Selection.getTargetOf(player, tool.config());
+		BlockHitResult target = ToolTargeting.getTargetOf(player, tool.config());
 		if(target == null) return false;
 		
 		Set<BlockPos> positions = tool.tool().getBlockPositions(serverWorld, target, tool.config());
@@ -98,30 +97,18 @@ public final class ToolItem extends Item implements VoxEditItem {
 	
 	public ItemStack getStackWith(ConfiguredTool<?, ?> tool) {
 		ItemStack stack = super.getDefaultStack();
-		storeToolData(stack, new Data(tool));
+		stack.set(VoxEdit.DATA_COMPONENT, new Data(tool));
 		return stack;
 	}
 	
 	public ItemStack getStackWith(Data data) {
 		ItemStack stack = super.getDefaultStack();
-		storeToolData(stack, data);
+		stack.set(VoxEdit.DATA_COMPONENT, data);
 		return stack;
 	}
 	
-	public static Data readToolData(ItemStack stack) {
-		var dataResult = Data.CODEC.decode(NbtOps.INSTANCE, stack.getOrCreateSubNbt("voxedit"));
-		if(dataResult.result().isPresent()) {
-			return dataResult.result().get().getFirst();
-		}
-		return new Data(VoxEdit.DEFAULT_TOOL);
-	}
-	
-	public static void storeToolData(ItemStack stack, Data data) {
-		stack.setSubNbt("voxedit", Data.CODEC.encodeStart(NbtOps.INSTANCE, data).result().get());
-	}
-	
 	public static class Data {
-		private static final Codec<Data> CODEC = RecordCodecBuilder.create(instance -> instance
+		public static final Codec<Data> CODEC = RecordCodecBuilder.create(instance -> instance
 				.group(
 						ConfiguredTool.CODEC.listOf().fieldOf("tools").forGetter(d -> d.tools),
 						Codec.INT.fieldOf("selected").forGetter(d -> d.selected)

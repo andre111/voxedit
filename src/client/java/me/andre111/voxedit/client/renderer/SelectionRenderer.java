@@ -1,27 +1,9 @@
-/*
- * Copyright (c) 2023 André Schweiger
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package me.andre111.voxedit.client.renderer;
 
-import java.util.Set;
-
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
-
+import me.andre111.voxedit.state.Selection;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
@@ -29,156 +11,104 @@ import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
 @Environment(value=EnvType.CLIENT)
 public class SelectionRenderer {
-	public static void render(Set<BlockPos> positions, MatrixStack matrices, float frame) {
+	public static void render(Selection selection, WorldRenderContext context) {
+		if(selection == null) return;
+		
+		BlockPos min = selection.min();
+		BlockPos max = selection.max();
+		
 		VertexConsumerProvider.Immediate consumer = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
 
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         Vec3d camPos = camera.getPos();
 
-        float expand = 0;
-        float one = 1;
-        
-        // render outlines
-        VertexConsumer lineConsumer = consumer.getBuffer(RenderLayer.getLines());
-    	Matrix4f matrix4f = matrices.peek().getPositionMatrix();
-        Matrix3f matrix3f = matrices.peek().getNormalMatrix();
-        
-        for(BlockPos pos : positions) {
-            boolean up = positions.contains(pos.offset(Direction.UP));
-            boolean down = positions.contains(pos.offset(Direction.DOWN));
-            boolean north = positions.contains(pos.offset(Direction.NORTH));
-            boolean east = positions.contains(pos.offset(Direction.EAST));
-            boolean south = positions.contains(pos.offset(Direction.SOUTH));
-            boolean west = positions.contains(pos.offset(Direction.WEST));
+        float xMin = (float) (min.getX() - camPos.x);
+        float yMin = (float) (min.getY() - camPos.y);
+        float zMin = (float) (min.getZ() - camPos.z);
+        float xMax = (float) (max.getX()+1 - camPos.x);
+        float yMax = (float) (max.getY()+1 - camPos.y);
+        float zMax = (float) (max.getZ()+1 - camPos.z);
+		
+		// outline
+		VertexConsumer lineConsumer = consumer.getBuffer(RenderLayer.getLines());
+    	MatrixStack.Entry matrix = context.matrixStack().peek();
 
-            float x = (float) (pos.getX() - camPos.x)-expand;
-            float y = (float) (pos.getY() - camPos.y)-expand;
-            float z = (float) (pos.getZ() - camPos.z)-expand;
-            
-            // top face
-            if(!up) {
-            	if(!north) {
-                    lineConsumer.vertex(matrix4f, x, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                    lineConsumer.vertex(matrix4f, x+one, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-            	}
-            	if(!east) {
-                    lineConsumer.vertex(matrix4f, x+one, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                    lineConsumer.vertex(matrix4f, x+one, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-            	}
-            	if(!south) {
-                    lineConsumer.vertex(matrix4f, x, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                    lineConsumer.vertex(matrix4f, x+one, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-            	}
-            	if(!west) {
-                    lineConsumer.vertex(matrix4f, x, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                    lineConsumer.vertex(matrix4f, x, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-            	}
-            }
-            
+        lineConsumer.vertex(matrix, xMin, yMin, zMin).color(1, 0, 0, 1f).normal(matrix, 1.0f, 0.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMax, yMin, zMin).color(1, 0, 0, 1f).normal(matrix, 1.0f, 0.0f, 0.0f).next();
 
-            // bottom face
-            if(!down) {
-            	if(!north) {
-                    lineConsumer.vertex(matrix4f, x, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                    lineConsumer.vertex(matrix4f, x+one, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-            	}
-            	if(!east) {
-                    lineConsumer.vertex(matrix4f, x+one, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                    lineConsumer.vertex(matrix4f, x+one, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-            	}
-            	if(!south) {
-                    lineConsumer.vertex(matrix4f, x, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-                    lineConsumer.vertex(matrix4f, x+one, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 1.0f, 0.0f, 0.0f).next();
-            	}
-            	if(!west) {
-                    lineConsumer.vertex(matrix4f, x, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-                    lineConsumer.vertex(matrix4f, x, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 0.0f, 1.0f).next();
-            	}
-            }
-            
-            // sides
-            if(!north) {
-            	if(!east) {
-                    lineConsumer.vertex(matrix4f, x+one, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                    lineConsumer.vertex(matrix4f, x+one, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-            	}
-            	if(!west) {
-                    lineConsumer.vertex(matrix4f, x, y, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                    lineConsumer.vertex(matrix4f, x, y+one, z).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-            	}
-            }
-            if(!south) {
-            	if(!east) {
-                    lineConsumer.vertex(matrix4f, x+one, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                    lineConsumer.vertex(matrix4f, x+one, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-            	}
-            	if(!west) {
-                    lineConsumer.vertex(matrix4f, x, y, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-                    lineConsumer.vertex(matrix4f, x, y+one, z+one).color(0, 0, 0, 0.75f).normal(matrix3f, 0.0f, 1.0f, 0.0f).next();
-            	}
-            }
-        }
+        lineConsumer.vertex(matrix, xMin, yMin, zMin).color(0, 1, 0, 1f).normal(matrix, 0.0f, 1.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMin, yMax, zMin).color(0, 1, 0, 1f).normal(matrix, 0.0f, 1.0f, 0.0f).next();
+
+        lineConsumer.vertex(matrix, xMin, yMin, zMin).color(0, 0, 1, 1f).normal(matrix, 1.0f, 0.0f, 1.0f).next();
+        lineConsumer.vertex(matrix, xMin, yMin, zMax).color(0, 0, 1, 1f).normal(matrix, 1.0f, 0.0f, 1.0f).next();
+        
+
+        lineConsumer.vertex(matrix, xMin, yMax, zMin).color(0, 0, 0, 1f).normal(matrix, 1.0f, 0.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMax, yMax, zMin).color(0, 0, 0, 1f).normal(matrix, 1.0f, 0.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMin, yMin, zMax).color(0, 0, 0, 1f).normal(matrix, 1.0f, 0.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMax, yMin, zMax).color(0, 0, 0, 1f).normal(matrix, 1.0f, 0.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMin, yMax, zMax).color(0, 0, 0, 1f).normal(matrix, 1.0f, 0.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMax, yMax, zMax).color(0, 0, 0, 1f).normal(matrix, 1.0f, 0.0f, 0.0f).next();
+
+        lineConsumer.vertex(matrix, xMax, yMin, zMin).color(0, 0, 0, 1f).normal(matrix, 0.0f, 1.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMax, yMax, zMin).color(0, 0, 0, 1f).normal(matrix, 0.0f, 1.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMin, yMin, zMax).color(0, 0, 0, 1f).normal(matrix, 0.0f, 1.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMin, yMax, zMax).color(0, 0, 0, 1f).normal(matrix, 0.0f, 1.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMax, yMin, zMax).color(0, 0, 0, 1f).normal(matrix, 0.0f, 1.0f, 0.0f).next();
+        lineConsumer.vertex(matrix, xMax, yMax, zMax).color(0, 0, 0, 1f).normal(matrix, 0.0f, 1.0f, 0.0f).next();
+
+        lineConsumer.vertex(matrix, xMax, yMin, zMin).color(0, 0, 0, 1f).normal(matrix, 0.0f, 0.0f, 1.0f).next();
+        lineConsumer.vertex(matrix, xMax, yMin, zMax).color(0, 0, 0, 1f).normal(matrix, 0.0f, 0.0f, 1.0f).next();
+        lineConsumer.vertex(matrix, xMin, yMax, zMin).color(0, 0, 0, 1f).normal(matrix, 0.0f, 0.0f, 1.0f).next();
+        lineConsumer.vertex(matrix, xMin, yMax, zMax).color(0, 0, 0, 1f).normal(matrix, 0.0f, 0.0f, 1.0f).next();
+        lineConsumer.vertex(matrix, xMax, yMax, zMin).color(0, 0, 0, 1f).normal(matrix, 0.0f, 0.0f, 1.0f).next();
+        lineConsumer.vertex(matrix, xMax, yMax, zMax).color(0, 0, 0, 1f).normal(matrix, 0.0f, 0.0f, 1.0f).next();
+
         consumer.drawCurrentLayer();
         
-        expand = 0.001f;
-        one = 1 + expand * 2;
-        
+        //TODO: quads
         float alpha = 0.15f;
+        float offset = 0.001f;
+        xMin -= offset;
+        yMin -= offset;
+        zMin -= offset;
+        xMax += offset;
+        yMax += offset;
+        zMax += offset;
+        
         VertexConsumer quadConsumer = consumer.getBuffer(RenderLayer.getDebugQuads());
-        for(BlockPos pos : positions) {
-            boolean up = positions.contains(pos.offset(Direction.UP));
-            boolean down = positions.contains(pos.offset(Direction.DOWN));
-            boolean north = positions.contains(pos.offset(Direction.NORTH));
-            boolean east = positions.contains(pos.offset(Direction.EAST));
-            boolean south = positions.contains(pos.offset(Direction.SOUTH));
-            boolean west = positions.contains(pos.offset(Direction.WEST));
-            
-            float x = (float) (pos.getX() - camPos.x)-expand;
-            float y = (float) (pos.getY() - camPos.y)-expand;
-            float z = (float) (pos.getZ() - camPos.z)-expand;
 
-            if(!up && y < 0) {
-            	quadConsumer.vertex(matrix4f, x, y+one, z).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x+one, y+one, z).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x+one, y+one, z+one).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x, y+one, z+one).color(1, 1, 1, alpha).next();
-            }
-            if(!down && y > 0) {
-            	quadConsumer.vertex(matrix4f, x, y, z).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x+one, y, z).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x+one, y, z+one).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x, y, z+one).color(1, 1, 1, alpha).next();
-            }
-            if(!north && z > 0) {
-            	quadConsumer.vertex(matrix4f, x, y, z).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x+one, y, z).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x+one, y+one, z).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x, y+one, z).color(1, 1, 1, alpha).next();
-            }
-            if(!east && x < 0) {
-            	quadConsumer.vertex(matrix4f, x+one, y, z).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x+one, y+one, z).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x+one, y+one, z+one).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x+one, y, z+one).color(1, 1, 1, alpha).next();
-            }
-            if(!south && z < 0) {
-            	quadConsumer.vertex(matrix4f, x, y, z+one).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x+one, y, z+one).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x+one, y+one, z+one).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x, y+one, z+one).color(1, 1, 1, alpha).next();
-            }
-            if(!west && x > 0) {
-            	quadConsumer.vertex(matrix4f, x, y, z).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x, y+one, z).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x, y+one, z+one).color(1, 1, 1, alpha).next();
-            	quadConsumer.vertex(matrix4f, x, y, z+one).color(1, 1, 1, alpha).next();
-            }
-        }
+        quadConsumer.vertex(matrix, xMin, yMin, zMin).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMin, yMax, zMin).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMax, yMax, zMin).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMax, yMin, zMin).color(1, 1, 1, alpha).next();
+        quadConsumer.vertex(matrix, xMin, yMin, zMax).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMin, yMax, zMax).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMax, yMax, zMax).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMax, yMin, zMax).color(1, 1, 1, alpha).next();
+        
+        quadConsumer.vertex(matrix, xMin, yMin, zMin).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMin, yMax, zMin).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMin, yMax, zMax).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMin, yMin, zMax).color(1, 1, 1, alpha).next();
+        quadConsumer.vertex(matrix, xMax, yMin, zMin).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMax, yMax, zMin).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMax, yMax, zMax).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMax, yMin, zMax).color(1, 1, 1, alpha).next();
+
+        quadConsumer.vertex(matrix, xMin, yMin, zMin).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMin, yMin, zMax).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMax, yMin, zMax).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMax, yMin, zMin).color(1, 1, 1, alpha).next();
+        quadConsumer.vertex(matrix, xMin, yMax, zMin).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMin, yMax, zMax).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMax, yMax, zMax).color(1, 1, 1, alpha).next();
+    	quadConsumer.vertex(matrix, xMax, yMax, zMin).color(1, 1, 1, alpha).next();
+
         consumer.drawCurrentLayer();
 	}
 }

@@ -22,7 +22,7 @@ import com.mojang.datafixers.util.Pair;
 
 import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
 import me.andre111.voxedit.tool.config.ToolConfigSmooth;
-import me.andre111.voxedit.tool.data.Selection;
+import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
@@ -64,6 +64,6 @@ public class ToolSmooth extends Tool<ToolConfigSmooth, ToolSmooth> {
 
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigSmooth config) {
-		return Selection.getBlockPositions(world, target, config.radius(), config.shape(), null, config.filter());
+		return ToolTargeting.getBlockPositions(world, target, config.radius(), config.shape(), null, config.filter());
 	}
 }

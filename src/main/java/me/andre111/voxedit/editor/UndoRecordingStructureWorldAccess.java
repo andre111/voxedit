@@ -51,6 +51,7 @@ import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Heightmap.Type;
 import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.StructureWorldAccess;
+import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeAccess;
@@ -153,7 +154,7 @@ public class UndoRecordingStructureWorldAccess implements StructureWorldAccess {
 	}
 
 	@Override
-	public void emitGameEvent(GameEvent var1, Vec3d var2, Emitter var3) {
+	public void emitGameEvent(RegistryEntry<GameEvent> var1, Vec3d var2, Emitter var3) {
 	}
 
 	@Override
@@ -240,8 +241,8 @@ public class UndoRecordingStructureWorldAccess implements StructureWorldAccess {
 		BlockEntity oldBe = world.getBlockEntity(pos);
 		if(oldBe == null) return null;
 		
-		BlockEntity newBe = BlockEntity.createFromNbt(pos, getBlockState(pos), oldBe.createNbtWithIdentifyingData());
-		changedBlockEntities.put(pos, new ModifiedBlockEntity(newBe));
+		BlockEntity newBe = BlockEntity.createFromNbt(pos, getBlockState(pos), oldBe.createNbtWithIdentifyingData(world.getRegistryManager()), world.getRegistryManager());
+		changedBlockEntities.put(pos, new ModifiedBlockEntity(world, newBe));
 		return newBe;
 	}
 
@@ -284,7 +285,7 @@ public class UndoRecordingStructureWorldAccess implements StructureWorldAccess {
 		changedBlockStates.put(immutablePos, state);
 		
 		if(state.hasBlockEntity()) {
-			changedBlockEntities.put(pos, new ModifiedBlockEntity(((BlockEntityProvider) state.getBlock()).createBlockEntity(pos, state)));
+			changedBlockEntities.put(pos, new ModifiedBlockEntity(world, ((BlockEntityProvider) state.getBlock()).createBlockEntity(pos, state)));
 		}
 		
 		return true;
@@ -308,16 +309,18 @@ public class UndoRecordingStructureWorldAccess implements StructureWorldAccess {
 	}
 
 	private static class ModifiedBlockEntity {
+		private final World world;
 		private final BlockEntity be;
 		private final NbtCompound oldNbt;
 		
-		private ModifiedBlockEntity(BlockEntity be) {
+		private ModifiedBlockEntity(World world, BlockEntity be) {
+			this.world = world;
 			this.be = be;
-			this.oldNbt = be.createNbtWithId();
+			this.oldNbt = be.createNbtWithId(world.getRegistryManager());
 		}
 		
 		private EditAction asAction(BlockPos pos) {
-			NbtCompound newNbt = be.createNbtWithId();
+			NbtCompound newNbt = be.createNbtWithId(world.getRegistryManager());
 			if(newNbt.equals(oldNbt)) return null;
 			return new ModifyBlockEntityAction(pos, oldNbt, newNbt);
 		}

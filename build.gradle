@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '1.4-SNAPSHOT'
+	id 'fabric-loom' version '1.5-SNAPSHOT'
 	id 'org.cadixdev.licenser' version '0.6.1'
 	id 'maven-publish'
 }
@@ -32,6 +32,8 @@ loom {
             		sourceSet sourceSets.client
         	}
 	}
+	
+	accessWidenerPath = file("src/main/resources/voxedit.accesswidener")
  }
 
 processResources {

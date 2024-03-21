@@ -43,13 +43,13 @@ public class EditorItem extends Item implements VoxEditItem {
     		BlockPos targetPos = context.getBlockPos();
     		BlockEntity entity = world.getBlockEntity(targetPos);
     		if(entity != null) {
-    			NbtCompound oldNbt = entity.createNbtWithId();
-    			ServerNetworking.serverSendOpenNBTEditor((ServerPlayerEntity) context.getPlayer(), entity.createNbt(), (nbt) -> {
+    			NbtCompound oldNbt = entity.createNbtWithId(world.getRegistryManager());
+    			ServerNetworking.serverSendOpenNBTEditor((ServerPlayerEntity) context.getPlayer(), entity.createNbt(world.getRegistryManager()), (nbt) -> {
     				if(nbt.equals(oldNbt)) return;
     				
     				Editor.undoable(context.getPlayer(), world, (editable) -> {
     					BlockEntity newBe = editable.getBlockEntity(targetPos);
-    					if(newBe != null) newBe.readNbt(nbt);
+    					if(newBe != null) newBe.readNbt(nbt, world.getRegistryManager());
     				}).inform(context.getPlayer(), EditType.PERFORM);
     			});
     			return ActionResult.SUCCESS;

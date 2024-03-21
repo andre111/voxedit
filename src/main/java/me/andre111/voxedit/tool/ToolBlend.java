@@ -21,7 +21,7 @@ import java.util.Set;
 
 import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
 import me.andre111.voxedit.tool.config.ToolConfigBlend;
-import me.andre111.voxedit.tool.data.Selection;
+import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
@@ -42,7 +42,7 @@ public class ToolBlend extends Tool<ToolConfigBlend, ToolBlend> {
 			neighbors.clear();
 			for(Direction dir : Direction.values()) {
 				BlockPos offset = pos.offset(dir);
-				if(positions.contains(offset) && !Selection.isFree(world, offset)) neighbors.add(world.getBlockState(offset));
+				if(positions.contains(offset) && !ToolTargeting.isFree(world, offset)) neighbors.add(world.getBlockState(offset));
 			}
 			if(neighbors.isEmpty()) continue;
 			
@@ -59,8 +59,8 @@ public class ToolBlend extends Tool<ToolConfigBlend, ToolBlend> {
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigBlend config) {
 		BlockPos center = target.getBlockPos();
-		if(Selection.isFree(world, center)) return Set.of();
+		if(ToolTargeting.isFree(world, center)) return Set.of();
 		
-		return Selection.getBlockPositions(world, target, config.radius(), config.shape(), (hit, testWorld, testPos) -> !Selection.isFree(testWorld, testPos), config.filter());
+		return ToolTargeting.getBlockPositions(world, target, config.radius(), config.shape(), (hit, testWorld, testPos) -> !ToolTargeting.isFree(testWorld, testPos), config.filter());
 	}
 }

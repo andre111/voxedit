@@ -19,7 +19,7 @@ import java.util.Set;
 
 import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
 import me.andre111.voxedit.tool.config.ToolConfigPlace;
-import me.andre111.voxedit.tool.data.Selection;
+import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.hit.BlockHitResult;
@@ -50,9 +50,9 @@ public class ToolPlace extends Tool<ToolConfigPlace, ToolPlace> {
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigPlace config) {
 		BlockPos targetPos = target.getBlockPos();
-		if(Selection.isFree(world, targetPos)) return Set.of();
+		if(ToolTargeting.isFree(world, targetPos)) return Set.of();
 		BlockPos up = targetPos.offset(target.getSide());
-		if(!Selection.isFree(world, up)) return Set.of();
+		if(!ToolTargeting.isFree(world, up)) return Set.of();
 		return Set.of(up);
 	}
 }

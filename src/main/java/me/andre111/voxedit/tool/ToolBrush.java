@@ -22,7 +22,7 @@ import java.util.Set;
 import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
 import me.andre111.voxedit.tool.config.ToolConfigBrush;
 import me.andre111.voxedit.tool.data.BlockPalette;
-import me.andre111.voxedit.tool.data.Selection;
+import me.andre111.voxedit.tool.data.ToolTargeting;
 import me.andre111.voxedit.tool.data.Mode;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -54,7 +54,7 @@ public class ToolBrush extends Tool<ToolConfigBrush, ToolBrush> {
 
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigBrush config) {
-		return Selection.getBlockPositions(world, target, config.radius(), config.shape(), config.mode().testPredicate, config.filter());
+		return ToolTargeting.getBlockPositions(world, target, config.radius(), config.shape(), config.mode().testPredicate, config.filter());
 	}
 
 	public List<ToolConfigBrush> getAdditionalCreativeMenuConfigs() {

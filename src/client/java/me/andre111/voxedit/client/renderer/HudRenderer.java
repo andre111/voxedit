@@ -49,7 +49,7 @@ public class HudRenderer implements HudRenderCallback {
 			return;
 		}
 		
-		if(ClientState.active == null) return;
+		if(ClientState.tool() == null) return;
 		
 		var screen = getToolSettingsScreen();
 		screen.render(drawContext, -1, -1, tickDelta);

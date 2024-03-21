@@ -60,7 +60,7 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 	        if (inputStrength < 1.0E-7) {
 	            setVelocity(Vec3d.ZERO);
 	        } else {
-		        Vec3d movementSpeed = (inputStrength > 1.0 ? movementInput.normalize() : movementInput).multiply(ClientState.cameraSpeed);
+		        Vec3d movementSpeed = (inputStrength > 1.0 ? movementInput.normalize() : movementInput).multiply(ClientState.INSTANCE.getCameraSpeed());
 		        float sin = MathHelper.sin(getYaw() * ((float)Math.PI / 180));
 		        float cos = MathHelper.cos(getYaw() * ((float)Math.PI / 180));
 		        setVelocity(new Vec3d(movementSpeed.x * cos - movementSpeed.z * sin, movementSpeed.y, movementSpeed.z * cos + movementSpeed.x * sin));

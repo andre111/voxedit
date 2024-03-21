@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.client.renderer;
+package me.andre111.voxedit.client.renderer.item;
 
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 
+import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.gui.Textures;
 import me.andre111.voxedit.item.ToolItem;
 import me.andre111.voxedit.tool.ConfiguredTool;
@@ -68,7 +69,9 @@ public class ToolRenderer implements DynamicItemRenderer {
 	public void render(ItemStack stack, DrawContext context) {
 		context.drawGuiTexture(Textures.TOOL, 0, 0, 16, 16);
 		
-		ToolItem.Data data = ToolItem.readToolData(stack);
+		ToolItem.Data data = stack.get(VoxEdit.DATA_COMPONENT);
+		if(data == null) return;
+		
 		ConfiguredTool<?, ?> tc = data.selected();
 		
 		// render information

@@ -25,7 +25,7 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 
-public class Selection {
+public class ToolTargeting {
 	public static BlockHitResult getTargetOf(Entity e, ToolConfig<?> config) {
 		HitResult result = e.raycast(64, 0, config.targetFluids());
 		if(result instanceof BlockHitResult blockHit) {

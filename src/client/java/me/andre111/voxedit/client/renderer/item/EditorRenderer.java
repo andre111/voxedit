@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.client.renderer;
+package me.andre111.voxedit.client.renderer.item;
 
 import me.andre111.voxedit.client.gui.Textures;
 import net.fabricmc.api.EnvType;

@@ -49,9 +49,9 @@ public class ToolSettingsScreen extends Screen {
 	}
 	
 	public void rebuild() {
-		if(ClientState.active == null) return;
-		if(lastTool != ClientState.active.selected().tool()) {
-			lastTool = ClientState.active.selected().tool();
+		if(ClientState.tool() == null) return;
+		if(lastTool != ClientState.tool()) {
+			lastTool = ClientState.tool();
 			init(MinecraftClient.getInstance(), MinecraftClient.getInstance().getWindow().getScaledWidth(), MinecraftClient.getInstance().getWindow().getScaledHeight());
 		} else {
 			reload();
@@ -59,12 +59,12 @@ public class ToolSettingsScreen extends Screen {
 	}
 	
 	private void reload() {
-		if(ClientState.active == null) return;
+		if(ClientState.tool() == null) return;
 
 		// (re)load name display
-		MutableText name = Text.translatable("voxedit.tool").copy().append(": ").append(ClientState.active.selected().tool().asText());
-		if(ClientState.active.size() > 1) {
-			name = name.append(" ("+(ClientState.active.selectedIndex()+1)+"/"+ClientState.active.size()+")");
+		MutableText name = Text.translatable("voxedit.tool").copy().append(": ").append(ClientState.tool().asText());
+		if(ClientState.INSTANCE.getActive().size() > 1) {
+			name = name.append(" ("+(ClientState.INSTANCE.getActive().selectedIndex()+1)+"/"+ClientState.INSTANCE.getActive().size()+")");
 		}
 		toolName.setMessage(name);
 		
@@ -79,10 +79,10 @@ public class ToolSettingsScreen extends Screen {
 	protected void init() {
 		contentWidth = 100;
 		contentHeight = 8+12;
-		if(ClientState.active == null) return;
+		if(ClientState.tool() == null) return;
 
 		toolSettingWidgets = new ArrayList<>();
-		for(var toolSetting : ClientState.active.selected().config().settings().get()) {
+		for(var toolSetting : ClientState.config().settings().get()) {
 			toolSettingWidgets.add(ToolSettingWidget.of(toolSetting));
 		}
 		contentHeight += (toolSettingWidgets.size()+1) * 22;
@@ -99,7 +99,7 @@ public class ToolSettingsScreen extends Screen {
 		
 		// change tool button
 		addDrawableChild(ButtonWidget.builder(Text.translatable("voxedit.screen.toolSettings.changeTool"), (button) -> {
-			InputScreen.getSelector(this, Text.translatable("voxedit.screen.toolSettings.changeToolTitle"), Text.translatable("voxedit.tool"), ClientState.active.selected().tool(), VoxEdit.TOOL_REGISTRY.stream().toList(), Tool::asText, (newTool) -> {
+			InputScreen.getSelector(this, Text.translatable("voxedit.screen.toolSettings.changeToolTitle"), Text.translatable("voxedit.tool"), ClientState.tool(), VoxEdit.TOOL_REGISTRY.stream().toList(), Tool::asText, (newTool) -> {
 				ClientNetworking.setTool(newTool.getDefault());
 			});
 		}).dimensions(x, currentY, contentWidth, 20).build());
@@ -117,7 +117,7 @@ public class ToolSettingsScreen extends Screen {
 	}
 	
 	@Override
-	public void renderInGameBackground(DrawContext context) {
+	public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
 		int x = 2;
 		int y = (context.getScaledWindowHeight()-contentHeight-padding*2) / 2;
         context.fillGradient(x, y, x + contentWidth + padding * 2, y + contentHeight + padding * 2, -1072689136, -804253680);

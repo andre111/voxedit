@@ -24,19 +24,19 @@ import net.minecraft.world.BlockView;
 public enum Mode {
 	SOLID((target, world, pos) -> true),
 	PAINT((target, world, pos) -> {
-		if(Selection.isFree(world, pos)) return false;
+		if(ToolTargeting.isFree(world, pos)) return false;
 		for(Direction d : Direction.values()) {
-			if(Selection.isFree(world, pos.offset(d))) return true;
+			if(ToolTargeting.isFree(world, pos.offset(d))) return true;
 		}
 		return false;
 	}),
 	PAINT_TOP((target, world, pos) -> {
-		if(Selection.isFree(world, pos)) return false;
-		return Selection.isFree(world, pos.offset(Direction.UP));
+		if(ToolTargeting.isFree(world, pos)) return false;
+		return ToolTargeting.isFree(world, pos.offset(Direction.UP));
 	}),
 	SCATTER((target, world, pos) -> {
 		if(!world.getBlockState(pos).isAir()) return false;
-		return !Selection.isFree(world, pos.offset(target.getSide().getOpposite()));
+		return !ToolTargeting.isFree(world, pos.offset(target.getSide().getOpposite()));
 	});
 	
 	public final TestPredicate testPredicate;

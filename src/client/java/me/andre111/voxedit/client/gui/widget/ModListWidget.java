@@ -155,7 +155,7 @@ public abstract class ModListWidget<E extends me.andre111.voxedit.client.gui.wid
         if (renderBackground) {
             context.setShaderColor(0.125f, 0.125f, 0.125f, 1.0f);
             i = 32;
-            context.drawTexture(Screen.OPTIONS_BACKGROUND_TEXTURE, getX(), getY(), getRight(), getBottom() + (int) getScrollAmount(), getWidth(), getHeight(), 32, 32);
+            context.drawTexture(Screen.MENU_BACKGROUND_TEXTURE, getX(), getY(), getRight(), getBottom() + (int) getScrollAmount(), getWidth(), getHeight(), 32, 32);
             context.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
         }
         this.enableScissor(context);

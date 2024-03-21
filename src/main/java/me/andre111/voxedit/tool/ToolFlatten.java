@@ -19,7 +19,7 @@ import java.util.Set;
 
 import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
 import me.andre111.voxedit.tool.config.ToolConfigFlatten;
-import me.andre111.voxedit.tool.data.Selection;
+import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
@@ -34,7 +34,7 @@ public class ToolFlatten extends Tool<ToolConfigFlatten, ToolFlatten> {
 	@Override
 	public void rightClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigFlatten config, Set<BlockPos> positions) {
 		for(BlockPos pos : positions) {
-			if(Selection.isFree(world, pos)) {
+			if(ToolTargeting.isFree(world, pos)) {
 				world.setBlockState(pos, config.palette().getRandom(world.getRandom()), 0);
 			} else {
 				world.setBlockState(pos, Blocks.AIR.getDefaultState(), 0);
@@ -49,9 +49,9 @@ public class ToolFlatten extends Tool<ToolConfigFlatten, ToolFlatten> {
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigFlatten config) {
 		BlockPos center = target.getBlockPos();
-		if(Selection.isFree(world, center)) return Set.of();
+		if(ToolTargeting.isFree(world, center)) return Set.of();
 		
-		Set<BlockPos> positions = Selection.getBlockPositions(world, target, config.radius(), config.shape());
+		Set<BlockPos> positions = ToolTargeting.getBlockPositions(world, target, config.radius(), config.shape());
 		positions.removeIf(pos -> {
 			int offset = switch(target.getSide()) {
 			case UP -> pos.getY() - center.getY();
@@ -61,8 +61,8 @@ public class ToolFlatten extends Tool<ToolConfigFlatten, ToolFlatten> {
 			case EAST -> pos.getX() - center.getX();
 			case WEST -> center.getX() - pos.getX();
 			};
-			if(offset <= 0) return !Selection.isFree(world, pos);
-			else return Selection.isFree(world, pos);
+			if(offset <= 0) return !ToolTargeting.isFree(world, pos);
+			else return ToolTargeting.isFree(world, pos);
 		});
 		return positions;
 	}

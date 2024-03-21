@@ -17,6 +17,7 @@ package me.andre111.voxedit;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.component.DataComponentType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
@@ -29,7 +30,9 @@ import org.slf4j.LoggerFactory;
 import com.mojang.serialization.Lifecycle;
 
 import me.andre111.voxedit.item.EditorItem;
+import me.andre111.voxedit.item.SelectItem;
 import me.andre111.voxedit.item.ToolItem;
+import me.andre111.voxedit.item.ToolItem.Data;
 import me.andre111.voxedit.network.ServerNetworking;
 import me.andre111.voxedit.tool.ConfiguredTool;
 import me.andre111.voxedit.tool.Tool;
@@ -58,6 +61,9 @@ public class VoxEdit implements ModInitializer {
     
     public static final ToolItem ITEM_TOOL = Registry.register(Registries.ITEM, id("tool"), new ToolItem());
     public static final EditorItem ITEM_EDITOR = Registry.register(Registries.ITEM, id("editor"), new EditorItem());
+    public static final SelectItem ITEM_SELECT = Registry.register(Registries.ITEM, id("select"), new SelectItem());
+    
+    public static final DataComponentType<Data> DATA_COMPONENT = Registry.register(Registries.DATA_COMPONENT_TYPE, id("tool"), DataComponentType.<Data>builder().codec(Data.CODEC).build());
     
 	@Override
 	public void onInitialize() {

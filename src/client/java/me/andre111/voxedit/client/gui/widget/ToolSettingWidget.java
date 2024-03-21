@@ -42,12 +42,12 @@ public abstract class ToolSettingWidget<V, TC extends ToolConfig<TC>, TS extends
 	
 	@SuppressWarnings("unchecked")
 	protected V read() {
-		return setting.reader().apply((TC) ClientState.active.selected().config());
+		return setting.reader().apply((TC) ClientState.config());
 	}
 	
 	@SuppressWarnings("unchecked")
 	protected void write(V value) {
-		ClientNetworking.setSelectedConfig(setting.writer().apply((TC) ClientState.active.selected().config(), value));
+		ClientNetworking.setSelectedConfig(setting.writer().apply((TC) ClientState.config(), value));
 	}
 	
 	public abstract List<ClickableWidget> create(Screen screen, int x, int y, int width, int height);

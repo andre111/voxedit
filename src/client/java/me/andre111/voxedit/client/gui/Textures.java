@@ -25,6 +25,7 @@ public class Textures {
     public static final Identifier AIR = new Identifier("voxedit", "air");
     public static final Identifier TOOL = new Identifier("voxedit", "tool");
     public static final Identifier EDITOR = new Identifier("voxedit", "editor");
+    public static final Identifier SELECT = new Identifier("voxedit", "select");
 
     public static final Identifier EDITOR_CUT = new Identifier("voxedit", "editor/cut");
     public static final Identifier EDITOR_COPY = new Identifier("voxedit", "editor/copy");

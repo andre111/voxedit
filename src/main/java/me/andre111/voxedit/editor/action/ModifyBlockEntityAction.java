@@ -36,7 +36,7 @@ public class ModifyBlockEntityAction extends EditAction {
 	public void undo(World world, EditStats stats) {
 		BlockEntity be = world.getBlockEntity(pos);
 		if(be != null) {
-			be.readNbt(oldNbt);
+			be.readNbt(oldNbt, world.getRegistryManager());
 			stats.changedBlockEntity();
 		}
 	}
@@ -45,7 +45,7 @@ public class ModifyBlockEntityAction extends EditAction {
 	public void redo(World world, EditStats stats) {
 		BlockEntity be = world.getBlockEntity(pos);
 		if(be != null) {
-			be.readNbt(newNbt);
+			be.readNbt(newNbt, world.getRegistryManager());
 			stats.changedBlockEntity();
 		}
 	}

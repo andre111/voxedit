@@ -15,6 +15,7 @@
  */
 package me.andre111.voxedit.network;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,19 +29,18 @@ import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.editor.EditType;
 import me.andre111.voxedit.editor.Undo;
 import me.andre111.voxedit.item.ToolItem;
+import me.andre111.voxedit.item.ToolItem.Data;
 import me.andre111.voxedit.item.VoxEditItem;
-import me.andre111.voxedit.tool.ConfiguredTool;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import me.andre111.voxedit.state.Selection;
+import me.andre111.voxedit.state.ServerStates;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.EntityEquipmentUpdateS2CPacket;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.structure.StructureTemplate;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
@@ -49,111 +49,111 @@ public class ServerNetworking {
 	private static Map<UUID, Consumer<NbtCompound>> nbtEditorTargets = new HashMap<>();
 	
 	public static void init() {
-		ServerPlayNetworking.registerGlobalReceiver(VoxEdit.id("set_tool"), (server, player, handler, buf, responseSender) -> {
-			if(!player.isCreative()) return;
+		ServerPlayNetworking.registerGlobalReceiver(CPCommand.ID, (payload, context) -> {
+			if(!context.player().isCreative()) return;
 			
-    		NbtCompound tag = buf.readNbt();
-    		ConfiguredTool<?, ?> tool = ConfiguredTool.CODEC.decode(NbtOps.INSTANCE, tag).result().get().getFirst();
-    		
-			server.execute(() -> {
-	    		ItemStack stack = player.getMainHandStack();
-	    		if(stack.getItem() instanceof ToolItem) {
-	    			ToolItem.storeToolData(stack, ToolItem.readToolData(stack).replaceSelected(tool));
-	    			
-	    			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
-	    			responseSender.sendPacket(new EntityEquipmentUpdateS2CPacket(player.getId(), list));
-	    		}
-			});
-    	});
-		
-		ServerPlayNetworking.registerGlobalReceiver(VoxEdit.id("select_tool"), (server, player, handler, buf, responseSender) -> {
-			if(!player.isCreative()) return;
-			
-			int index = buf.readInt();
-
-			server.execute(() -> {
-	    		ItemStack stack = player.getMainHandStack();
-	    		if(stack.getItem() instanceof ToolItem) {
-	    			ToolItem.storeToolData(stack, ToolItem.readToolData(stack).select(index));
-	    			
-	    			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
-	    			responseSender.sendPacket(new EntityEquipmentUpdateS2CPacket(player.getId(), list));
-	    		}
-			});
-    	});
-		
-		ServerPlayNetworking.registerGlobalReceiver(VoxEdit.id("command"), (server, player, handler, buf, responseSender) -> {
-			if(!player.isCreative()) return;
-			
-			Command command = Command.valueOf(buf.readString());
-			
-			server.execute(() -> {
-				World world = player.getWorld();
-				switch(command) {
+			context.player().server.execute(() -> {
+				World world = context.player().getWorld();
+				switch(payload.command()) {
 				case UNDO:
-					Undo.of(player, world).undo(world).inform(player, EditType.UNDO);
+					Undo.of(context.player(), world).undo(world).inform(context.player(), EditType.UNDO);
 					break;
 				case REDO:
-					Undo.of(player, world).redo(world).inform(player, EditType.REDO);
+					Undo.of(context.player(), world).redo(world).inform(context.player(), EditType.REDO);
 					break;
 				case LEFT_CLICK:
-					ItemStack stack = player.getMainHandStack();
+					ItemStack stack = context.player().getMainHandStack();
 		    		if(stack.getItem() instanceof VoxEditItem item) {
 						//TODO: verify attack cooldown
-						item.leftClicked(world, player, Hand.MAIN_HAND);
+						item.leftClicked(world, context.player(), Hand.MAIN_HAND);
+					}
+					break;
+				case DEV:
+					Selection sel = ServerStates.get(context.player()).getSelection();
+					if(sel != null) {
+						StructureTemplate copy = new StructureTemplate();
+						copy.saveFromWorld(world, sel.min(), sel.max().subtract(sel.min()).add(1, 1, 1), false, Blocks.STRUCTURE_VOID);
+						ServerStates.get(context.player()).setCopyBuffer(copy);
 					}
 					break;
 				}
 			});
 		});
 		
-		ServerPlayNetworking.registerGlobalReceiver(VoxEdit.id("nbteditor"), (server, player, handler, buf, responseSender) -> {
-			if(!player.isCreative()) return;
-			if(!nbtEditorTargets.containsKey(player.getUuid())) return;
+		ServerPlayNetworking.registerGlobalReceiver(CPSetTool.ID, (payload, context) -> {
+			if(!context.player().isCreative()) return;
+    		
+			context.player().server.execute(() -> {
+	    		ItemStack stack = context.player().getMainHandStack();
+	    		if(stack.getItem() instanceof ToolItem) {
+	    			Data data = stack.get(VoxEdit.DATA_COMPONENT);
+	    			if(data == null) data = new Data(payload.tool());
+	    			else data.replaceSelected(payload.tool());
+	    			stack.set(VoxEdit.DATA_COMPONENT, data);
+	    			
+	    			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
+	    			context.responseSender().sendPacket(new EntityEquipmentUpdateS2CPacket(context.player().getId(), list));
+	    		}
+			});
+    	});
+		
+		ServerPlayNetworking.registerGlobalReceiver(CPSelectTool.ID, (payload, context) -> {
+			if(!context.player().isCreative()) return;
+
+			context.player().server.execute(() -> {
+	    		ItemStack stack = context.player().getMainHandStack();
+	    		if(stack.getItem() instanceof ToolItem) {
+	    			Data data = stack.get(VoxEdit.DATA_COMPONENT);
+	    			data.select(payload.index());
+	    			stack.set(VoxEdit.DATA_COMPONENT, data);
+
+	    			List<Pair<EquipmentSlot, ItemStack>> list = List.of(Pair.of(EquipmentSlot.MAINHAND, stack));
+	    			context.responseSender().sendPacket(new EntityEquipmentUpdateS2CPacket(context.player().getId(), list));
+	    		}
+			});
+    	});
+		
+		ServerPlayNetworking.registerGlobalReceiver(CPNBTEditor.ID, (payload, context) -> {
+			if(!context.player().isCreative()) return;
+			if(!nbtEditorTargets.containsKey(context.player().getUuid())) return;
 			
-			boolean applied = buf.readBoolean();
-			if(!applied) {
-				nbtEditorTargets.remove(player.getUuid());
+			if(!payload.apply()) {
+				nbtEditorTargets.remove(context.player().getUuid());
 				return;
 			}
-			
-			NbtCompound nbt = buf.readNbt();
 
-			server.execute(() -> {
-				nbtEditorTargets.get(player.getUuid()).accept(nbt);
-				nbtEditorTargets.remove(player.getUuid());
+			context.player().server.execute(() -> {
+				nbtEditorTargets.get(context.player().getUuid()).accept(payload.nbt());
+				nbtEditorTargets.remove(context.player().getUuid());
 			});
 		});
 
-		ServerPlayNetworking.registerGlobalReceiver(VoxEdit.id("request_registry_ids"), (server, player, handler, buf, responseSender) -> {
-			if(!player.isCreative()) return;
-			
-			int id = buf.readInt();
-			RegistryKey<? extends Registry<?>> registryKey = buf.readRegistryRefKey();
-			
+		ServerPlayNetworking.registerGlobalReceiver(CPRequestRegistry.ID, (payload, context) -> {
+			if(!context.player().isCreative()) return;
 
-			server.execute(() -> {
-				var registry = server.getRegistryManager().getOptional(registryKey);
+			context.player().server.execute(() -> {
+				var registry = context.player().server.getRegistryManager().getOptional(payload.registryKey());
 				
-				PacketByteBuf responseBuf = PacketByteBufs.create();
-				responseBuf.writeInt(id);
 				if(registry.isPresent()) {
 					Set<Identifier> registryIDs = registry.get().getIds();
-					responseBuf.writeInt(registryIDs.size());
-					for(Identifier registryID : registryIDs) responseBuf.writeIdentifier(registryID);
+					ServerPlayNetworking.send(context.player(), new CPRegistryList(payload.requestID(), new ArrayList<>(registryIDs)));
 				} else {
-					responseBuf.writeInt(0);
+					ServerPlayNetworking.send(context.player(), new CPRegistryList(payload.requestID(), List.of()));
 				}
-				ServerPlayNetworking.send(player, VoxEdit.id("registry_ids"), responseBuf);
 			});
 		});
+		
+		/*
+		ServerPlayNetworking.registerGlobalReceiver(VoxEdit.id("state"), (server, player, handler, buf, responseSender) -> {
+			if(!player.isCreative()) return;
+			
+			ServerStates.get(player).read(buf);
+		});
+		*/
 	}
 	
 	public static void serverSendOpenNBTEditor(ServerPlayerEntity player, NbtCompound root, Consumer<NbtCompound> editTarget) {
 		nbtEditorTargets.put(player.getUuid(), editTarget);
-		
-		PacketByteBuf buf = PacketByteBufs.create();
-		buf.writeNbt(root);
-		ServerPlayNetworking.send(player, VoxEdit.id("nbteditor"), buf);
+		ServerPlayNetworking.send(player, new CPNBTEditor(false, root));
 	}
 }

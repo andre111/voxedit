@@ -36,7 +36,7 @@ public class SetBlockAction extends EditAction {
 		
 		this.oldState = world.getBlockState(pos);
 		if(world.getBlockEntity(pos) != null) {
-			this.oldNbt = world.getBlockEntity(pos).createNbtWithId();
+			this.oldNbt = world.getBlockEntity(pos).createNbtWithId(world.getRegistryManager());
 		} else {
 			this.oldNbt = null;
 		}
@@ -55,7 +55,7 @@ public class SetBlockAction extends EditAction {
 		
 		// restore be from stored nbt
 		if(oldNbt != null && world.getBlockEntity(pos) != null) {
-			world.getBlockEntity(pos).readNbt(oldNbt);
+			world.getBlockEntity(pos).readNbt(oldNbt, world.getRegistryManager());
 		}
 		
 		stats.changedBlock();

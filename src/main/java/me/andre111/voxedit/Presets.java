@@ -23,6 +23,7 @@ import me.andre111.voxedit.tool.data.Mode;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ButtonBlock;
 import net.minecraft.block.enums.BlockFace;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -85,7 +86,7 @@ public class Presets {
 		}), 0);
 		
 		ItemStack stack = VoxEdit.ITEM_TOOL.getStackWith(andre111);
-		stack.setCustomName(Text.of("andre111s Presets").copy().setStyle(Style.EMPTY.withItalic(false).withBold(true).withColor(Formatting.GOLD)));
+		stack.set(DataComponentTypes.CUSTOM_NAME, Text.of("andre111s Presets").copy().setStyle(Style.EMPTY.withItalic(false).withBold(true).withColor(Formatting.GOLD)));
 		andre111Stack = stack;
 	}
 }
