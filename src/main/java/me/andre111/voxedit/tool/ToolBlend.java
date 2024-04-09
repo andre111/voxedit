@@ -19,23 +19,30 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
-import me.andre111.voxedit.tool.config.ToolConfigBlend;
+import me.andre111.voxedit.editor.EditorWorld;
+import me.andre111.voxedit.tool.data.Context;
+import me.andre111.voxedit.tool.data.Shape;
+import me.andre111.voxedit.tool.data.Target;
+import me.andre111.voxedit.tool.data.ToolConfig;
+import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.tool.data.ToolSettings;
 import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 
-public class ToolBlend extends Tool<ToolConfigBlend, ToolBlend> {
+public class ToolBlend extends Tool {
+	private static final ToolSetting<Shape> SHAPE = ToolSetting.ofEnum("shape", Shape.class, Shape::asText);
+	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
+	
 	public ToolBlend() {
-		super(ToolConfigBlend.CODEC, new ToolConfigBlend());
+		super(Properties.of(SHAPE, RADIUS, ToolSettings.TARGET_FLUIDS).draggable());
 	}
 
 	@Override
-	public void rightClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigBlend config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
 		List<BlockState> neighbors = new ArrayList<>();
 		for(BlockPos pos : positions) {
 			// find all solid neighbors
@@ -53,14 +60,13 @@ public class ToolBlend extends Tool<ToolConfigBlend, ToolBlend> {
 	}
 
 	@Override
-	public void leftClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigBlend config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigBlend config) {
-		BlockPos center = target.getBlockPos();
-		if(ToolTargeting.isFree(world, center)) return Set.of();
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
+		if(ToolTargeting.isFree(world, target.pos())) return Set.of();
 		
-		return ToolTargeting.getBlockPositions(world, target, config.radius(), config.shape(), (hit, testWorld, testPos) -> !ToolTargeting.isFree(testWorld, testPos), config.filter());
+		return ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), SHAPE.get(config), (hit, testWorld, testPos) -> !ToolTargeting.isFree(testWorld, testPos), context.filter());
 	}
 }

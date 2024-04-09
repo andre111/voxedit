@@ -45,7 +45,7 @@ import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.Nullable;
 
 @Environment(value=EnvType.CLIENT)
-public abstract class ModListWidget<E extends me.andre111.voxedit.client.gui.widget.ModListWidget.Entry<E>> extends ContainerWidget implements LayoutWidget {
+public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends ContainerWidget implements LayoutWidget {
     private static final Identifier SCROLLER_TEXTURE = new Identifier("widget/scroller");
     protected final MinecraftClient client;
     private final List<E> children = new ArrayList<>();

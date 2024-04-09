@@ -21,14 +21,15 @@ import java.util.function.Consumer;
 import me.andre111.voxedit.editor.action.EditAction;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 
 public class Editor {
 	//TODO: combine "held" actions into one undo state
-	public static EditStats undoable(PlayerEntity player, ServerWorld world, Consumer<UndoRecordingStructureWorldAccess> edit) {
+	public static EditStats undoable(PlayerEntity player, ServerWorld world, Consumer<EditorWorld> edit, BlockPos origin, boolean preview) {
 		Undo undo = Undo.of(player, world);
-		UndoRecordingStructureWorldAccess worldAccess = new UndoRecordingStructureWorldAccess(world, undo);
+		EditorWorld worldAccess = new EditorWorld(world, undo);
 		edit.accept(worldAccess);
-		return worldAccess.apply();
+		return preview ? worldAccess.toSchematic(origin) : worldAccess.apply();
 	}
 	
 	public static EditStats undoableAction(PlayerEntity player, ServerWorld world, EditAction action) {

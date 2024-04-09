@@ -49,8 +49,8 @@ public class EditorItem extends Item implements VoxEditItem {
     				
     				Editor.undoable(context.getPlayer(), world, (editable) -> {
     					BlockEntity newBe = editable.getBlockEntity(targetPos);
-    					if(newBe != null) newBe.readNbt(nbt, world.getRegistryManager());
-    				}).inform(context.getPlayer(), EditType.PERFORM);
+    					if(newBe != null) newBe.read(nbt, world.getRegistryManager());
+    				}, null, false).inform(context.getPlayer(), EditType.PERFORM);
     			});
     			return ActionResult.SUCCESS;
     		}

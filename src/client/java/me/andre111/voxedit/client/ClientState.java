@@ -17,55 +17,22 @@ package me.andre111.voxedit.client;
 
 import java.util.Set;
 
-import me.andre111.voxedit.item.ToolItem;
 import me.andre111.voxedit.state.ServerState;
-import me.andre111.voxedit.tool.Tool;
-import me.andre111.voxedit.tool.config.ToolConfig;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.registry.RegistryWrapper.WrapperLookup;
 import net.minecraft.util.math.BlockPos;
 
 @Environment(value=EnvType.CLIENT)
 public class ClientState extends ServerState {
-	public static final ClientState INSTANCE = new ClientState();
-	private ClientState() {
-		super(buf -> {} /*ClientPlayNetworking.send(VoxEdit.id("state"), buf)*/);
-	}
-	
-	// helpers
-	public static Tool<?, ?> tool() {
-		if(INSTANCE.active == null) return null;
-		return INSTANCE.active.selected().tool();
-	}
-	public static ToolConfig<?> config() {
-		if(INSTANCE.active == null) return null;
-		return INSTANCE.active.selected().config();
+	public ClientState(WrapperLookup registryLookup) {
+		super(registryLookup, buf -> {} /*ClientPlayNetworking.send(VoxEdit.id("state"), buf)*/);
 	}
 	
 	// actual state (in addition to state shared with server)
-	private ToolItem.Data active;
-	private BlockHitResult target;
-	
 	private Set<BlockPos> positions;
 	
 	private float cameraSpeed = 2f;
-
-	public ToolItem.Data getActive() {
-		return active;
-	}
-
-	public void setActive(ToolItem.Data active) {
-		this.active = active;
-	}
-
-	public BlockHitResult getTarget() {
-		return target;
-	}
-
-	public void setTarget(BlockHitResult target) {
-		this.target = target;
-	}
 
 	public Set<BlockPos> getPositions() {
 		return positions;

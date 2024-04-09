@@ -15,16 +15,31 @@
  */
 package me.andre111.voxedit;
 
+import me.andre111.voxedit.client.gui.screen.EditorScreen;
 import me.andre111.voxedit.item.VoxEditItem;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.RegistryWrapper.WrapperLookup;
+import net.minecraft.util.math.BlockPos;
 
 public class VoxEditUtil {
 	public static boolean shouldUseCustomControls(PlayerEntity player) {
 		if(player != null && player.isCreative() && player.getAbilities().flying) {
+			//TODO: this refers to client code -> WILL CRASH ON SERVER -> FIX!!!
+			if(EditorScreen.get().isActive()) return true;
+			
 			ItemStack stack = player.getMainHandStack();
 			return stack.getItem() instanceof VoxEditItem item && item.useCustomControls();
 		}
 		return false;
+	}
+	
+	public static BlockEntity copyBlockEntity(WrapperLookup registryLookup, BlockState state, BlockEntity source, BlockPos pos) {
+		// create unlinked copy and adjust position
+		NbtCompound nbt = source.createNbtWithId(registryLookup);
+		return BlockEntity.createFromNbt(pos, state, nbt, registryLookup);
 	}
 }

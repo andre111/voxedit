@@ -15,24 +15,8 @@
  */
 package me.andre111.voxedit;
 
-import java.util.ArrayList;
-
-import me.andre111.voxedit.item.ToolItem;
-import me.andre111.voxedit.tool.data.BlockPalette;
-import me.andre111.voxedit.tool.data.Mode;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.ButtonBlock;
-import net.minecraft.block.enums.BlockFace;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.Direction;
-
 public class Presets {
-	public static final ToolItem.Data andre111;
+	/*public static final ToolItem.Data andre111;
 	public static final ItemStack andre111Stack;
 	static {
 		andre111 = new ToolItem.Data(Util.make(new ArrayList<>(), list -> {
@@ -88,5 +72,5 @@ public class Presets {
 		ItemStack stack = VoxEdit.ITEM_TOOL.getStackWith(andre111);
 		stack.set(DataComponentTypes.CUSTOM_NAME, Text.of("andre111s Presets").copy().setStyle(Style.EMPTY.withItalic(false).withBold(true).withColor(Formatting.GOLD)));
 		andre111Stack = stack;
-	}
+	}*/
 }

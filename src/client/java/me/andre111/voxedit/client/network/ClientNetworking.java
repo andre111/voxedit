@@ -20,17 +20,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import me.andre111.voxedit.client.ClientState;
+import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.client.ClientStates;
+import me.andre111.voxedit.client.EditorState;
+import me.andre111.voxedit.client.VoxEditClient;
 import me.andre111.voxedit.client.gui.screen.NBTEditorScreen;
+import me.andre111.voxedit.client.renderer.SchematicRenderer;
+import me.andre111.voxedit.client.renderer.SchematicView;
+import me.andre111.voxedit.network.CPClearSelection;
 import me.andre111.voxedit.network.CPCommand;
 import me.andre111.voxedit.network.CPNBTEditor;
 import me.andre111.voxedit.network.CPRegistryList;
 import me.andre111.voxedit.network.CPRequestRegistry;
-import me.andre111.voxedit.network.CPSelectTool;
-import me.andre111.voxedit.network.CPSetTool;
+import me.andre111.voxedit.network.CPSchematic;
+import me.andre111.voxedit.network.CPSetSelection;
 import me.andre111.voxedit.network.Command;
-import me.andre111.voxedit.tool.ConfiguredTool;
-import me.andre111.voxedit.tool.config.ToolConfig;
+import me.andre111.voxedit.state.Schematic;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -38,6 +43,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 
 @Environment(value=EnvType.CLIENT)
 public class ClientNetworking {
@@ -55,29 +61,24 @@ public class ClientNetworking {
 				context.client().execute(() -> request.complete(payload.ids()));
 			}
 		});
-
-		/*
-		ClientPlayNetworking.registerGlobalReceiver(VoxEdit.id("state"), (client, handler, buf, responseSender) -> {
-			ClientState.INSTANCE.read(buf);
+		
+		ClientPlayNetworking.registerGlobalReceiver(CPClearSelection.ID, (payload, context) -> {
+			ClientStates.instance().setSelection(null, false);
 		});
-		*/
-	}
-	
-
-	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static void setSelectedConfig(ToolConfig<?> toolConfig) {
-		if(ClientState.tool() == null) return;
-		if(!ClientState.config().getClass().isAssignableFrom(toolConfig.getClass())) return;
-		ClientNetworking.setTool(new ConfiguredTool(ClientState.tool(), toolConfig));
-	}
-	
-	public static void setTool(ConfiguredTool<?, ?> tool) {
-		ClientPlayNetworking.send(new CPSetTool(tool));
-	}
-	
-	public static void selectTool(int index) {
-		ClientPlayNetworking.send(new CPSelectTool(index));
+		
+		ClientPlayNetworking.registerGlobalReceiver(CPSetSelection.ID, (payload, context) -> {
+			ClientStates.instance().setSelection(payload.selection(), false);
+		});
+		
+		ClientPlayNetworking.registerGlobalReceiver(CPSchematic.ID, (payload, context) -> {
+			NbtCompound nbt = payload.nbt();
+			Schematic schematic = nbt.isEmpty() ? null : Schematic.readNbt(context.client().world.getRegistryManager(), nbt);
+			
+			EditorState.schematic(payload.id(), schematic);
+			if(payload.id().equals(VoxEdit.id("copy_buffer"))) {
+				VoxEditClient.testRenderer = new SchematicRenderer(new SchematicView(context.client().world, new BlockPos(0, 0, 0), schematic));
+			}
+		});
 	}
 	
 	public static void sendCommand(Command command) {

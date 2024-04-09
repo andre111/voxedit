@@ -17,25 +17,32 @@ package me.andre111.voxedit.tool;
 
 import java.util.Set;
 
-import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
-import me.andre111.voxedit.tool.config.ToolConfigFlatten;
+import me.andre111.voxedit.editor.EditorWorld;
+import me.andre111.voxedit.tool.data.Context;
+import me.andre111.voxedit.tool.data.Shape;
+import me.andre111.voxedit.tool.data.Target;
+import me.andre111.voxedit.tool.data.ToolConfig;
+import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.tool.data.ToolSettings;
 import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 
-public class ToolFlatten extends Tool<ToolConfigFlatten, ToolFlatten> {
+public class ToolFlatten extends Tool {
+	private static final ToolSetting<Shape> SHAPE = ToolSetting.ofEnum("shape", Shape.class, Shape::asText);
+	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
+	
 	public ToolFlatten() {
-		super(ToolConfigFlatten.CODEC, new ToolConfigFlatten());
+		super(Properties.of(SHAPE, RADIUS, ToolSettings.TARGET_FLUIDS));
 	}
 
 	@Override
-	public void rightClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigFlatten config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
 		for(BlockPos pos : positions) {
 			if(ToolTargeting.isFree(world, pos)) {
-				world.setBlockState(pos, config.palette().getRandom(world.getRandom()), 0);
+				world.setBlockState(pos, context.palette().getRandom(world.getRandom()), 0);
 			} else {
 				world.setBlockState(pos, Blocks.AIR.getDefaultState(), 0);
 			}
@@ -43,17 +50,17 @@ public class ToolFlatten extends Tool<ToolConfigFlatten, ToolFlatten> {
 	}
 
 	@Override
-	public void leftClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigFlatten config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigFlatten config) {
-		BlockPos center = target.getBlockPos();
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
+		BlockPos center = target.pos();
 		if(ToolTargeting.isFree(world, center)) return Set.of();
 		
-		Set<BlockPos> positions = ToolTargeting.getBlockPositions(world, target, config.radius(), config.shape());
+		Set<BlockPos> positions = ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), SHAPE.get(config));
 		positions.removeIf(pos -> {
-			int offset = switch(target.getSide()) {
+			int offset = switch(target.side()) {
 			case UP -> pos.getY() - center.getY();
 			case DOWN -> center.getY() - pos.getY();
 			case SOUTH -> pos.getZ() - center.getZ();

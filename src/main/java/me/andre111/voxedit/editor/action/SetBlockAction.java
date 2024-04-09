@@ -55,7 +55,7 @@ public class SetBlockAction extends EditAction {
 		
 		// restore be from stored nbt
 		if(oldNbt != null && world.getBlockEntity(pos) != null) {
-			world.getBlockEntity(pos).readNbt(oldNbt, world.getRegistryManager());
+			world.getBlockEntity(pos).read(oldNbt, world.getRegistryManager());
 		}
 		
 		stats.changedBlock();

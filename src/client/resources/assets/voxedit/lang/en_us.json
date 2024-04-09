@@ -4,32 +4,29 @@
     
     "voxedit.tool": "Tool",
     "voxedit.tool.voxedit.blend": "Blend",
+    "voxedit.tool.voxedit.paint": "Paint",
+    "voxedit.tool.voxedit.scatter": "Scatter",
     "voxedit.tool.voxedit.brush": "Brush",
     "voxedit.tool.voxedit.fill": "Fill",
     "voxedit.tool.voxedit.flatten": "Flatten",
     "voxedit.tool.voxedit.smooth": "Smooth",
     "voxedit.tool.voxedit.place": "Place",
+    "voxedit.tool.voxedit.extrude": "Extrude",
     
-    "voxedit.tool.settings.palette": "Edit Palette",
-    "voxedit.tool.settings.filter": "Edit Filter",
     "voxedit.tool.settings.radius": "Radius",
-    "voxedit.tool.settings.checkValid": "Check Valid",
+    "voxedit.tool.settings.shape": "Shape",
+    "voxedit.tool.settings.topOnly": "Top surfaces only",
+    "voxedit.tool.settings.checkCanPlace": "Prevent invalid placement",
+    "voxedit.tool.settings.targetFluids": "Target fluids",
     "voxedit.tool.settings.feature": "Feature",
     "voxedit.tool.settings.tries": "Tries",
     
-    "voxedit.shape": "Shape",
     "voxedit.shape.sphere": "Sphere",
     "voxedit.shape.cube": "Cube",
     "voxedit.shape.disc": "Disc",
     "voxedit.shape.cylinder": "Cylinder",
     "voxedit.shape.hollow_sphere": "Hollow Sphere",
     "voxedit.shape.hollow_cube": "Hollow Cube",
-    
-    "voxedit.mode": "Mode",
-    "voxedit.mode.solid": "Solid",
-    "voxedit.mode.paint": "Paint",
-    "voxedit.mode.paint_top": "Paint Top",
-    "voxedit.mode.scatter": "Scatter",
     
     "voxedit.action.perform": "%s",
     "voxedit.action.undo": "Undo:%s",
@@ -43,6 +40,10 @@
     
     "voxedit.feedback.cameraSpeed": "Camera Speed: %s",
     "voxedit.feedback.noTarget": "No valid positions",
+	
+	"voxedit.screen.panel.tools": "Tools",
+	"voxedit.screen.panel.toolConfig": "Tool Settings",
+	"voxedit.screen.panel.palette": "Block Palette",
     
     "voxedit.screen.blockPalette.add": "Add Entry",
     "voxedit.screen.blockPalette.remove": "Remove Entry",

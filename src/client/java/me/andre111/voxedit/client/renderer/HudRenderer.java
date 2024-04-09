@@ -15,8 +15,13 @@
  */
 package me.andre111.voxedit.client.renderer;
 
-import me.andre111.voxedit.client.ClientState;
-import me.andre111.voxedit.client.gui.screen.ToolSettingsScreen;
+import org.joml.Matrix4f;
+
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.VertexSorter;
+
+import me.andre111.voxedit.client.VoxEditClient;
+import me.andre111.voxedit.client.gui.screen.EditorScreen;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -25,33 +30,22 @@ import net.minecraft.client.gui.DrawContext;
 
 @Environment(value=EnvType.CLIENT)
 public class HudRenderer implements HudRenderCallback {
-	private static ToolSettingsScreen TOOL_SETTINGS;
-	
 	public static void init() {
 		HudRenderCallback.EVENT.register(new HudRenderer());
-	}
-	
-	public static ToolSettingsScreen getToolSettingsScreen() {
-		if(TOOL_SETTINGS == null) TOOL_SETTINGS = new ToolSettingsScreen();
-		return TOOL_SETTINGS;
 	}
 
 	@Override
 	public void onHudRender(DrawContext drawContext, float tickDelta) {
 		var currentScreen = MinecraftClient.getInstance().currentScreen;
-		if(currentScreen != null) {
-			if(currentScreen == getToolSettingsScreen()) {
-				int width = MinecraftClient.getInstance().getWindow().getScaledWidth();
-				int height =  MinecraftClient.getInstance().getWindow().getScaledHeight();
-				drawContext.fillGradient(0, 0, width, height, 0xA0101010, 0xB0101010);
-				drawContext.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, "<- Edit Tool Settings", width/2, height/2, 0xFFFFFFFF);
-			}
-			return;
+		if(currentScreen != null) return;
+		
+		if(EditorScreen.get().isActive()) {
+			MinecraftClient.getInstance().getWindow().setScaleFactor(1);
+			Matrix4f projMat = RenderSystem.getProjectionMatrix();
+			RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0.0f, (float) MinecraftClient.getInstance().getWindow().getFramebufferWidth(), (float) MinecraftClient.getInstance().getWindow().getFramebufferHeight(), 0.0f, 1000.0f, 21000.0f), VertexSorter.BY_Z);
+			EditorScreen.get().render(drawContext, -1, -1, tickDelta);
+			RenderSystem.setProjectionMatrix(projMat, VertexSorter.BY_Z);
+			VoxEditClient.restoreGuiScale();
 		}
-		
-		if(ClientState.tool() == null) return;
-		
-		var screen = getToolSettingsScreen();
-		screen.render(drawContext, -1, -1, tickDelta);
 	}
 }

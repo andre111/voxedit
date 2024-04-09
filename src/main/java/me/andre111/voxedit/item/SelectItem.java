@@ -23,8 +23,8 @@ public class SelectItem extends Item implements VoxEditItem {
 			HitResult result = serverPlayer.raycast(64, 0, false);
 			if(result instanceof BlockHitResult blockHit && !world.isAir(blockHit.getBlockPos())) {
 				Selection prevSel = ServerStates.get(serverPlayer).getSelection();
-				if(prevSel == null) ServerStates.get(serverPlayer).setSelection(new Selection(blockHit.getBlockPos(), blockHit.getBlockPos()));
-				else ServerStates.get(serverPlayer).setSelection(prevSel.expandToInclude(blockHit.getBlockPos()));
+				if(prevSel == null) ServerStates.get(serverPlayer).setSelection(new Selection(blockHit.getBlockPos(), blockHit.getBlockPos()), true);
+				else ServerStates.get(serverPlayer).setSelection(prevSel.expandToInclude(blockHit.getBlockPos()), true);
 				return TypedActionResult.success(player.getStackInHand(hand));
 			}
 			return TypedActionResult.fail(player.getStackInHand(hand));
@@ -35,7 +35,7 @@ public class SelectItem extends Item implements VoxEditItem {
 	@Override
 	public void leftClicked(World world, PlayerEntity player, Hand hand) {
 		if(!world.isClient && player instanceof ServerPlayerEntity serverPlayer && player.isCreative()) {
-			ServerStates.get(serverPlayer).setSelection(null);
+			ServerStates.get(serverPlayer).setSelection(null, true);
 		}
 	}
 }

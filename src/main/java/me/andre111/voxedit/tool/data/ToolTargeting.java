@@ -18,35 +18,23 @@ package me.andre111.voxedit.tool.data;
 import java.util.HashSet;
 import java.util.Set;
 
-import me.andre111.voxedit.tool.config.ToolConfig;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 
 public class ToolTargeting {
-	public static BlockHitResult getTargetOf(Entity e, ToolConfig<?> config) {
-		HitResult result = e.raycast(64, 0, config.targetFluids());
-		if(result instanceof BlockHitResult blockHit) {
-			return blockHit;
-		}
-		return null;
-	}
-	
-	public static Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, int radius) {
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, int radius) {
 		return getBlockPositions(world, target, radius, null, null, null);
 	}
-	public static Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, int radius, Shape shape) {
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, int radius, Shape shape) {
 		return getBlockPositions(world, target, radius, shape, null, null);
 	}
-	public static Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, int radius, Shape shape, Mode.TestPredicate testPredicate) {
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, int radius, Shape shape, TestPredicate testPredicate) {
 		return getBlockPositions(world, target, radius, shape, testPredicate, null);
 	}
-	public static Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, int radius, Shape shape, Mode.TestPredicate testPredicate, BlockPalette filter) {
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, int radius, Shape shape, TestPredicate testPredicate, BlockPalette filter) {
 		Set<BlockPos> positions = new HashSet<>();
 		
-		BlockPos center = target.getBlockPos();
+		BlockPos center = target.pos();
 		BlockPos.Mutable pos = new BlockPos.Mutable();
 		for(int x = -radius; x <= radius; x++) {
         	for(int y = -radius; y <= radius; y++) {
@@ -68,5 +56,14 @@ public class ToolTargeting {
 	
 	public static boolean isFree(BlockView world, BlockPos pos) {
 		return world.getBlockState(pos).getCollisionShape(world, pos).isEmpty();
+	}
+	
+	public static boolean isSolid(BlockView world, BlockPos pos) {
+		return world.getBlockState(pos).isFullCube(world, pos);
+	}
+	
+	@FunctionalInterface
+	public static interface TestPredicate {
+		public boolean test(Target target, BlockView world, BlockPos pos);
 	}
 }

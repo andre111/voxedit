@@ -1,78 +1,58 @@
 package me.andre111.voxedit.state;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import me.andre111.voxedit.network.CPClearSelection;
+import me.andre111.voxedit.network.CPSchematic;
+import me.andre111.voxedit.network.CPSetSelection;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.registry.Registries;
-import net.minecraft.structure.StructureTemplate;
+import net.minecraft.network.packet.CustomPayload;
+import net.minecraft.registry.RegistryWrapper.WrapperLookup;
+import net.minecraft.util.Identifier;
 
 public class ServerState {
-	private final Consumer<PacketByteBuf> updateConsumer;
+	private final WrapperLookup registryLookup;
+	private final Consumer<CustomPayload> updateConsumer;
 	
 	private Selection selection = null;
-	private StructureTemplate copyBuffer = null;
+	private Map<Identifier, Schematic> schematics = new HashMap<>();
 	
-	public ServerState(Consumer<PacketByteBuf> updateConsumer) {
+	public ServerState(WrapperLookup registryLookup, Consumer<CustomPayload> updateConsumer) {
+		this.registryLookup = registryLookup;
 		this.updateConsumer = updateConsumer;
 	}
 	
 	public final Selection getSelection() {
 		return selection;
 	}
-	public final void setSelection(Selection selection) {
+	public final void setSelection(Selection selection, boolean transfer) {
 		this.selection = selection;
 		
 		// send update
-		PacketByteBuf buf = PacketByteBufs.create();
-		if(selection == null) {
-			buf.writeEnumConstant(Command.CLEAR_SELECTION);
-		} else {
-			buf.writeEnumConstant(Command.SET_SELECTION);
-			buf.writeNbt(Selection.CODEC.encodeStart(NbtOps.INSTANCE, selection).result().get());
+		if(transfer) {
+			if(selection == null) {
+				updateConsumer.accept(new CPClearSelection());
+			} else {
+				updateConsumer.accept(new CPSetSelection(selection));
+			}
 		}
-		updateConsumer.accept(buf);
 	}
 	
-	public final StructureTemplate getCopyBuffer() {
-		return copyBuffer;
+	public final Schematic schematic(Identifier id) {
+		return schematics.get(id);
 	}
 
-	public final void setCopyBuffer(StructureTemplate copyBuffer) {
-		this.copyBuffer = copyBuffer;
+	public final void schematic(Identifier id, Schematic schematic, boolean transfer) {
+		if(schematic == null) schematics.remove(id);
+		else schematics.put(id, schematic);
 		
 		// send update
-		PacketByteBuf buf = PacketByteBufs.create();
-		if(copyBuffer == null) {
-			buf.writeEnumConstant(Command.CLEAR_COPY_BUFFER);
-		} else {
-			buf.writeEnumConstant(Command.SET_COPY_BUFFER);
+		if(transfer) {
 			NbtCompound nbt = new NbtCompound();
-			copyBuffer.writeNbt(nbt);
-			buf.writeNbt(nbt);
-		}
-		updateConsumer.accept(buf);
-	}
-	
-	public final void read(PacketByteBuf buf) {
-		switch(buf.readEnumConstant(Command.class)) {
-		case CLEAR_SELECTION:
-			selection = null;
-			break;
-		case SET_SELECTION:
-			selection = Selection.CODEC.decode(NbtOps.INSTANCE, buf.readNbt()).result().get().getFirst();
-			break;
-		case CLEAR_COPY_BUFFER:
-			copyBuffer = null;
-			break;
-		case SET_COPY_BUFFER:
-			copyBuffer = new StructureTemplate();
-			copyBuffer.readNbt(Registries.BLOCK.getReadOnlyWrapper(), buf.readNbt());
-			break;
-		default:
-			break;
+			if(schematic != null) schematic.writeNbt(registryLookup, nbt);
+			updateConsumer.accept(new CPSchematic(id, nbt));
 		}
 	}
 

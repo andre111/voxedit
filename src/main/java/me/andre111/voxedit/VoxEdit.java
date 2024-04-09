@@ -17,7 +17,6 @@ package me.andre111.voxedit;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.component.DataComponentType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
@@ -31,39 +30,41 @@ import com.mojang.serialization.Lifecycle;
 
 import me.andre111.voxedit.item.EditorItem;
 import me.andre111.voxedit.item.SelectItem;
-import me.andre111.voxedit.item.ToolItem;
-import me.andre111.voxedit.item.ToolItem.Data;
 import me.andre111.voxedit.network.ServerNetworking;
-import me.andre111.voxedit.tool.ConfiguredTool;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.ToolBlend;
 import me.andre111.voxedit.tool.ToolBrush;
+import me.andre111.voxedit.tool.ToolExtrude;
 import me.andre111.voxedit.tool.ToolFill;
 import me.andre111.voxedit.tool.ToolFlatten;
+import me.andre111.voxedit.tool.ToolPaint;
 import me.andre111.voxedit.tool.ToolPlace;
+import me.andre111.voxedit.tool.ToolRaise;
+import me.andre111.voxedit.tool.ToolScatter;
 import me.andre111.voxedit.tool.ToolSmooth;
-import me.andre111.voxedit.tool.config.ToolConfigBrush;
 
 public class VoxEdit implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("voxedit");
     
-    public static final RegistryKey<Registry<Tool<?, ?>>> TOOL_REGISTRY_KEY = RegistryKey.ofRegistry(id("tool"));
-    public static final Registry<Tool<?, ?>> TOOL_REGISTRY = new SimpleRegistry<Tool<?, ?>>(TOOL_REGISTRY_KEY, Lifecycle.stable());
+    public static final RegistryKey<Registry<Tool>> TOOL_REGISTRY_KEY = RegistryKey.ofRegistry(id("tool"));
+    public static final Registry<Tool> TOOL_REGISTRY = new SimpleRegistry<Tool>(TOOL_REGISTRY_KEY, Lifecycle.stable());
     
     public static final ToolBrush TOOL_BRUSH = Registry.register(TOOL_REGISTRY, id("brush"), new ToolBrush());
+    public static final ToolPaint TOOL_PAINT = Registry.register(TOOL_REGISTRY, id("paint"), new ToolPaint());
+    public static final ToolScatter TOOL_SCATTER = Registry.register(TOOL_REGISTRY, id("scatter"), new ToolScatter());
     public static final ToolSmooth TOOL_SMOOTH = Registry.register(TOOL_REGISTRY, id("smooth"), new ToolSmooth());
     public static final ToolFill TOOL_FILL = Registry.register(TOOL_REGISTRY, id("fill"), new ToolFill());
     public static final ToolFlatten TOOL_FLATTEN = Registry.register(TOOL_REGISTRY, id("flatten"), new ToolFlatten());
     public static final ToolBlend TOOL_BLEND = Registry.register(TOOL_REGISTRY, id("blend"), new ToolBlend());
     public static final ToolPlace TOOL_PLACE = Registry.register(TOOL_REGISTRY, id("place"), new ToolPlace());
+    public static final ToolExtrude TOOL_EXTRUDE = Registry.register(TOOL_REGISTRY, id("extrude"), new ToolExtrude());
+    public static final ToolRaise TOOL_RAISE = Registry.register(TOOL_REGISTRY, id("raise"), new ToolRaise());
     
-	public static final ConfiguredTool<?, ?> DEFAULT_TOOL = new ConfiguredTool<>(TOOL_BRUSH, new ToolConfigBrush());
-    
-    public static final ToolItem ITEM_TOOL = Registry.register(Registries.ITEM, id("tool"), new ToolItem());
     public static final EditorItem ITEM_EDITOR = Registry.register(Registries.ITEM, id("editor"), new EditorItem());
     public static final SelectItem ITEM_SELECT = Registry.register(Registries.ITEM, id("select"), new SelectItem());
     
-    public static final DataComponentType<Data> DATA_COMPONENT = Registry.register(Registries.DATA_COMPONENT_TYPE, id("tool"), DataComponentType.<Data>builder().codec(Data.CODEC).build());
+    public static final int MAX_TARGETS = 1024;
+    public static final int PREVIEW_DELAY = 5;
     
 	@Override
 	public void onInitialize() {

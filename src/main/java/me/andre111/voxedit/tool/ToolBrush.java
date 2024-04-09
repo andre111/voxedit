@@ -15,62 +15,49 @@
  */
 package me.andre111.voxedit.tool;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
-import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
-import me.andre111.voxedit.tool.config.ToolConfigBrush;
-import me.andre111.voxedit.tool.data.BlockPalette;
+import me.andre111.voxedit.editor.EditorWorld;
+import me.andre111.voxedit.tool.data.Context;
+import me.andre111.voxedit.tool.data.Shape;
+import me.andre111.voxedit.tool.data.Target;
+import me.andre111.voxedit.tool.data.ToolConfig;
+import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.tool.data.ToolSettings;
 import me.andre111.voxedit.tool.data.ToolTargeting;
-import me.andre111.voxedit.tool.data.Mode;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Util;
-import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 
-public class ToolBrush extends Tool<ToolConfigBrush, ToolBrush> {
+public class ToolBrush extends Tool {
+	private static final ToolSetting<Shape> SHAPE = ToolSetting.ofEnum("shape", Shape.class, Shape::asText);
+	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
+	private static final ToolSetting<Boolean> CHECK_CAN_PLACE = ToolSetting.ofBoolean("checkCanPlace", false);
+	
 	public ToolBrush() {
-		super(ToolConfigBrush.CODEC, new ToolConfigBrush());
+		super(Properties.of(SHAPE, RADIUS, CHECK_CAN_PLACE, ToolSettings.TARGET_FLUIDS).draggable());
 	}
 
 	@Override
-	public void rightClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigBrush config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+		boolean checkCanPlace = CHECK_CAN_PLACE.get(config);
 		for(BlockPos pos : positions) {
-			BlockState state = config.palette().getRandom(world.getRandom());
-			if(!config.checkCanPlace() || state.canPlaceAt(world, pos)) world.setBlockState(pos, state, 0);
+			BlockState state = context.palette().getRandom(world.getRandom());
+			if(!checkCanPlace || state.canPlaceAt(world, pos)) world.setBlockState(pos, state, 0);
 		}
 	}
 
 	@Override
-	public void leftClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigBrush config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
 		for(BlockPos pos : positions) {
 			world.setBlockState(pos, Blocks.AIR.getDefaultState(), 0);
 		}
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigBrush config) {
-		return ToolTargeting.getBlockPositions(world, target, config.radius(), config.shape(), config.mode().testPredicate, config.filter());
-	}
-
-	public List<ToolConfigBrush> getAdditionalCreativeMenuConfigs() {
-		return List.of(
-				getDefaultConfig().withMode(Mode.PAINT_TOP).withRadius(5).withPalette(new BlockPalette(Util.make(new ArrayList<>(), list -> {
-					list.add(new BlockPalette.Entry(Blocks.DIRT.getDefaultState(), 1));
-					list.add(new BlockPalette.Entry(Blocks.GRAVEL.getDefaultState(), 1));
-					list.add(new BlockPalette.Entry(Blocks.DIRT_PATH.getDefaultState(), 1));
-				}))),
-				getDefaultConfig().withMode(Mode.SCATTER).withRadius(6).withPalette(new BlockPalette(Util.make(new ArrayList<>(), list -> {
-					list.add(new BlockPalette.Entry(Blocks.AIR.getDefaultState(), 20));
-					list.add(new BlockPalette.Entry(Blocks.SHORT_GRASS.getDefaultState(), 5));
-					list.add(new BlockPalette.Entry(Blocks.FERN.getDefaultState(), 5));
-					list.add(new BlockPalette.Entry(Blocks.POPPY.getDefaultState(), 1));
-					list.add(new BlockPalette.Entry(Blocks.DANDELION.getDefaultState(), 1));
-				})))
-				);
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
+		return ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), SHAPE.get(config), (innerTarget, innerWorld, pos) -> true, context.filter());
 	}
 }

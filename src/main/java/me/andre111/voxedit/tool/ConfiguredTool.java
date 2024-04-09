@@ -16,10 +16,23 @@
 package me.andre111.voxedit.tool;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import io.netty.buffer.ByteBuf;
 import me.andre111.voxedit.VoxEdit;
-import me.andre111.voxedit.tool.config.ToolConfig;
+import me.andre111.voxedit.tool.data.ToolConfig;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
 
-public record ConfiguredTool<TC extends ToolConfig<TC>, T extends Tool<TC, T>>(T tool, TC config) {
-	public static final Codec<ConfiguredTool<?, ?>> CODEC = VoxEdit.TOOL_REGISTRY.getCodec().dispatch(configuredTool -> configuredTool.tool, Tool::getCodec);
+public record ConfiguredTool(Tool tool, ToolConfig config) {
+	public static final Codec<ConfiguredTool> CODEC = RecordCodecBuilder.create(instance -> instance
+			.group(
+					VoxEdit.TOOL_REGISTRY.getCodec().fieldOf("tool").forGetter(ConfiguredTool::tool),
+					ToolConfig.CODEC.fieldOf("config").forGetter(ConfiguredTool::config)
+			)
+			.apply(instance, ConfiguredTool::new));
+	public static final PacketCodec<ByteBuf, ConfiguredTool> PACKET_CODEC = PacketCodec.tuple(
+			PacketCodecs.codec(VoxEdit.TOOL_REGISTRY.getCodec()), ConfiguredTool::tool,
+			ToolConfig.PACKET_CODEC, ConfiguredTool::config,
+			ConfiguredTool::new);
 }

@@ -16,58 +16,54 @@
 package me.andre111.voxedit.client.gui.widget;
 
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-import me.andre111.voxedit.client.ClientState;
-import me.andre111.voxedit.client.gui.screen.EditBlockPaletteScreen;
-import me.andre111.voxedit.client.network.ClientNetworking;
-import me.andre111.voxedit.tool.config.ToolConfig;
-import me.andre111.voxedit.tool.data.BlockPalette;
+import me.andre111.voxedit.tool.data.ToolConfig;
 import me.andre111.voxedit.tool.data.ToolSetting;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.gui.widget.CyclingButtonWidget;
-import net.minecraft.client.gui.widget.DirectionalLayoutWidget;
-import net.minecraft.client.gui.widget.DirectionalLayoutWidget.DisplayAxis;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.util.Identifier;
 
-public abstract class ToolSettingWidget<V, TC extends ToolConfig<TC>, TS extends ToolSetting<V, TC>> {
+public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 	protected final TS setting;
+	protected final Supplier<ToolConfig> configGetter;
+	protected final Consumer<ToolConfig> configSetter;
 	
-	public ToolSettingWidget(TS setting) {
+	public ToolSettingWidget(TS setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
 		this.setting = setting;
+		this.configGetter = configGetter;
+		this.configSetter = configSetter;
 	}
 	
-	@SuppressWarnings("unchecked")
 	protected V read() {
-		return setting.reader().apply((TC) ClientState.config());
+		return setting.get(configGetter.get());
 	}
 	
-	@SuppressWarnings("unchecked")
 	protected void write(V value) {
-		ClientNetworking.setSelectedConfig(setting.writer().apply((TC) ClientState.config(), value));
+		configSetter.accept(setting.with(configGetter.get(), value));
 	}
 	
 	public abstract List<ClickableWidget> create(Screen screen, int x, int y, int width, int height);
 	public abstract void reload();
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static ToolSettingWidget of(ToolSetting<?, ?> setting) {
-		if(setting instanceof ToolSetting.Bool boolSetting) return new Bool<>(boolSetting);
-		if(setting instanceof ToolSetting.FixedValues enumSetting) return new FixedValues<>(enumSetting);
-		if(setting instanceof ToolSetting.Int intSetting) return new Int<>(intSetting);
-		if(setting instanceof ToolSetting.TSBlockPalette paletteSetting) return new TSBlockPalette<>(paletteSetting);
-		if(setting instanceof ToolSetting.TSIdentifier identifierSetting) return new TSIdentifier<>(identifierSetting);
+	@SuppressWarnings("unchecked")
+	public static ToolSettingWidget<?, ?> of(ToolSetting<?> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
+		if(setting instanceof ToolSetting.Bool boolSetting) return new Bool(boolSetting, configGetter, configSetter);
+		if(setting instanceof ToolSetting.FixedValues enumSetting) return new FixedValues<>(enumSetting, configGetter, configSetter);
+		if(setting instanceof ToolSetting.Int intSetting) return new Int(intSetting, configGetter, configSetter);
+		if(setting instanceof ToolSetting.TSIdentifier identifierSetting) return new TSIdentifier<>(identifierSetting, configGetter, configSetter);
 		return null;
 	}
 	
-	public static class Bool<TC extends ToolConfig<TC>> extends ToolSettingWidget<Boolean, TC, ToolSetting.Bool<TC>> {
+	public static class Bool extends ToolSettingWidget<Boolean, ToolSetting.Bool> {
 		private CyclingButtonWidget<Boolean> button;
 		
-		public Bool(ToolSetting.Bool<TC> setting) {
-			super(setting);
+		public Bool(ToolSetting.Bool setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
+			super(setting, configGetter, configSetter);
 		}
 		
 		@Override
@@ -83,11 +79,11 @@ public abstract class ToolSettingWidget<V, TC extends ToolConfig<TC>, TS extends
 		}
 	}
 	
-	public static class FixedValues<TC extends ToolConfig<TC>, E> extends ToolSettingWidget<E, TC, ToolSetting.FixedValues<E, TC>> {
+	public static class FixedValues<E> extends ToolSettingWidget<E, ToolSetting.FixedValues<E>> {
 		private CyclingButtonWidget<E> button;
 		
-		public FixedValues(ToolSetting.FixedValues<E, TC> setting) {
-			super(setting);
+		public FixedValues(ToolSetting.FixedValues<E> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
+			super(setting, configGetter, configSetter);
 		}
 		
 		@Override
@@ -103,11 +99,11 @@ public abstract class ToolSettingWidget<V, TC extends ToolConfig<TC>, TS extends
 		}
 	}
 	
-	public static class Int<TC extends ToolConfig<TC>> extends ToolSettingWidget<Integer, TC, ToolSetting.Int<TC>> {
+	public static class Int extends ToolSettingWidget<Integer, ToolSetting.Int> {
 		private IntSliderWidget slider;
 		
-		public Int(ToolSetting.Int<TC> setting) {
-			super(setting);
+		public Int(ToolSetting.Int setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
+			super(setting, configGetter, configSetter);
 		}
 		
 		@Override
@@ -123,42 +119,11 @@ public abstract class ToolSettingWidget<V, TC extends ToolConfig<TC>, TS extends
 		}
 	}
 	
-
-	public static class TSBlockPalette<TC extends ToolConfig<TC>> extends ToolSettingWidget<BlockPalette, TC, ToolSetting.TSBlockPalette<TC>> {
-		private BlockPaletteDisplayWidget display;
-		
-		public TSBlockPalette(ToolSetting.TSBlockPalette<TC> setting) {
-			super(setting);
-		}
-		
-		@Override
-		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
-			DirectionalLayoutWidget container = new DirectionalLayoutWidget(x, y, DisplayAxis.HORIZONTAL);
-			container.spacing(2);
-
-			List<ClickableWidget> elements = List.of(
-					container.add(ButtonWidget.builder(setting.label(), (button) -> {
-						MinecraftClient.getInstance().setScreen(new EditBlockPaletteScreen(screen, setting.label(), 0, setting.includeProperties(), setting.showWeights(), read(), palette -> {
-							write(palette);
-						}));
-					}).size(width-22, height).build()),
-					container.add(display = new BlockPaletteDisplayWidget(0, 0, 20, height, read()))
-					);
-			container.refreshPositions();
-			return elements;
-		}
-		
-		@Override
-		public void reload() {
-			display.setValue(read());
-		}
-	}
-	
-	public static class TSIdentifier<TC extends ToolConfig<TC>, T> extends ToolSettingWidget<Identifier, TC, ToolSetting.TSIdentifier<TC, T>> {
+	public static class TSIdentifier<T> extends ToolSettingWidget<Identifier, ToolSetting.TSIdentifier<T>> {
 		private RegistryEntryWidget<T> input;
 		
-		public TSIdentifier(ToolSetting.TSIdentifier<TC, T> setting) {
-			super(setting);
+		public TSIdentifier(ToolSetting.TSIdentifier<T> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
+			super(setting, configGetter, configSetter);
 		}
 		
 		@Override

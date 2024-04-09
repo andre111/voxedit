@@ -15,6 +15,7 @@
  */
 package me.andre111.voxedit.editor;
 
+import me.andre111.voxedit.state.Schematic;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -25,6 +26,7 @@ public class EditStats {
 	private int blockChanges = 0;
 	private int blockEntityChanges = 0;
 	private int entityChanges = 0;
+	private Schematic schematic = null;
 	
 	public int blockChanges() {
 		return blockChanges;
@@ -48,6 +50,14 @@ public class EditStats {
 	
 	public void changedEntity() {
 		entityChanges++;
+	}
+	
+	public Schematic schematic() {
+		return schematic;
+	}
+	
+	public void setSchematic(Schematic schematic) {
+		this.schematic = schematic;
 	}
 	
 	public void inform(PlayerEntity player, EditType type) {

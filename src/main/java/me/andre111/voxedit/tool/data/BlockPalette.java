@@ -21,9 +21,12 @@ import java.util.List;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.util.math.random.Random;
 
 public class BlockPalette {
@@ -32,17 +35,21 @@ public class BlockPalette {
 					Entry.CODEC.listOf().fieldOf("entries").forGetter(bp -> bp.entries)
 			)
 			.apply(instance, BlockPalette::new));
+	public static final PacketCodec<ByteBuf, BlockPalette> PACKET_CODEC = Entry.PACKET_CODEC.collect(PacketCodecs.toList()).xmap(BlockPalette::new, BlockPalette::getEntries);
 	public static final BlockPalette DEFAULT = new BlockPalette(Blocks.STONE.getDefaultState());
 	
 	private List<Entry> entries = new ArrayList<>();
+	private int totalWeight = 0;
 
 	public BlockPalette() {
 	}
 	public BlockPalette(BlockState state) {
 		entries.add(new Entry(state, 1));
+		totalWeight = entries.stream().mapToInt(Entry::weight).sum();
 	}
 	public BlockPalette(List<Entry> entries) {
-		this.entries = entries;
+		this.entries = new ArrayList<>(entries);
+		totalWeight = entries.stream().mapToInt(Entry::weight).sum();
 	}
 	
 	public int size() {
@@ -61,7 +68,6 @@ public class BlockPalette {
 	}
 	
 	public BlockState getRandom(Random random) {
-		int totalWeight = entries.stream().mapToInt(Entry::weight).sum();
 		int value = random.nextInt(totalWeight);
 		for(Entry entry : entries) {
 			if(value < entry.weight) return entry.state;
@@ -76,6 +82,7 @@ public class BlockPalette {
 	
 	public void setEntry(int index, Entry entry) {
 		entries.set(index, entry);
+		totalWeight = entries.stream().mapToInt(Entry::weight).sum();
 	}
 	
 	public List<Entry> getEntries() {
@@ -100,6 +107,10 @@ public class BlockPalette {
 						Codec.INT.fieldOf("weight").forGetter(e -> e.weight)
 				)
 				.apply(instance, Entry::new));
+		private static final PacketCodec<ByteBuf, Entry> PACKET_CODEC = PacketCodec.tuple(
+				PacketCodecs.codec(BlockState.CODEC), Entry::state, 
+				PacketCodecs.INTEGER, Entry::weight, 
+				Entry::new);
 	}
 	
 	public static class Builder {

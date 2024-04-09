@@ -15,22 +15,25 @@
  */
 package me.andre111.voxedit.tool.data;
 
-import java.util.function.BiFunction;
+import java.util.Map;
 import java.util.function.Function;
 
-import me.andre111.voxedit.tool.config.ToolConfig;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
-public sealed abstract class ToolSetting<V, TC extends ToolConfig<TC>> {
+public sealed abstract class ToolSetting<V> {
+	private final String key;
 	private final Text label;
-	private final Function<TC, V> reader;
-	private final BiFunction<TC, V, TC> writer;
+	private final V defaultValue;
+	private final Function<String, V> reader;
+	private final Function<V, String> writer;
 	
-	private ToolSetting(Text label, Function<TC, V> reader, BiFunction<TC, V, TC> writer) {
-		this.label = label;
+	private ToolSetting(String key, V defaultValue, Function<String, V> reader, Function<V, String> writer) {
+		this.key = key;
+		this.label = Text.translatable("voxedit.tool.settings."+key);
+		this.defaultValue = defaultValue;
 		this.reader = reader;
 		this.writer = writer;
 	}
@@ -39,25 +42,75 @@ public sealed abstract class ToolSetting<V, TC extends ToolConfig<TC>> {
 		return label;
 	}
 	
-	public Function<TC, V> reader() {
-		return reader;
+	public V get(ToolConfig config) {
+		if(!config.values().containsKey(key)) return defaultValue;
+		try {
+			V value = reader.apply(config.values().get(key));
+			if(isValid(value)) return value;
+		} catch(Exception e) {}
+		return defaultValue;
 	}
 	
-	public BiFunction<TC, V, TC> writer() {
-		return writer;
+	public ToolConfig with(ToolConfig config, V value) {
+		if(!isValid(value)) return config;
+		
+		Map<String, String> newValues = config.values();
+		newValues.put(key, writer.apply(value));
+		return new ToolConfig(newValues);
 	}
 	
-	public static final class Bool<TC extends ToolConfig<TC>> extends ToolSetting<Boolean, TC> {
-		public Bool(Text label, Function<TC, Boolean> reader, BiFunction<TC, Boolean, TC> writer) {
-			super(label, reader, writer);
+	public V getDefaultValue() {
+		return defaultValue;
+	}
+	
+	public ToolConfig withDefaultValue(ToolConfig config) {
+		return with(config, defaultValue);
+	}
+	
+	public boolean isValidOrMissing(ToolConfig config) {
+		if(!config.values().containsKey(key)) return true;
+		try {
+			V value = reader.apply(config.values().get(key));
+			return isValid(value);
+		} catch(Exception e) {}
+		return false;
+	}
+	
+	protected abstract boolean isValid(V value);
+	
+	
+	public static ToolSetting<Boolean> ofBoolean(String key, boolean defaultValue) {
+		return new Bool(key, defaultValue);
+	}
+
+	public static <E extends Enum<E>> ToolSetting<E> ofEnum(String key, Class<E> enumCls, Function<E, Text> toText) {
+		return new FixedValues<E>(key, enumCls.getEnumConstants()[0], enumCls.getEnumConstants(), toText, name -> Enum.valueOf(enumCls, name), e -> e.name());
+	}
+	
+	public static ToolSetting<Integer> ofInt(String key, int defaultValue, int min, int max) {
+		return new Int(key, defaultValue, min, max);
+	}
+	
+	public static <T> ToolSetting<Identifier> ofIdentifier(String key, Identifier defaultValue, RegistryKey<? extends Registry<T>> registryKey) {
+		return new TSIdentifier<>(key, defaultValue, registryKey);
+	}
+	
+	public static final class Bool extends ToolSetting<Boolean> {
+		public Bool(String key, boolean defaultValue) {
+			super(key, defaultValue, Boolean::parseBoolean, b -> b.toString());
+		}
+
+		@Override
+		protected boolean isValid(Boolean value) {
+			return value != null;
 		}
 	}
 	
-	public static final class FixedValues<E, TC extends ToolConfig<TC>> extends ToolSetting<E, TC> {
+	public static final class FixedValues<E> extends ToolSetting<E> {
 		private final E[] values;
 		private final Function<E, Text> toText;
-		public FixedValues(Text label, E[] values, Function<E, Text> toText, Function<TC, E> reader, BiFunction<TC, E, TC> writer) {
-			super(label, reader, writer);
+		public FixedValues(String key, E defaultValue, E[] values, Function<E, Text> toText, Function<String, E> reader, Function<E, String> writer) {
+			super(key, defaultValue, reader, writer);
 			this.values = values;
 			this.toText = toText;
 		}
@@ -69,13 +122,19 @@ public sealed abstract class ToolSetting<V, TC extends ToolConfig<TC>> {
 		public Function<E, Text> toText() {
 			return toText;
 		}
+
+		@Override
+		protected boolean isValid(E value) {
+			for(E e : values) if(e.equals(value)) return true;
+			return false;
+		}
 	}
 
-	public static final class Int<TC extends ToolConfig<TC>> extends ToolSetting<Integer, TC> {
+	public static final class Int extends ToolSetting<Integer> {
 		private final int min;
 		private final int max;
-		public Int(Text label, int min, int max, Function<TC, Integer> reader, BiFunction<TC, Integer, TC> writer) {
-			super(label, reader, writer);
+		public Int(String key, int defaultValue, int min, int max) {
+			super(key, defaultValue, Integer::parseInt, i -> i.toString());
 			this.min = min;
 			this.max = max;
 		}
@@ -87,36 +146,29 @@ public sealed abstract class ToolSetting<V, TC extends ToolConfig<TC>> {
 		public int max() {
 			return max;
 		}
-	}
-	
-	public static final class TSBlockPalette<TC extends ToolConfig<TC>> extends ToolSetting<BlockPalette, TC> {
-		private final boolean includeProperties;
-		private final boolean showWeights;
-		public TSBlockPalette(Text title, boolean includeProperties, boolean showWeights, Function<TC, BlockPalette> reader, BiFunction<TC, BlockPalette, TC> writer) {
-			super(title, reader, writer);
-			this.includeProperties = includeProperties;
-			this.showWeights = showWeights;
-		}
-		
-		public boolean includeProperties() {
-			return includeProperties;
-		}
-		
-		public boolean showWeights() {
-			return showWeights;
+
+		@Override
+		protected boolean isValid(Integer value) {
+			if(value == null) return false;
+			return min <= value && value <= max;
 		}
 	}
 	
-	public static final class TSIdentifier<TC extends ToolConfig<TC>, T> extends ToolSetting<Identifier, TC> {
+	public static final class TSIdentifier<T> extends ToolSetting<Identifier> {
 		private final RegistryKey<? extends Registry<T>> registryKey;
 		
-		public TSIdentifier(Text title, RegistryKey<? extends Registry<T>> registryKey, Function<TC, Identifier> reader, BiFunction<TC, Identifier, TC> writer) {
-			super(title, reader, writer);
+		public TSIdentifier(String key, Identifier defaultValue, RegistryKey<? extends Registry<T>> registryKey) {
+			super(key, defaultValue, Identifier::tryParse, Identifier::toString);
 			this.registryKey = registryKey;
 		}
 		
 		public RegistryKey<? extends Registry<T>> registryKey() {
 			return registryKey;
+		}
+
+		@Override
+		protected boolean isValid(Identifier value) {
+			return value != null;
 		}
 	}
 }

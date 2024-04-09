@@ -20,23 +20,30 @@ import java.util.Set;
 
 import com.mojang.datafixers.util.Pair;
 
-import me.andre111.voxedit.editor.UndoRecordingStructureWorldAccess;
-import me.andre111.voxedit.tool.config.ToolConfigSmooth;
+import me.andre111.voxedit.editor.EditorWorld;
+import me.andre111.voxedit.tool.data.Context;
+import me.andre111.voxedit.tool.data.Shape;
+import me.andre111.voxedit.tool.data.Target;
+import me.andre111.voxedit.tool.data.ToolConfig;
+import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.tool.data.ToolSettings;
 import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 
-public class ToolSmooth extends Tool<ToolConfigSmooth, ToolSmooth> {
+public class ToolSmooth extends Tool {
+	private static final ToolSetting<Shape> SHAPE = ToolSetting.ofEnum("shape", Shape.class, Shape::asText);
+	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
+	
 	public ToolSmooth() {
-		super(ToolConfigSmooth.CODEC, new ToolConfigSmooth());
+		super(Properties.of(SHAPE, RADIUS, ToolSettings.TARGET_FLUIDS).draggable());
 	}
 
 	@Override
-	public void rightClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigSmooth config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
 		// erode
 		List<BlockPos> erodePositions = positions.stream().filter(pos -> !world.isAir(pos)).filter(pos -> {
 			int neighborCount = (int) Direction.stream().map(pos::offset).filter(neighbor -> !world.isAir(neighbor)).count();
@@ -59,11 +66,11 @@ public class ToolSmooth extends Tool<ToolConfigSmooth, ToolSmooth> {
 	}
 
 	@Override
-	public void leftClick(UndoRecordingStructureWorldAccess world, PlayerEntity player, BlockHitResult target, ToolConfigSmooth config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, BlockHitResult target, ToolConfigSmooth config) {
-		return ToolTargeting.getBlockPositions(world, target, config.radius(), config.shape(), null, config.filter());
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
+		return ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), SHAPE.get(config), null, context.filter());
 	}
 }

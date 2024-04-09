@@ -21,12 +21,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import me.andre111.voxedit.VoxEditUtil;
 import me.andre111.voxedit.editor.action.EditAction;
 import me.andre111.voxedit.editor.action.ModifyBlockEntityAction;
 import me.andre111.voxedit.editor.action.SetBlockAction;
+import me.andre111.voxedit.state.Schematic;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -43,6 +46,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.TypeFilter;
+import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
@@ -64,14 +68,14 @@ import net.minecraft.world.event.GameEvent;
 import net.minecraft.world.event.GameEvent.Emitter;
 import net.minecraft.world.tick.QueryableTickScheduler;
 
-public class UndoRecordingStructureWorldAccess implements StructureWorldAccess {
+public class EditorWorld implements StructureWorldAccess {
 	private final ServerWorld world;
 	private final Undo undo;
 	private final List<EditAction> actions;
 	private final Map<BlockPos, BlockState> changedBlockStates;
 	private final Map<BlockPos, ModifiedBlockEntity> changedBlockEntities;
 	
-	public UndoRecordingStructureWorldAccess(ServerWorld world, Undo undo) {
+	public EditorWorld(ServerWorld world, Undo undo) {
 		this.world = world;
 		this.undo = undo;
 		this.actions = new ArrayList<>();
@@ -92,6 +96,48 @@ public class UndoRecordingStructureWorldAccess implements StructureWorldAccess {
 			action.redo(world, result);
 		}
 		undo.push(new UndoState(actions));
+		return result;
+	}
+	
+	public EditStats toSchematic(BlockPos origin) {
+		EditStats result = new EditStats();
+		
+		// find bounding box
+		BlockBox blockStateBB = BlockBox.encompassPositions(changedBlockStates.keySet()).orElse(null);
+		BlockBox blockEntityBB = BlockBox.encompassPositions(changedBlockEntities.keySet()).orElse(null);
+		BlockBox boundingBox = null;
+		if(blockStateBB != null && blockEntityBB != null) boundingBox = BlockBox.encompass(List.of(blockStateBB, blockEntityBB)).get();
+		else if(blockStateBB != null) boundingBox = blockStateBB;
+		else if(blockEntityBB != null) boundingBox = blockEntityBB;
+		
+		// create schematic
+		if(boundingBox != null) {
+			int offsetX = boundingBox.getMinX() - origin.getX();
+			int offsetY = boundingBox.getMinY() - origin.getY();
+			int offsetZ = boundingBox.getMinZ() - origin.getZ();
+			BlockPos.Mutable sourcePos = new BlockPos.Mutable();
+			BlockPos.Mutable schematicPos = new BlockPos.Mutable();
+			List<BlockState> blockStates = new ArrayList<>();
+			Map<BlockPos, BlockEntity> blockEntities = new HashMap<>();
+			for(int y=0; y<boundingBox.getBlockCountY(); y++) {
+				for(int z=0; z<boundingBox.getBlockCountZ(); z++) {
+					for(int x=0; x<boundingBox.getBlockCountX(); x++) {
+						sourcePos.set(boundingBox.getMinX()+x, boundingBox.getMinY()+y, boundingBox.getMinZ()+z);
+						schematicPos.set(x, y, z);
+						
+						BlockState state = changedBlockStates.getOrDefault(sourcePos, Blocks.STRUCTURE_VOID.getDefaultState());
+						blockStates.add(state);
+						if(changedBlockEntities.containsKey(sourcePos)) {
+							BlockEntity copy = VoxEditUtil.copyBlockEntity(getRegistryManager(), state, changedBlockEntities.get(sourcePos).be, schematicPos);
+							blockEntities.put(schematicPos.toImmutable(), copy);
+						}
+					}
+				}
+			}
+			Schematic schematic = new Schematic(offsetX, offsetY, offsetZ, boundingBox.getBlockCountX(), boundingBox.getBlockCountY(), boundingBox.getBlockCountZ(), blockStates, blockEntities);
+			result.setSchematic(schematic);
+		}
+		
 		return result;
 	}
 

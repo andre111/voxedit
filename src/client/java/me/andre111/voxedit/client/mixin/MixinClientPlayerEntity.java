@@ -24,12 +24,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.mojang.authlib.GameProfile;
 
 import me.andre111.voxedit.VoxEditUtil;
-import me.andre111.voxedit.client.ClientState;
+import me.andre111.voxedit.client.ClientStates;
 import net.minecraft.client.input.Input;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 @Mixin(ClientPlayerEntity.class)
@@ -60,10 +59,13 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 	        if (inputStrength < 1.0E-7) {
 	            setVelocity(Vec3d.ZERO);
 	        } else {
-		        Vec3d movementSpeed = (inputStrength > 1.0 ? movementInput.normalize() : movementInput).multiply(ClientState.INSTANCE.getCameraSpeed());
-		        float sin = MathHelper.sin(getYaw() * ((float)Math.PI / 180));
-		        float cos = MathHelper.cos(getYaw() * ((float)Math.PI / 180));
-		        setVelocity(new Vec3d(movementSpeed.x * cos - movementSpeed.z * sin, movementSpeed.y, movementSpeed.z * cos + movementSpeed.x * sin));
+		        Vec3d movementSpeed = (inputStrength > 1.0 ? movementInput.normalize() : movementInput).multiply(ClientStates.instance().getCameraSpeed());
+		        //float sin = MathHelper.sin(getYaw() * ((float)Math.PI / 180));
+		        //float cos = MathHelper.cos(getYaw() * ((float)Math.PI / 180));
+		        //setVelocity(new Vec3d(movementSpeed.x * cos - movementSpeed.z * sin, movementSpeed.y, movementSpeed.z * cos + movementSpeed.x * sin));
+		        movementSpeed = movementSpeed.rotateX((float) Math.toRadians(-getPitch()));
+		        movementSpeed = movementSpeed.rotateY((float) Math.toRadians(-getYaw()));
+		        setVelocity(movementSpeed);
 	        }
 	        
 	        forwardSpeed = 0;
