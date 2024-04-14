@@ -25,7 +25,7 @@ import net.minecraft.util.math.Direction.AxisDirection;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
 
-public class ToolRaise extends Tool {
+public class ToolRaise extends VoxelTool {
 	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 8, 1, 32);
 	private static final ToolSetting<Integer> FALLOFF = ToolSetting.ofInt("falloff", 4, 0, 16);
 	private static final ToolSetting<Boolean> ROUNDED = ToolSetting.ofBoolean("rounded", true);
@@ -38,8 +38,8 @@ public class ToolRaise extends Tool {
 
 	@Override
 	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
-		BlockPos center = target.pos();
-		Direction dir = target.side();
+		BlockPos center = target.getBlockPos();
+		Direction dir = target.getSide();
 		
 		if(MOVE_CONNECTED.get(config)) {
 			// find connected structures
@@ -90,8 +90,8 @@ public class ToolRaise extends Tool {
 	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
 		Set<BlockPos> positions = new HashSet<>();
 		
-		BlockPos center = target.pos();
-		Direction dir = target.side();
+		BlockPos center = target.getBlockPos();
+		Direction dir = target.getSide();
 		positions.add(center);
 		
 		int radius = RADIUS.get(config);

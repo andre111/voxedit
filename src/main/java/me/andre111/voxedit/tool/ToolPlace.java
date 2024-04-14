@@ -15,6 +15,7 @@
  */
 package me.andre111.voxedit.tool;
 
+import java.util.Map;
 import java.util.Set;
 
 import me.andre111.voxedit.editor.EditorWorld;
@@ -31,7 +32,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.gen.feature.ConfiguredFeature;
 
-public class ToolPlace extends Tool {
+public class ToolPlace extends VoxelTool {
 	private static final ToolSetting<Identifier> FEATURE = ToolSetting.ofIdentifier("feature", new Identifier("minecraft", "oak"), RegistryKeys.CONFIGURED_FEATURE);
 	private static final ToolSetting<Integer> TRIES = ToolSetting.ofInt("tries", 3, 1, 10);
 	
@@ -56,9 +57,23 @@ public class ToolPlace extends Tool {
 
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
-		if(ToolTargeting.isFree(world, target.pos())) return Set.of();
-		BlockPos offset = target.pos().offset(target.side());
+		if(ToolTargeting.isFree(world, target.getBlockPos())) return Set.of();
+		BlockPos offset = target.getBlockPos().offset(target.getSide());
 		if(!ToolTargeting.isFree(world, offset)) return Set.of();
 		return Set.of(offset);
+	}
+	
+	@Override
+	public Map<String, ToolConfig> getPresets() {
+		return Map.of(
+				"Oak", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "oak")),
+				"Birch", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "birch")),
+				"Spruce", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "spruce")),
+				"Acacia", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "acacia")),
+				"Dark Oak", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "dark_oak")),
+				"Jungle", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "jungle_tree")),
+				"Azalea", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "azalea_tree")),
+				"Mangrove", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "mangrove"))
+			);
 	}
 }

@@ -15,18 +15,49 @@
  */
 package me.andre111.voxedit.editor;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+import io.netty.buffer.ByteBuf;
 import me.andre111.voxedit.state.Schematic;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TextCodecs;
 
 public class EditStats {
-	public static final EditStats EMPTY = new EditStats();
+	public static final EditStats EMPTY = new EditStats(Text.empty());
+	public static final Codec<EditStats> WITHOUT_SCHEMATIC_CODEC = RecordCodecBuilder.create(instance -> instance
+			.group(
+				TextCodecs.CODEC.fieldOf("text").forGetter(EditStats::text),
+				Codec.INT.fieldOf("blockChanges").forGetter(EditStats::blockChanges),
+				Codec.INT.fieldOf("blockEntityChanges").forGetter(EditStats::blockEntityChanges),
+				Codec.INT.fieldOf("entityChanges").forGetter(EditStats::entityChanges)
+			)
+			.apply(instance, EditStats::new));
+	public static final PacketCodec<ByteBuf, EditStats> WITHOUT_SCHEMATIC_PACKET_CODEC = PacketCodecs.codec(WITHOUT_SCHEMATIC_CODEC);
 	
+	private Text text = Text.empty();
 	private int blockChanges = 0;
 	private int blockEntityChanges = 0;
 	private int entityChanges = 0;
 	private Schematic schematic = null;
+	
+	public EditStats(Text text) {
+		this.text = text;
+	}
+	private EditStats(Text text, int blockChanges, int blockEntityChanges, int entityChanges) {
+		this.text = text;
+		this.blockChanges = blockChanges;
+		this.blockEntityChanges = blockEntityChanges;
+		this.entityChanges = entityChanges;
+	}
+	
+	public Text text() {
+		return text;
+	}
 	
 	public int blockChanges() {
 		return blockChanges;
@@ -60,8 +91,8 @@ public class EditStats {
 		this.schematic = schematic;
 	}
 	
-	public void inform(PlayerEntity player, EditType type) {
-		MutableText contentText = Text.empty();
+	public Text fullText() {
+		MutableText contentText = text.copy().append(":");
 		
 		if(blockChanges == 1) contentText.append(" ").append(Text.translatable("voxedit.edit.block"));
 		if(blockChanges > 1) contentText.append(" ").append(Text.translatable("voxedit.edit.block.multiple", blockChanges));
@@ -71,6 +102,12 @@ public class EditStats {
 
 		if(entityChanges == 1) contentText.append(" ").append(Text.translatable("voxedit.edit.entity"));
 		if(entityChanges > 1) contentText.append(" ").append(Text.translatable("voxedit.edit.entity.multiple", blockChanges));
+		
+		return contentText;
+	}
+	
+	public void inform(PlayerEntity player, EditType type) {
+		Text contentText = fullText();
 		
 		MutableText fullText = switch(type) {
 		case PERFORM -> Text.translatable("voxedit.action.perform", contentText);

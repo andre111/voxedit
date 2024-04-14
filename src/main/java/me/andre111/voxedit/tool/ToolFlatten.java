@@ -30,7 +30,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 
-public class ToolFlatten extends Tool {
+public class ToolFlatten extends VoxelTool {
 	private static final ToolSetting<Shape> SHAPE = ToolSetting.ofEnum("shape", Shape.class, Shape::asText);
 	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
 	
@@ -55,12 +55,12 @@ public class ToolFlatten extends Tool {
 
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
-		BlockPos center = target.pos();
+		BlockPos center = target.getBlockPos();
 		if(ToolTargeting.isFree(world, center)) return Set.of();
 		
 		Set<BlockPos> positions = ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), SHAPE.get(config));
 		positions.removeIf(pos -> {
-			int offset = switch(target.side()) {
+			int offset = switch(target.getSide()) {
 			case UP -> pos.getY() - center.getY();
 			case DOWN -> center.getY() - pos.getY();
 			case SOUTH -> pos.getZ() - center.getZ();

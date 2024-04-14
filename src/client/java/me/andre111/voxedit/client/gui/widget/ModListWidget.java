@@ -219,7 +219,7 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
     }
 
     protected int getScrollbarPositionX() {
-        return getWidth()-5;
+        return getX()+getWidth()-5;
     }
 
     protected boolean isSelectButton(int button) {

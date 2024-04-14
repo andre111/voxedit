@@ -13,9 +13,13 @@ public record ToolConfig(Map<String, String> values) {
 	public static final Codec<ToolConfig> CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING).xmap(ToolConfig::new, ToolConfig::values);
 	public static final PacketCodec<ByteBuf, ToolConfig> PACKET_CODEC = PacketCodecs.map(s -> (Map<String, String>) new HashMap<String, String>(), PacketCodecs.STRING, PacketCodecs.STRING).xmap(ToolConfig::new, ToolConfig::values);
 
-	public ToolConfig with(String key, String value) {
+	public ToolConfig withRaw(String key, String value) {
 		Map<String, String> newValues = new HashMap<>(values);
 		newValues.put(key, value);
 		return new ToolConfig(newValues);
+	}
+	
+	public <V> ToolConfig with(ToolSetting<V> setting, V value) {
+		return setting.with(this, value);
 	}
 }

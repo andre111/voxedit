@@ -15,6 +15,10 @@
  */
 package me.andre111.voxedit.client;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
@@ -36,14 +40,11 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -52,7 +53,7 @@ import net.minecraft.util.math.Vec3i;
 
 @Environment(value=EnvType.CLIENT)
 public class VoxEditClient implements ClientModInitializer {
-	public static final KeyBinding INCREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.increaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_UP, "key.category.voxedit"));
+    public static final KeyBinding INCREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.increaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_UP, "key.category.voxedit"));
     public static final KeyBinding DECREASE_RADIUS = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.decreaseRadius", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_DOWN, "key.category.voxedit"));
     public static final KeyBinding INCREASE_SPEED = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.increaseSpeed", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_KP_ADD, "key.category.voxedit"));
     public static final KeyBinding DECREASE_SPEED = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.decreaseSpeed", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_KP_SUBTRACT, "key.category.voxedit"));
@@ -70,16 +71,6 @@ public class VoxEditClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		ClientNetworking.init();
 		HudRenderer.init();
-		
-		ItemGroupEvents.MODIFY_ENTRIES_ALL.register((group, entries) -> {
-			if(group.getType() == ItemGroup.Type.CATEGORY && entries.shouldShowOpRestrictedItems()) {
-				boolean hasCB = entries.getDisplayStacks().stream().filter(stack -> stack.getItem() == Items.COMMAND_BLOCK).findAny().isPresent();
-				if(hasCB) {
-					entries.add(VoxEdit.ITEM_EDITOR.getDefaultStack());
-					entries.add(VoxEdit.ITEM_SELECT.getDefaultStack());
-				}
-			}
-		});
 		
 		ClientPlayConnectionEvents.INIT.register((handler, client) -> {
 			ClientStates.recreateInstance(handler.getRegistryManager());
@@ -126,11 +117,13 @@ public class VoxEditClient implements ClientModInitializer {
 		while(REDO.wasPressed()) {
 			if(Screen.hasControlDown()) ClientNetworking.sendCommand(Command.REDO);
 		}
-		if(!Screen.hasAltDown() && EditorScreen.get().isActive() && MinecraftClient.getInstance().currentScreen != EditorScreen.get()) {
+		if(!Screen.hasAltDown() && EditorScreen.get().isActive() && MinecraftClient.getInstance().currentScreen == null) {
 			MinecraftClient.getInstance().getWindow().setScaleFactor(1);
 			MinecraftClient.getInstance().setScreen(EditorScreen.get());
 			restoreGuiScale();
 		}
+		
+		EditorState.tick();
 	}
 	
 	public static void render(WorldRenderContext context) {
@@ -145,16 +138,27 @@ public class VoxEditClient implements ClientModInitializer {
 		HitResult result = MinecraftClient.getInstance().player.raycast(64, 0, true);
 		if(testRenderer != null && result instanceof BlockHitResult blockHit) {
 			BlockPos origin = blockHit.getBlockPos().offset(blockHit.getSide());
-			testRenderer.draw(origin, context.camera(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), false);
+			testRenderer.draw(origin, context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), false);
 		}
 		
 		if(previewRenderer != null) {
-			previewRenderer.draw(Vec3i.ZERO, context.camera(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), true);
+			previewRenderer.draw(Vec3i.ZERO, context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), true);
 		}
 	}
 	
 	public static void restoreGuiScale() {
 		MinecraftClient mc = MinecraftClient.getInstance();
 		mc.getWindow().setScaleFactor(mc.getWindow().calculateScaleFactor(mc.options.getGuiScale().getValue(), mc.forcesUnicodeFont()));
+	}
+	
+	public static Path dataPath() {
+		Path path = MinecraftClient.getInstance().runDirectory.toPath().resolve("voxedit/client/");
+		try {
+			if(!Files.exists(path)) Files.createDirectories(path);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return path;
 	}
 }

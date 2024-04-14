@@ -29,6 +29,7 @@ import me.andre111.voxedit.client.renderer.SchematicRenderer;
 import me.andre111.voxedit.client.renderer.SchematicView;
 import me.andre111.voxedit.network.CPClearSelection;
 import me.andre111.voxedit.network.CPCommand;
+import me.andre111.voxedit.network.CPHistoryInfo;
 import me.andre111.voxedit.network.CPNBTEditor;
 import me.andre111.voxedit.network.CPRegistryList;
 import me.andre111.voxedit.network.CPRequestRegistry;
@@ -76,13 +77,29 @@ public class ClientNetworking {
 			
 			EditorState.schematic(payload.id(), schematic);
 			if(payload.id().equals(VoxEdit.id("copy_buffer"))) {
-				VoxEditClient.testRenderer = new SchematicRenderer(new SchematicView(context.client().world, new BlockPos(0, 0, 0), schematic));
+				VoxEditClient.testRenderer = new SchematicRenderer(new SchematicView(new BlockPos(0, 0, 0), schematic));
 			}
+		});
+		
+		ClientPlayNetworking.registerGlobalReceiver(CPHistoryInfo.ID, (payload, context) -> {
+			EditorState.history(payload.history(), payload.index(), payload.append());
 		});
 	}
 	
 	public static void sendCommand(Command command) {
 		ClientPlayNetworking.send(new CPCommand(command));
+	}
+	
+	public static void sendHistorySelect(int index) {
+		int offset = index - EditorState.historyIndex();
+		while(offset > 0) { 
+			sendCommand(Command.REDO);
+			offset--;
+		}
+		while(offset < 0) {
+			sendCommand(Command.UNDO);
+			offset++;
+		}
 	}
 	
 	public static void sendNBTEditorResult(NbtCompound compound) {

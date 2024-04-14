@@ -15,10 +15,44 @@
  */
 package me.andre111.voxedit.editor.action;
 
-import me.andre111.voxedit.editor.EditStats;
-import net.minecraft.world.World;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
-public abstract class EditAction {
-	public abstract void undo(World world, EditStats stats);
-	public abstract void redo(World world, EditStats stats);
+import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.editor.EditStats;
+import me.andre111.voxedit.editor.EditHistoryReader;
+import me.andre111.voxedit.editor.EditHistoryWriter;
+import net.minecraft.registry.Registry;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Identifier;
+
+public abstract class EditAction<A extends EditAction<A>> {
+	public abstract Type<A> type();
+	public abstract void undo(ServerWorld world, EditStats stats);
+	public abstract void redo(ServerWorld world, EditStats stats);
+	
+	public static abstract class Type<A extends EditAction<A>> {
+		public final Identifier id() {
+			return VoxEdit.ACTION_TYPE_REGISTRY.getId(this);
+		}
+		
+		public abstract void write(A action, EditHistoryWriter writer);
+		public abstract A read(EditHistoryReader reader);
+		
+		public static <A extends EditAction<A>> Type<A> create(Identifier id, BiConsumer<A, EditHistoryWriter> writerImpl, Function<EditHistoryReader, A> readerImpl) {
+			Type<A> type = new Type<A>() {
+				@Override
+				public void write(A action, EditHistoryWriter writer) {
+					writerImpl.accept(action, writer);
+				}
+
+				@Override
+				public A read(EditHistoryReader reader) {
+					return readerImpl.apply(reader);
+				}
+			};
+			Registry.register(VoxEdit.ACTION_TYPE_REGISTRY, id, type);
+			return type;
+		}
+	}
 }

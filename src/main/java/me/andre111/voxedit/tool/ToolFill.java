@@ -34,7 +34,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 
-public class ToolFill extends Tool {
+public class ToolFill extends VoxelTool {
 	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 8, 1, 16);
 	
 	public ToolFill() {
@@ -59,7 +59,7 @@ public class ToolFill extends Tool {
 	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
 		Set<BlockPos> positions = new HashSet<>();
 		
-		BlockPos center = target.pos();
+		BlockPos center = target.getBlockPos();
 		if(!shouldFill(world.getBlockState(center), null, context)) return positions;
 		
 		Block targetBlock = world.getBlockState(center).getBlock();	

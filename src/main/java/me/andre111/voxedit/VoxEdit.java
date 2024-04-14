@@ -21,19 +21,33 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.SimpleRegistry;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.WorldSavePath;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mojang.serialization.Lifecycle;
 
-import me.andre111.voxedit.item.EditorItem;
+import me.andre111.voxedit.editor.EditHistoryReader;
+import me.andre111.voxedit.editor.EditHistoryWriter;
+import me.andre111.voxedit.editor.action.EditAction;
+import me.andre111.voxedit.editor.action.ModifyBlockEntityAction;
+import me.andre111.voxedit.editor.action.ModifyEntityAction;
+import me.andre111.voxedit.editor.action.SetBlockAction;
 import me.andre111.voxedit.item.SelectItem;
 import me.andre111.voxedit.network.ServerNetworking;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.ToolBlend;
 import me.andre111.voxedit.tool.ToolBrush;
+import me.andre111.voxedit.tool.ToolEditNBT;
 import me.andre111.voxedit.tool.ToolExtrude;
 import me.andre111.voxedit.tool.ToolFill;
 import me.andre111.voxedit.tool.ToolFlatten;
@@ -47,7 +61,7 @@ public class VoxEdit implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("voxedit");
     
     public static final RegistryKey<Registry<Tool>> TOOL_REGISTRY_KEY = RegistryKey.ofRegistry(id("tool"));
-    public static final Registry<Tool> TOOL_REGISTRY = new SimpleRegistry<Tool>(TOOL_REGISTRY_KEY, Lifecycle.stable());
+    public static final Registry<Tool> TOOL_REGISTRY = new SimpleRegistry<>(TOOL_REGISTRY_KEY, Lifecycle.stable());
     
     public static final ToolBrush TOOL_BRUSH = Registry.register(TOOL_REGISTRY, id("brush"), new ToolBrush());
     public static final ToolPaint TOOL_PAINT = Registry.register(TOOL_REGISTRY, id("paint"), new ToolPaint());
@@ -60,7 +74,15 @@ public class VoxEdit implements ModInitializer {
     public static final ToolExtrude TOOL_EXTRUDE = Registry.register(TOOL_REGISTRY, id("extrude"), new ToolExtrude());
     public static final ToolRaise TOOL_RAISE = Registry.register(TOOL_REGISTRY, id("raise"), new ToolRaise());
     
-    public static final EditorItem ITEM_EDITOR = Registry.register(Registries.ITEM, id("editor"), new EditorItem());
+    public static final ToolEditNBT TOOL_EDITNBT = Registry.register(TOOL_REGISTRY, id("nbtedit"), new ToolEditNBT());
+    
+    public static final RegistryKey<Registry<EditAction.Type<?>>> ACTION_TYPE_REGISTRY_KEY = RegistryKey.ofRegistry(id("action_type"));
+    public static final Registry<EditAction.Type<?>> ACTION_TYPE_REGISTRY = new SimpleRegistry<>(ACTION_TYPE_REGISTRY_KEY, Lifecycle.stable());
+    
+    public static final EditAction.Type<SetBlockAction> ACTION_SET_BLOCK = registerAction(id("set_block"), SetBlockAction::write, SetBlockAction::read);
+    public static final EditAction.Type<ModifyBlockEntityAction> ACTION_MODIFY_BLOCK_ENTITY = registerAction(id("modify_block_entity"), ModifyBlockEntityAction::write, ModifyBlockEntityAction::read);
+    public static final EditAction.Type<ModifyEntityAction> ACTION_MODIFY_ENTITY = registerAction(id("modify_entity"), ModifyEntityAction::write, ModifyEntityAction::read);
+    
     public static final SelectItem ITEM_SELECT = Registry.register(Registries.ITEM, id("select"), new SelectItem());
     
     public static final int MAX_TARGETS = 1024;
@@ -76,5 +98,22 @@ public class VoxEdit implements ModInitializer {
 	
 	public static Identifier id(String path) {
 		return new Identifier("voxedit", path);
+	}
+	
+	public static <A extends EditAction<A>> EditAction.Type<A> registerAction(Identifier id, BiConsumer<A, EditHistoryWriter> writer, Function<EditHistoryReader, A> reader) {
+		EditAction.Type<A> type = EditAction.Type.create(id, writer, reader);
+		Registry.register(ACTION_TYPE_REGISTRY, id, type);
+		return type;
+	}
+	
+	public static Path dataPath(MinecraftServer server) {
+		Path path = server.getSavePath(WorldSavePath.ROOT).resolve("voxedit/server/");
+		try {
+			if(!Files.exists(path)) Files.createDirectories(path);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return path;
 	}
 }

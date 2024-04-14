@@ -19,25 +19,30 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import me.andre111.voxedit.editor.action.EditAction;
-import net.minecraft.entity.player.PlayerEntity;
+import me.andre111.voxedit.network.CPHistoryInfo;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 public class Editor {
-	//TODO: combine "held" actions into one undo state
-	public static EditStats undoable(PlayerEntity player, ServerWorld world, Consumer<EditorWorld> edit, BlockPos origin, boolean preview) {
-		Undo undo = Undo.of(player, world);
+	public static EditStats undoable(ServerPlayerEntity player, ServerWorld world, Text text, Consumer<EditorWorld> edit, BlockPos origin, boolean preview) {
+		EditHistory undo = EditHistory.of(player, world);
 		EditorWorld worldAccess = new EditorWorld(world, undo);
 		edit.accept(worldAccess);
-		return preview ? worldAccess.toSchematic(origin) : worldAccess.apply();
+		return preview ? worldAccess.toSchematic(player, text, origin) : worldAccess.apply(player, text);
 	}
 	
-	public static EditStats undoableAction(PlayerEntity player, ServerWorld world, EditAction action) {
-		Undo undo = Undo.of(player, world);
-		undo.push(new UndoState(List.of(action)));
+	public static EditStats undoableAction(ServerPlayerEntity player, ServerWorld world, Text text, EditAction<?> action) {
+		EditHistory undo = EditHistory.of(player, world);
 		
-		EditStats result = new EditStats();
+		EditStats result = new EditStats(text);
 		action.redo(world, result);
+		
+		CPHistoryInfo info = undo.push(world, new EditHistoryState(result, List.of(action)));
+		ServerPlayNetworking.send(player, info);
+		
 		return result;
 	}
 }

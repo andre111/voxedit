@@ -1,10 +1,12 @@
 package me.andre111.voxedit.state;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import me.andre111.voxedit.VoxEditUtil;
 import me.andre111.voxedit.editor.EditorWorld;
@@ -14,6 +16,7 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtIntArray;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
@@ -32,6 +35,8 @@ public class Schematic implements BlockView {
 	private final Map<BlockPos, BlockEntity> blockEntities;
 	
 	public Schematic(int offsetX, int offsetY, int offsetZ, int sizeX, int sizeY, int sizeZ, List<BlockState> blockStates, Map<BlockPos, BlockEntity> blockEntities) {
+		long size = (long) sizeX * (long) sizeY * (long) sizeZ;
+		if(size > Integer.MAX_VALUE) throw new IllegalArgumentException("Schematic size to large: "+size+" max supported is: "+Integer.MAX_VALUE);
 		if(sizeX * sizeY * sizeZ != blockStates.size()) throw new IllegalArgumentException("Blockstate list does not match provided size.");
 		
 		this.offsetX = offsetX;
@@ -128,7 +133,16 @@ public class Schematic implements BlockView {
 		nbt.putInt("sizeX", sizeX);
 		nbt.putInt("sizeY", sizeY);
 		nbt.putInt("sizeZ", sizeZ);
-		nbt.put("blockStates", BlockState.CODEC.listOf().encodeStart(NbtOps.INSTANCE, blockStates).result().get());
+		
+		List<BlockState> paletteList = List.copyOf(Set.copyOf(blockStates));
+		Map<BlockState, Integer> paletteIndices = new HashMap<>();
+		for(int i=0; i<paletteList.size(); i++) {
+			paletteIndices.put(paletteList.get(i), i);
+		}
+		nbt.put("palette", BlockState.CODEC.listOf().encodeStart(NbtOps.INSTANCE, paletteList).result().get());
+		int[] blockStateArray = blockStates.stream().mapToInt(state -> paletteIndices.get(state)).toArray();
+		nbt.put("blockStates", new NbtIntArray(blockStateArray));
+		
 		NbtList blockEntitiesNBT = new NbtList();
 		for(BlockEntity blockEntity : blockEntities.values()) {
 			blockEntitiesNBT.add(blockEntity.createNbtWithIdentifyingData(registryLookup));
@@ -155,7 +169,10 @@ public class Schematic implements BlockView {
 		int sizeX = nbt.getInt("sizeX");
 		int sizeY = nbt.getInt("sizeY");
 		int sizeZ = nbt.getInt("sizeZ");
-		List<BlockState> blockStates = BlockState.CODEC.listOf().decode(NbtOps.INSTANCE, nbt.get("blockStates")).result().get().getFirst();
+		
+		List<BlockState> paletteList = BlockState.CODEC.listOf().decode(NbtOps.INSTANCE, nbt.get("palette")).result().get().getFirst();
+		List<BlockState> blockStates = Arrays.stream(nbt.getIntArray("blockStates")).mapToObj(index -> paletteList.get(index)).toList();
+		
 		Map<BlockPos, BlockEntity> blockEntities = new HashMap<>();
 		for(NbtElement e : nbt.getList("blockEntities", NbtElement.COMPOUND_TYPE)) {
 			BlockPos pos = BlockEntity.posFromNbt((NbtCompound) e);

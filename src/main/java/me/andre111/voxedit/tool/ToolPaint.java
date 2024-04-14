@@ -15,6 +15,7 @@
  */
 package me.andre111.voxedit.tool;
 
+import java.util.Map;
 import java.util.Set;
 
 import me.andre111.voxedit.editor.EditorWorld;
@@ -32,7 +33,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 
-public class ToolPaint extends Tool {
+public class ToolPaint extends VoxelTool {
 	private static final ToolSetting<Shape> SHAPE = ToolSetting.ofEnum("shape", Shape.class, Shape::asText);
 	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
 	private static final ToolSetting<Boolean> TOP_ONLY = ToolSetting.ofBoolean("topOnly", false);
@@ -69,16 +70,9 @@ public class ToolPaint extends Tool {
 			return false;
 		}, context.filter());
 	}
-
-	/*@Override
-	public List<ToolConfigPaint> getAdditionalPremadeConfigs() {
-		return List.of();
-		return List.of(
-				getDefaultConfig().withMode(Mode.PAINT_TOP).withRadius(5).withPalette(new BlockPalette(Util.make(new ArrayList<>(), list -> {
-					list.add(new BlockPalette.Entry(Blocks.DIRT.getDefaultState(), 1));
-					list.add(new BlockPalette.Entry(Blocks.GRAVEL.getDefaultState(), 1));
-					list.add(new BlockPalette.Entry(Blocks.DIRT_PATH.getDefaultState(), 1));
-				})))
-				);
-	}*/
+	
+	@Override
+	public Map<String, ToolConfig> getPresets() {
+		return Map.of("Surface", getDefaultConfig().with(SHAPE, Shape.DISC).with(TOP_ONLY, true));
+	}
 }

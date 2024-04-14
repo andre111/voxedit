@@ -5,6 +5,7 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.tool.ConfiguredTool;
+import me.andre111.voxedit.tool.Tool.Action;
 import me.andre111.voxedit.tool.data.Context;
 import me.andre111.voxedit.tool.data.Target;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -27,12 +28,5 @@ public record CPAction(ConfiguredTool tool, List<Target> targets, Context contex
 	@Override
 	public Id<? extends CustomPayload> getId() {
 		return ID;
-	}
-	
-	public static enum Action {
-		PLACE,
-		REMOVE,
-		PREVIEW,
-		APPLY_PREVIEW;
 	}
 }

@@ -34,7 +34,7 @@ public class ToolTargeting {
 	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, int radius, Shape shape, TestPredicate testPredicate, BlockPalette filter) {
 		Set<BlockPos> positions = new HashSet<>();
 		
-		BlockPos center = target.pos();
+		BlockPos center = target.getBlockPos();
 		BlockPos.Mutable pos = new BlockPos.Mutable();
 		for(int x = -radius; x <= radius; x++) {
         	for(int y = -radius; y <= radius; y++) {

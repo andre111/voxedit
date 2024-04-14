@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import me.andre111.voxedit.client.EditorState;
+import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
 
@@ -14,8 +15,6 @@ public class EditorPanelToolConfig extends EditorPanel {
 
 	public EditorPanelToolConfig(EditorWidget parent, Location location) {
 		super(parent, location, Text.translatable("voxedit.screen.panel.toolConfig"));
-		
-		gap = 0;
 		
 		EditorState.CHANGE_TOOL.register((tool) -> rebuild());
 		EditorState.CHANGE_TOOL_CONFIG.register((toolConfig) -> reload());
@@ -30,6 +29,10 @@ public class EditorPanelToolConfig extends EditorPanel {
 		
 		if(EditorState.tool() != null) {
 			// presets / saved configs
+			for(var preset : EditorState.persistant().presets(EditorState.tool())) {
+				children.add(ButtonWidget.builder(Text.of(preset.name()), (button) -> EditorState.toolConfig(preset.config())).size(64, 32).build());
+			}
+			children.add(new LineHorizontal(width));
 			
 			// settings
 			for(var toolSetting : EditorState.tool().getSettings()) {

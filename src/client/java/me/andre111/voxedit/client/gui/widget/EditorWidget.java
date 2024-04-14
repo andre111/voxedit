@@ -7,6 +7,7 @@ import java.util.function.Function;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import me.andre111.voxedit.client.gui.Textures;
 import me.andre111.voxedit.client.gui.screen.EditorScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
@@ -15,12 +16,10 @@ import net.minecraft.client.gui.widget.ContainerWidget;
 import net.minecraft.client.gui.widget.LayoutWidget;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 
 public class EditorWidget extends ContainerWidget implements LayoutWidget {
-    public static final Identifier BACKGROUND_TEXTURE = new Identifier("textures/gui/inworld_menu_background.png");
-    
     private final EditorScreen screen;
+    private final MenuWidget menu;
 	private final List<EditorPanel> panels = new ArrayList<>();
 	
 	private int leftWidth = 300;
@@ -30,10 +29,15 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 		super(0, 0, 100, 100, Text.empty());
 		
 		this.screen = screen;
+		this.menu = new MenuWidget(0, 0, screen.width, 20);
 	}
 	
 	public EditorScreen getScreen() {
 		return screen;
+	}
+	
+	public MenuWidget getMenu() {
+		return menu;
 	}
 	
 	public EditorPanel addPanel(EditorPanel.Location location, Text text) {
@@ -48,11 +52,16 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 
 	@Override
 	public List<? extends Element> children() {
-		return panels;
+		//TODO: improve
+		List<Element> children = new ArrayList<>();
+		children.add(menu);
+		children.addAll(panels);
+		return children;
 	}
 
 	@Override
 	public void forEachElement(Consumer<Widget> consumer) {
+		consumer.accept(menu);
 		panels.forEach(consumer);
 	}
 
@@ -60,17 +69,18 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 	protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
 		RenderSystem.enableBlend();
 		for(int i=0; i<2; i++) {
-			context.drawTexture(BACKGROUND_TEXTURE, 0, 0, 0, 0, leftWidth, context.getScaledWindowHeight());
-			context.drawTexture(BACKGROUND_TEXTURE, context.getScaledWindowWidth()-rightWidth, 0, 0, 0, rightWidth, context.getScaledWindowHeight());
+			context.drawTexture(Textures.BACKGROUND, 0, menu.getHeight(), 0, 0, leftWidth+1, context.getScaledWindowHeight());
+			context.drawTexture(Textures.BACKGROUND, context.getScaledWindowWidth()-rightWidth-1, menu.getHeight(), 0, 0, rightWidth+1, context.getScaledWindowHeight());
 		}
 		RenderSystem.disableBlend();
 		
-		context.drawVerticalLine(leftWidth, 0, context.getScaledWindowHeight(), 0xFFFFFFFF);
-		context.drawVerticalLine(context.getScaledWindowWidth()-rightWidth, 0, context.getScaledWindowHeight(), 0xFFFFFFFF);
+		context.drawVerticalLine(leftWidth+1, menu.getHeight(), context.getScaledWindowHeight(), 0xFFFFFFFF);
+		context.drawVerticalLine(context.getScaledWindowWidth()-rightWidth-1, menu.getHeight(), context.getScaledWindowHeight(), 0xFFFFFFFF);
 		
 		for(EditorPanel panel : panels) {
 			panel.render(context, mouseX, mouseY, delta);
 		}
+		menu.render(context, mouseX, mouseY, delta);
 	}
 
 	@Override
@@ -80,6 +90,8 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 
 	@Override
 	public void refreshPositions() {
+		menu.setWidth(screen.width);
+		
 		for(EditorPanel panel : panels) {
 			if(panel.getLocation() == EditorPanel.Location.LEFT) {
 				panel.setWidth(leftWidth);
@@ -90,8 +102,8 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 		
 		LayoutWidget.super.refreshPositions();
 		
-		int leftY = 0;
-		int rightY = 0;
+		int leftY = menu.getHeight();
+		int rightY = menu.getHeight();
 		for(EditorPanel panel : panels) {
 			if(panel.getLocation() == EditorPanel.Location.LEFT) {
 				panel.setPosition(0, leftY);
@@ -106,6 +118,7 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 	}
 	
 	public boolean isOverGui(double mouseX, double mouseY) {
+		if(mouseY <= menu.getHeight()) return true;
 		if(mouseX <= leftWidth) return true;
 		if(mouseX >= width-rightWidth) return true;
 		return false;

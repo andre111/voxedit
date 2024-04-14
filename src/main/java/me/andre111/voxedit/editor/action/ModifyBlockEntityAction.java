@@ -15,16 +15,19 @@
  */
 package me.andre111.voxedit.editor.action;
 
+import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.editor.EditStats;
+import me.andre111.voxedit.editor.EditHistoryReader;
+import me.andre111.voxedit.editor.EditHistoryWriter;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
-public class ModifyBlockEntityAction extends EditAction {
+public class ModifyBlockEntityAction extends EditAction<ModifyBlockEntityAction> {
 	private final BlockPos pos;
-	private final NbtCompound oldNbt;
 	private final NbtCompound newNbt;
+	private final NbtCompound oldNbt;
 	
 	public ModifyBlockEntityAction(BlockPos pos, NbtCompound oldNbt, NbtCompound newNbt) {
 		this.pos = pos;
@@ -33,7 +36,7 @@ public class ModifyBlockEntityAction extends EditAction {
 	}
 
 	@Override
-	public void undo(World world, EditStats stats) {
+	public void undo(ServerWorld world, EditStats stats) {
 		BlockEntity be = world.getBlockEntity(pos);
 		if(be != null) {
 			be.read(oldNbt, world.getRegistryManager());
@@ -42,11 +45,29 @@ public class ModifyBlockEntityAction extends EditAction {
 	}
 
 	@Override
-	public void redo(World world, EditStats stats) {
+	public void redo(ServerWorld world, EditStats stats) {
 		BlockEntity be = world.getBlockEntity(pos);
 		if(be != null) {
 			be.read(newNbt, world.getRegistryManager());
 			stats.changedBlockEntity();
 		}
+	}
+
+	@Override
+	public Type<ModifyBlockEntityAction> type() {
+		return VoxEdit.ACTION_MODIFY_BLOCK_ENTITY;
+	}
+	
+	public static void write(ModifyBlockEntityAction action, EditHistoryWriter writer) {
+		writer.writeBlockPos(action.pos);
+		writer.writeNbt(action.newNbt);
+		writer.writeNbt(action.oldNbt);
+	}
+	
+	public static ModifyBlockEntityAction read(EditHistoryReader reader) {
+		BlockPos pos = reader.readBlockPos();
+		NbtCompound newNbt = reader.readNbt();
+		NbtCompound oldNbt = reader.readNbt();
+		return new ModifyBlockEntityAction(pos, oldNbt, newNbt);
 	}
 }

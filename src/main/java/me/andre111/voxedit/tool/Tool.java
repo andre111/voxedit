@@ -17,19 +17,18 @@ package me.andre111.voxedit.tool;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import me.andre111.voxedit.VoxEdit;
-import me.andre111.voxedit.editor.EditorWorld;
+import me.andre111.voxedit.state.ServerState;
 import me.andre111.voxedit.tool.data.Context;
+import me.andre111.voxedit.tool.data.RaycastTargets;
 import me.andre111.voxedit.tool.data.Target;
 import me.andre111.voxedit.tool.data.ToolConfig;
 import me.andre111.voxedit.tool.data.ToolSetting;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockView;
 
 public abstract class Tool {
 	private final Properties properties;
@@ -79,11 +78,17 @@ public abstract class Tool {
 		return Text.translatable("voxedit.tool."+id.toTranslationKey());
 	}
     
-    /*public List<TC> getAdditionalPremadeConfigs() {
-    	return List.of();
-    }*/
-
-	public abstract void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions);
-	public abstract void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions);
-	public abstract Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config);
+	public Map<String, ToolConfig> getPresets() {
+		return Map.of();
+	}
+	
+	public abstract RaycastTargets getRaycastTargets(ToolConfig config);
+	public abstract void performAction(ServerPlayerEntity player, Action action, List<Target> targets, Context context, ToolConfig config, ServerState state);
+	
+	public static enum Action {
+		ADD_OR_MODIFY,
+		REMOVE,
+		PREVIEW,
+		APPLY_PREVIEW;
+	}
 }

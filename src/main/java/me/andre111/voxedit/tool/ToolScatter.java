@@ -15,6 +15,7 @@
  */
 package me.andre111.voxedit.tool;
 
+import java.util.Map;
 import java.util.Set;
 
 import me.andre111.voxedit.editor.EditorWorld;
@@ -31,7 +32,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 
-public class ToolScatter extends Tool {
+public class ToolScatter extends VoxelTool {
 	private static final ToolSetting<Shape> SHAPE = ToolSetting.ofEnum("shape", Shape.class, Shape::asText);
 	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
 	private static final ToolSetting<Boolean> CHECK_CAN_PLACE = ToolSetting.ofBoolean("checkCanPlace", false);
@@ -60,21 +61,12 @@ public class ToolScatter extends Tool {
 	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
 		return ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), SHAPE.get(config), (innerTarget, innerWorld, pos) -> {
 			if(!innerWorld.getBlockState(pos).isAir()) return false;
-			return !ToolTargeting.isFree(innerWorld, pos.offset(innerTarget.side().getOpposite()));
+			return !ToolTargeting.isFree(innerWorld, pos.offset(innerTarget.getSide().getOpposite()));
 		}, context.filter());
 	}
-
-	/*@Override
-	public List<ToolConfigBrush> getAdditionalPremadeConfigs() {
-		return List.of();
-		return List.of(
-				getDefaultConfig().withMode(Mode.SCATTER).withRadius(6).withPalette(new BlockPalette(Util.make(new ArrayList<>(), list -> {
-					list.add(new BlockPalette.Entry(Blocks.AIR.getDefaultState(), 20));
-					list.add(new BlockPalette.Entry(Blocks.SHORT_GRASS.getDefaultState(), 5));
-					list.add(new BlockPalette.Entry(Blocks.FERN.getDefaultState(), 5));
-					list.add(new BlockPalette.Entry(Blocks.POPPY.getDefaultState(), 1));
-					list.add(new BlockPalette.Entry(Blocks.DANDELION.getDefaultState(), 1));
-				})))
-				);
-	}*/
+	
+	@Override
+	public Map<String, ToolConfig> getPresets() {
+		return Map.of("Place Valid", getDefaultConfig().with(RADIUS, 6).with(CHECK_CAN_PLACE, true));
+	}
 }

@@ -12,6 +12,8 @@
     "voxedit.tool.voxedit.smooth": "Smooth",
     "voxedit.tool.voxedit.place": "Place",
     "voxedit.tool.voxedit.extrude": "Extrude",
+    "voxedit.tool.voxedit.raise": "Raise",
+    "voxedit.tool.voxedit.nbtedit": "NBT Edit",
     
     "voxedit.tool.settings.radius": "Radius",
     "voxedit.tool.settings.shape": "Shape",
@@ -44,6 +46,8 @@
 	"voxedit.screen.panel.tools": "Tools",
 	"voxedit.screen.panel.toolConfig": "Tool Settings",
 	"voxedit.screen.panel.palette": "Block Palette",
+	"voxedit.screen.panel.editHistory": "Edit History",
+	"voxedit.screen.panel.schematics": "Schematics",
     
     "voxedit.screen.blockPalette.add": "Add Entry",
     "voxedit.screen.blockPalette.remove": "Remove Entry",

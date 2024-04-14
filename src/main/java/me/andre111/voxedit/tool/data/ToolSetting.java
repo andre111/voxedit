@@ -15,6 +15,7 @@
  */
 package me.andre111.voxedit.tool.data;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -54,7 +55,7 @@ public sealed abstract class ToolSetting<V> {
 	public ToolConfig with(ToolConfig config, V value) {
 		if(!isValid(value)) return config;
 		
-		Map<String, String> newValues = config.values();
+		Map<String, String> newValues = new HashMap<>(config.values());
 		newValues.put(key, writer.apply(value));
 		return new ToolConfig(newValues);
 	}

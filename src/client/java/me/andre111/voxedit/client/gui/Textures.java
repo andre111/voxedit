@@ -17,6 +17,7 @@ package me.andre111.voxedit.client.gui;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.gui.screen.ButtonTextures;
 import net.minecraft.util.Identifier;
 
 @Environment(value=EnvType.CLIENT)
@@ -45,4 +46,7 @@ public class Textures {
     public static final Identifier NBT_FLOAT = new Identifier("voxedit", "editor/float");
     public static final Identifier NBT_DOUBLE = new Identifier("voxedit", "editor/double");
     public static final Identifier NBT_STRING = new Identifier("voxedit", "editor/string");
+    
+    public static final Identifier BACKGROUND = new Identifier("textures/gui/inworld_menu_background.png");
+    public static final ButtonTextures BUTTON = new ButtonTextures(new Identifier("widget/button"), new Identifier("widget/button_disabled"), new Identifier("widget/button_highlighted"));
 }

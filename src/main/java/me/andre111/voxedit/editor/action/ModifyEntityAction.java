@@ -17,41 +17,57 @@ package me.andre111.voxedit.editor.action;
 
 import java.util.UUID;
 
+import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.editor.EditStats;
+import me.andre111.voxedit.editor.EditHistoryReader;
+import me.andre111.voxedit.editor.EditHistoryWriter;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.world.World;
+import net.minecraft.server.world.ServerWorld;
 
-public class ModifyEntityAction extends EditAction {
-	private final int id;
-	private final NbtCompound oldNbt;
+public class ModifyEntityAction extends EditAction<ModifyEntityAction> {
+	private final UUID uuid;
 	private final NbtCompound newNbt;
+	private final NbtCompound oldNbt;
 
-	public ModifyEntityAction(int id, NbtCompound oldNbt, NbtCompound newNbt) {
-		this.id = id;
+	public ModifyEntityAction(UUID uuid, NbtCompound oldNbt, NbtCompound newNbt) {
+		this.uuid = uuid;
 		this.oldNbt = oldNbt;
 		this.newNbt = newNbt;
 	}
 
 	@Override
-	public void undo(World world, EditStats stats) {
-		Entity entity = world.getEntityById(id);
+	public void undo(ServerWorld world, EditStats stats) {
+		Entity entity = world.getEntity(uuid);
 		if(entity != null) {
-			UUID uuid = entity.getUuid();
 	        entity.readNbt(oldNbt);
-	        entity.setUuid(uuid);
 	        stats.changedEntity();
 		}
 	}
 
 	@Override
-	public void redo(World world, EditStats stats) {
-		Entity entity = world.getEntityById(id);
+	public void redo(ServerWorld world, EditStats stats) {
+		Entity entity = world.getEntity(uuid);
 		if(entity != null) {
-			UUID uuid = entity.getUuid();
 	        entity.readNbt(newNbt);
-	        entity.setUuid(uuid);
 	        stats.changedEntity();
 		}
+	}
+
+	@Override
+	public Type<ModifyEntityAction> type() {
+		return VoxEdit.ACTION_MODIFY_ENTITY;
+	}
+	
+	public static void write(ModifyEntityAction action, EditHistoryWriter writer) {
+		writer.writeNbt(action.newNbt);
+		writer.writeNbt(action.oldNbt);
+	}
+	
+	public static ModifyEntityAction read(EditHistoryReader reader) {
+		NbtCompound newNbt = reader.readNbt();
+		NbtCompound oldNbt = reader.readNbt();
+		UUID uuid = oldNbt.getUuid("UUID");
+		return new ModifyEntityAction(uuid, oldNbt, newNbt);
 	}
 }

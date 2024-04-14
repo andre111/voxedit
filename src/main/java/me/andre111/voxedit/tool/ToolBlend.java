@@ -33,7 +33,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 
-public class ToolBlend extends Tool {
+public class ToolBlend extends VoxelTool {
 	private static final ToolSetting<Shape> SHAPE = ToolSetting.ofEnum("shape", Shape.class, Shape::asText);
 	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
 	
@@ -65,7 +65,7 @@ public class ToolBlend extends Tool {
 
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
-		if(ToolTargeting.isFree(world, target.pos())) return Set.of();
+		if(ToolTargeting.isFree(world, target.getBlockPos())) return Set.of();
 		
 		return ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), SHAPE.get(config), (hit, testWorld, testPos) -> !ToolTargeting.isFree(testWorld, testPos), context.filter());
 	}

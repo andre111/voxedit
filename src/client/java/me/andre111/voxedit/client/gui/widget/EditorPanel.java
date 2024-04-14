@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import me.andre111.voxedit.client.gui.Textures;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
@@ -49,7 +50,7 @@ public class EditorPanel extends ContainerWidget implements LayoutWidget {
 	@Override
 	protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
         context.drawTexture(Screen.INWORLD_HEADER_SEPARATOR_TEXTURE, getX(), getY(), 0.0f, 0.0f, width, 2, 32, 2);
-		context.drawTexture(EditorWidget.BACKGROUND_TEXTURE, getX(), getY()+2, 0, 0, width, 24-4);
+		context.drawTexture(Textures.BACKGROUND, getX(), getY()+2, 0, 0, width, 24-4);
         context.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, getMessage(), getX()+width/2, getY()+8, 0xFFFFFFFF);
         context.drawTexture(Screen.INWORLD_FOOTER_SEPARATOR_TEXTURE, getX(), getY()+24-2, 0.0f, 0.0f, width, 2, 32, 2);
 		
@@ -74,8 +75,8 @@ public class EditorPanel extends ContainerWidget implements LayoutWidget {
 		for(var child : children) {
 			int childWidth = child.getWidth();
 			int childHeight = child.getHeight();
-			if(x + childWidth > width) {
-				x = 0;
+			if(x + childWidth > getX()+width) {
+				x = getX();
 				y = maxHeight + gap;
 			}
 			child.setPosition(x, y);

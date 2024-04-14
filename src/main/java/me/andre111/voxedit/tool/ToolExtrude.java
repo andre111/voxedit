@@ -34,7 +34,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 
-public class ToolExtrude extends Tool {
+public class ToolExtrude extends VoxelTool {
 	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 32, 1, 64);
 	
 	public ToolExtrude() {
@@ -43,7 +43,7 @@ public class ToolExtrude extends Tool {
 
 	@Override
 	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
-		BlockState state = world.getBlockState(target.pos());
+		BlockState state = world.getBlockState(target.getBlockPos());
 		for(BlockPos pos : positions) {
 			world.setBlockState(pos, state, 0);
 		}
@@ -51,7 +51,7 @@ public class ToolExtrude extends Tool {
 
 	@Override
 	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
-		Direction offset = target.side().getOpposite();
+		Direction offset = target.getSide().getOpposite();
 		for(BlockPos pos : positions) {
 			world.setBlockState(pos.offset(offset), Blocks.AIR.getDefaultState(), 0);
 		}
@@ -60,10 +60,10 @@ public class ToolExtrude extends Tool {
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
 		Set<BlockPos> positions = new HashSet<>();
-		if(world.getBlockState(target.pos()).isAir()) return positions;
+		if(world.getBlockState(target.getBlockPos()).isAir()) return positions;
 		
-		BlockPos center = target.pos();
-		Direction offset = target.side();
+		BlockPos center = target.getBlockPos();
+		Direction offset = target.getSide();
 		Direction[] checkDirs = Direction.stream().filter(d -> d != offset && d != offset.getOpposite()).toArray(Direction[]::new);
 		
 		Block targetBlock = world.getBlockState(center).getBlock();	

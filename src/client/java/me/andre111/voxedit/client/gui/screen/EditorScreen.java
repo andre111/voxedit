@@ -4,7 +4,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -16,10 +18,13 @@ import me.andre111.voxedit.client.ClientStates;
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.VoxEditClient;
 import me.andre111.voxedit.client.gui.widget.EditorPanel;
+import me.andre111.voxedit.client.gui.widget.EditorPanelHistory;
 import me.andre111.voxedit.client.gui.widget.EditorPanelPalette;
 import me.andre111.voxedit.client.gui.widget.EditorPanelToolConfig;
+import me.andre111.voxedit.client.gui.widget.EditorSchematicWidget;
 import me.andre111.voxedit.client.gui.widget.EditorToolWidget;
 import me.andre111.voxedit.client.gui.widget.EditorWidget;
+import me.andre111.voxedit.client.gui.widget.MenuWidget;
 import me.andre111.voxedit.client.renderer.SchematicRenderer;
 import me.andre111.voxedit.client.renderer.SchematicView;
 import me.andre111.voxedit.network.CPAction;
@@ -27,19 +32,24 @@ import me.andre111.voxedit.network.CPCommand;
 import me.andre111.voxedit.network.Command;
 import me.andre111.voxedit.tool.ConfiguredTool;
 import me.andre111.voxedit.tool.Tool;
+import me.andre111.voxedit.tool.Tool.Action;
+import me.andre111.voxedit.tool.VoxelTool;
 import me.andre111.voxedit.tool.data.Context;
+import me.andre111.voxedit.tool.data.RaycastTargets;
 import me.andre111.voxedit.tool.data.Target;
 import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSettings;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 
@@ -66,14 +76,15 @@ public class EditorScreen extends Screen {
 			if(!id.equals(VoxEdit.id("preview."+tool.id().toTranslationKey()))) return;
 			if(schematic == null) return;
 			if(lastTarget == null) return;
+			if(lastTarget.pos().isEmpty()) return;
 			
 			if(VoxEditClient.previewRenderer != null) {
 				VoxEditClient.previewRenderer.close();
 				VoxEditClient.previewRenderer = null;
 			}
 			
-			BlockPos pos = lastTarget.pos().add(schematic.getOffsetX(), schematic.getOffsetY(), schematic.getOffsetZ());
-			SchematicView view = new SchematicView(MinecraftClient.getInstance().world, pos, schematic);
+			BlockPos pos = lastTarget.getBlockPos().add(schematic.getOffsetX(), schematic.getOffsetY(), schematic.getOffsetZ());
+			SchematicView view = new SchematicView(pos, schematic);
 			VoxEditClient.previewRenderer = new SchematicRenderer(view);
 		});
 	}
@@ -92,11 +103,27 @@ public class EditorScreen extends Screen {
 			widget = new EditorWidget(this);
 			widget.setDimensions(width, height);
 			addDrawableChild(widget);
+			
+			//TODO: translatable
+			MenuWidget menu = widget.getMenu();
+			menu.addCategory(Text.of("Edit"))
+				.addEntry(Text.of("Undo"), () -> {})
+				.addEntry(Text.of("Redo"), () -> {});
+			menu.addCategory(Text.of("Selection"))
+				.addEntry(Text.of("Clear"), () -> {})
+				.addEntry(Text.of("Save as Schematic"), () -> {});
 	
 			var toolPanel = widget.addPanel(EditorPanel.Location.LEFT, Text.translatable("voxedit.screen.panel.tools"));
 			widget.addPanel(parent -> new EditorPanelToolConfig(parent, EditorPanel.Location.LEFT));
 			widget.addPanel(parent -> new EditorPanelPalette(parent, EditorPanel.Location.LEFT));
-	
+			
+			widget.addPanel(parent -> new EditorPanelHistory(parent, EditorPanel.Location.RIGHT));
+			
+			var schematicPanel = widget.addPanel(EditorPanel.Location.RIGHT, Text.translatable("voxedit.screen.panel.schematics"));
+			EditorState.CHANGE_SCHEMATIC.register((id, schematic) -> {
+				if(schematic != null) schematicPanel.addChild(new EditorSchematicWidget(schematic));
+			});
+			
 			VoxEdit.TOOL_REGISTRY.forEach(tool -> {
 				toolPanel.addChild(new EditorToolWidget(tool));
 			});
@@ -120,7 +147,7 @@ public class EditorScreen extends Screen {
 			ConfiguredTool tool = EditorState.configuredTool();
 			Context context = EditorState.context();
 			if(tool != null && tool.tool().properties().showPreview() && context != null) {
-				CPAction action = new CPAction(tool, List.of(lastTarget), context, CPAction.Action.PREVIEW);
+				CPAction action = new CPAction(tool, List.of(lastTarget), context, Action.PREVIEW);
 				ClientPlayNetworking.send(action);
 			}
 		}
@@ -226,6 +253,8 @@ public class EditorScreen extends Screen {
 	private void updateTarget(double mouseX, double mouseY, boolean add) {
 		ConfiguredTool tool = EditorState.configuredTool();
 		if(tool == null) return;
+		RaycastTargets raycastTargets = tool.tool().getRaycastTargets(tool.config());
+		if(!raycastTargets.targetBlocks() && !raycastTargets.targetEntities()) return;
 		
 		// build ray from mouse coords
 		float mx = (float) mouseX;
@@ -239,23 +268,49 @@ public class EditorScreen extends Screen {
 		Vec3d start = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
 		Vec3d end = start.add(new Vec3d(dir.x, dir.y, dir.z).normalize().multiply(128));
 		
-		// cast ray determine target
-		boolean targetFluids = false;
-		if(tool.tool().has(ToolSettings.TARGET_FLUIDS)) targetFluids = ToolSettings.TARGET_FLUIDS.get(tool.config());
-		RaycastContext.FluidHandling fluidHandling = targetFluids ? RaycastContext.FluidHandling.ANY : RaycastContext.FluidHandling.NONE;
+		// prepare
+		double nearestDist = 128;
+		UUID nearestEntity = null;
+		BlockPos blockPos = null;
+		Direction blockSide = null;
 		
-		RaycastContext context = new RaycastContext(start, end, RaycastContext.ShapeType.VISUAL, fluidHandling, MinecraftClient.getInstance().cameraEntity);
-		HitResult result = MinecraftClient.getInstance().world.raycast(context);
-		if(result instanceof BlockHitResult blockHit) {
-			Target target = new Target(blockHit.getBlockPos(), blockHit.getSide());
-			if(target.equals(lastTarget)) return;
-			
-			setLastTarget(target);
-			
-			if(!EditorState.targets().contains(target)) {
-				EditorState.target(target, add);
-				updatePositions();
+		// find hit entity
+		if(raycastTargets.targetEntities()) {
+			Box box = new Box(start.x, start.y, start.z, end.x, end.y, end.z);
+			List<Entity> entities = MinecraftClient.getInstance().world.getOtherEntities(MinecraftClient.getInstance().player, box, entity -> !entity.isPlayer());
+			for(Entity entity : entities) {
+				Box entityBox = entity.getBoundingBox().expand(entity.getTargetingMargin());
+				Optional<Vec3d> hitPos = entityBox.raycast(start, end);
+				if(hitPos.isEmpty()) continue;
+				double dist = hitPos.get().distanceTo(start);
+				if(dist >= nearestDist) continue;
+				nearestDist = dist;
+				nearestEntity = entity.getUuid();
 			}
+		}
+		
+		// find hit block
+		if(raycastTargets.targetBlocks()) {
+			RaycastContext.FluidHandling fluidHandling = raycastTargets.targetFluids() ? RaycastContext.FluidHandling.ANY : RaycastContext.FluidHandling.NONE;
+			RaycastContext context = new RaycastContext(start, end, RaycastContext.ShapeType.VISUAL, fluidHandling, MinecraftClient.getInstance().cameraEntity);
+			HitResult result = MinecraftClient.getInstance().world.raycast(context);
+			if(result instanceof BlockHitResult blockHit) {
+				blockPos = blockHit.getBlockPos();
+				blockSide = blockHit.getSide();
+			}
+		}
+		
+		// set target
+		if(blockPos == null && nearestEntity == null) return;
+		
+		Target target = new Target(Optional.ofNullable(blockPos), Optional.ofNullable(blockSide), Optional.ofNullable(nearestEntity));
+		if(target.equals(lastTarget)) return;
+		
+		setLastTarget(target);
+		
+		if(!EditorState.targets().contains(target)) {
+			EditorState.target(target, add);
+			updatePositions();
 		}
 	}
 	
@@ -266,7 +321,11 @@ public class EditorScreen extends Screen {
 		if(context == null) return;
 		
 		Set<BlockPos> positions = new HashSet<BlockPos>();
-		for(Target target : EditorState.targets()) positions.addAll(tool.tool().getBlockPositions(MinecraftClient.getInstance().world, target, context, tool.config()));
+		if(tool.tool() instanceof VoxelTool voxelTool) {
+			for(Target target : EditorState.targets()) {
+				positions.addAll(voxelTool.getBlockPositions(MinecraftClient.getInstance().world, target, context, tool.config()));
+			}
+		}
 		ClientStates.instance().setPositions(positions);
 	}
 	
@@ -279,13 +338,13 @@ public class EditorScreen extends Screen {
 		if(targets.isEmpty()) return;
 		
 		if(EditorState.schematic(VoxEdit.id("preview."+tool.tool().id().toTranslationKey())) != null && dragging == 1) {
-			CPAction action = new CPAction(tool, targets, context, CPAction.Action.APPLY_PREVIEW);
+			CPAction action = new CPAction(tool, targets, context, Action.APPLY_PREVIEW);
 			ClientPlayNetworking.send(action);
 		} else if(dragging == 1) {
-			CPAction action = new CPAction(tool, targets, context, CPAction.Action.PLACE);
+			CPAction action = new CPAction(tool, targets, context, Action.ADD_OR_MODIFY);
 			ClientPlayNetworking.send(action);
 		} else if(dragging == 0) {
-			CPAction action = new CPAction(tool, targets, context, CPAction.Action.REMOVE);
+			CPAction action = new CPAction(tool, targets, context, Action.REMOVE);
 			ClientPlayNetworking.send(action);
 		}
 
@@ -296,7 +355,7 @@ public class EditorScreen extends Screen {
 	private boolean updateRadius(int change) {
 		if(EditorState.toolConfig().values().containsKey("radius")) {
 			int radius = Integer.parseInt(EditorState.toolConfig().values().get("radius"));
-			ToolConfig newConfig = EditorState.toolConfig().with("radius", Integer.toString(radius+change));
+			ToolConfig newConfig = EditorState.toolConfig().withRaw("radius", Integer.toString(radius+change));
 			if(EditorState.tool().isValid(newConfig)) {
 				EditorState.toolConfig(newConfig);
 				updatePositions();

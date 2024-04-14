@@ -15,16 +15,20 @@
  */
 package me.andre111.voxedit.editor.action;
 
+import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.editor.EditStats;
+import me.andre111.voxedit.editor.EditHistoryReader;
+import me.andre111.voxedit.editor.EditHistoryWriter;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Clearable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-public class SetBlockAction extends EditAction {
+public class SetBlockAction extends EditAction<SetBlockAction> {
 	private final BlockPos pos;
 	private final BlockState newState;
 	private final BlockState oldState;
@@ -41,10 +45,17 @@ public class SetBlockAction extends EditAction {
 			this.oldNbt = null;
 		}
 	}
+	
+	private SetBlockAction(BlockPos pos, BlockState newState, BlockState oldState, NbtCompound oldNbt) {
+		this.pos = pos;
+		this.newState = newState;
+		this.oldState = oldState;
+		this.oldNbt = oldNbt;
+	}
 
 	@Override
-	public void undo(World world, EditStats stats) {
-		// if had block entity -> first set block without be to ensure it is newly created
+	public void undo(ServerWorld world, EditStats stats) {
+		// if had block entity -> first set block without to ensure it is newly created
 		if(oldNbt != null) {
             Clearable.clear(world.getBlockEntity(pos)); // do not drop anything
             world.setBlockState(pos, Blocks.BARRIER.getDefaultState(), Block.NO_REDRAW | Block.FORCE_STATE);
@@ -62,11 +73,33 @@ public class SetBlockAction extends EditAction {
 	}
 	
 	@Override
-	public void redo(World world, EditStats stats) {
+	public void redo(ServerWorld world, EditStats stats) {
 		if(world.getBlockEntity(pos) != null) {
 			Clearable.clear(world.getBlockEntity(pos));
 		}
 		world.setBlockState(pos, newState, Block.NOTIFY_LISTENERS | Block.SKIP_DROPS, 0);
 		stats.changedBlock();
+	}
+
+	@Override
+	public Type<SetBlockAction> type() {
+		return VoxEdit.ACTION_SET_BLOCK;
+	}
+	
+	public static void write(SetBlockAction action, EditHistoryWriter writer) {
+		writer.writeBlockPos(action.pos);
+		writer.writeBlockState(action.newState);
+		writer.writeBlockState(action.oldState);
+		writer.writeFlag(action.oldNbt != null);
+		if(action.oldNbt != null) writer.writeNbt(action.oldNbt);
+	}
+	
+	public static SetBlockAction read(EditHistoryReader reader) {
+		BlockPos pos = reader.readBlockPos();
+		BlockState newState = reader.readBlockState();
+		BlockState oldState = reader.readBlockState();
+		NbtCompound oldNbt = null;
+		if(reader.readFlagBoolean()) oldNbt = reader.readNbt();
+		return new SetBlockAction(pos, newState, oldState, oldNbt);
 	}
 }

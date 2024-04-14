@@ -15,7 +15,49 @@
  */
 package me.andre111.voxedit;
 
+import java.util.Map;
+
+import me.andre111.voxedit.tool.data.BlockPalette;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.ButtonBlock;
+import net.minecraft.block.enums.BlockFace;
+import net.minecraft.util.math.Direction;
+
 public class Presets {
+	public static void addPalettesIfAbsent(Map<String, BlockPalette> palettes) {
+		palettes.putIfAbsent("Stone", BlockPalette.builder()
+				.add(Blocks.STONE)
+				.build()
+				);
+		palettes.putIfAbsent("Path", BlockPalette.builder()
+				.add(Blocks.DIRT)
+				.add(Blocks.COARSE_DIRT)
+				.add(Blocks.DIRT_PATH)
+				.add(Blocks.GRAVEL)
+				.add(Blocks.COBBLESTONE)
+				.build()
+				);
+		palettes.putIfAbsent("Pebbles", BlockPalette.builder()
+				.add(Blocks.AIR, 30)
+				.add(Blocks.STONE_BUTTON.getDefaultState().with(ButtonBlock.FACE, BlockFace.FLOOR).with(ButtonBlock.FACING, Direction.NORTH), 1)
+				.add(Blocks.STONE_BUTTON.getDefaultState().with(ButtonBlock.FACE, BlockFace.FLOOR).with(ButtonBlock.FACING, Direction.WEST), 1)
+				.build()
+				);
+		palettes.putIfAbsent("Lush Mix", BlockPalette.builder()
+				.add(Blocks.GRASS_BLOCK, 3)
+				.add(Blocks.MOSS_BLOCK, 3)
+				.add(Blocks.GREEN_CONCRETE_POWDER)
+				.build()
+				);
+		palettes.putIfAbsent("Grass Mix", BlockPalette.builder()
+				.add(Blocks.AIR, 32)
+				.add(Blocks.SHORT_GRASS, 8)
+				.add(Blocks.FERN, 8)
+				.add(Blocks.POPPY, 1)
+				.add(Blocks.DANDELION, 1)
+				.build()
+				);
+	}
 	/*public static final ToolItem.Data andre111;
 	public static final ItemStack andre111Stack;
 	static {
@@ -68,7 +110,7 @@ public class Presets {
 					)));
 			list.add(VoxEdit.TOOL_PLACE.getDefault());
 		}), 0);
-		
+
 		ItemStack stack = VoxEdit.ITEM_TOOL.getStackWith(andre111);
 		stack.set(DataComponentTypes.CUSTOM_NAME, Text.of("andre111s Presets").copy().setStyle(Style.EMPTY.withItalic(false).withBold(true).withColor(Formatting.GOLD)));
 		andre111Stack = stack;

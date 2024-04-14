@@ -25,7 +25,9 @@ import me.andre111.voxedit.VoxEditUtil;
 import me.andre111.voxedit.editor.action.EditAction;
 import me.andre111.voxedit.editor.action.ModifyBlockEntityAction;
 import me.andre111.voxedit.editor.action.SetBlockAction;
+import me.andre111.voxedit.network.CPHistoryInfo;
 import me.andre111.voxedit.state.Schematic;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
@@ -41,10 +43,12 @@ import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.resource.featuretoggle.FeatureSet;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
+import net.minecraft.text.Text;
 import net.minecraft.util.TypeFilter;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
@@ -70,12 +74,12 @@ import net.minecraft.world.tick.QueryableTickScheduler;
 
 public class EditorWorld implements StructureWorldAccess {
 	private final ServerWorld world;
-	private final Undo undo;
-	private final List<EditAction> actions;
+	private final EditHistory undo;
+	private final List<EditAction<?>> actions;
 	private final Map<BlockPos, BlockState> changedBlockStates;
 	private final Map<BlockPos, ModifiedBlockEntity> changedBlockEntities;
 	
-	public EditorWorld(ServerWorld world, Undo undo) {
+	public EditorWorld(ServerWorld world, EditHistory undo) {
 		this.world = world;
 		this.undo = undo;
 		this.actions = new ArrayList<>();
@@ -83,24 +87,25 @@ public class EditorWorld implements StructureWorldAccess {
 		this.changedBlockEntities = new HashMap<>();
 	}
 
-	public EditStats apply() {
-		EditStats result = new EditStats();
+	public EditStats apply(ServerPlayerEntity player, Text text) {
+		EditStats result = new EditStats(text);
 		
 		for(var e : changedBlockEntities.entrySet()) {
-			EditAction action = e.getValue().asAction(e.getKey());
+			EditAction<?> action = e.getValue().asAction(e.getKey());
 			if(action != null) actions.add(action);
 		}
 		if(actions.isEmpty()) return result;
 		
-		for(EditAction action : actions) {
+		for(EditAction<?> action : actions) {
 			action.redo(world, result);
 		}
-		undo.push(new UndoState(actions));
+		CPHistoryInfo info = undo.push(world, new EditHistoryState(result, actions));
+		ServerPlayNetworking.send(player, info); //TODO: this is really not the correct location for this
 		return result;
 	}
 	
-	public EditStats toSchematic(BlockPos origin) {
-		EditStats result = new EditStats();
+	public EditStats toSchematic(ServerPlayerEntity player, Text text, BlockPos origin) {
+		EditStats result = new EditStats(text);
 		
 		// find bounding box
 		BlockBox blockStateBB = BlockBox.encompassPositions(changedBlockStates.keySet()).orElse(null);
@@ -365,7 +370,7 @@ public class EditorWorld implements StructureWorldAccess {
 			this.oldNbt = be.createNbtWithId(world.getRegistryManager());
 		}
 		
-		private EditAction asAction(BlockPos pos) {
+		private EditAction<?> asAction(BlockPos pos) {
 			NbtCompound newNbt = be.createNbtWithId(world.getRegistryManager());
 			if(newNbt.equals(oldNbt)) return null;
 			return new ModifyBlockEntityAction(pos, oldNbt, newNbt);

@@ -26,39 +26,48 @@ import java.util.function.Consumer;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.editor.EditType;
-import me.andre111.voxedit.editor.Editor;
-import me.andre111.voxedit.editor.Undo;
+import me.andre111.voxedit.editor.EditHistory;
+import me.andre111.voxedit.editor.EditHistoryState;
 import me.andre111.voxedit.item.VoxEditItem;
-import me.andre111.voxedit.network.CPAction.Action;
 import me.andre111.voxedit.state.Schematic;
 import me.andre111.voxedit.state.Selection;
 import me.andre111.voxedit.state.ServerStates;
 import me.andre111.voxedit.tool.ConfiguredTool;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 public class ServerNetworking {
 	private static Map<UUID, Consumer<NbtCompound>> nbtEditorTargets = new HashMap<>();
 	
 	public static void init() {
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+			EditHistory history = EditHistory.of(handler.getPlayer(), handler.getPlayer().getServerWorld());
+			List<EditStats> stats = history.getStates().stream().map(EditHistoryState::getStats).toList();
+			int index = history.getIndex();
+			
+			sender.sendPacket(new CPHistoryInfo(stats, index, false));
+		});
+		
 		ServerPlayNetworking.registerGlobalReceiver(CPCommand.ID, (payload, context) -> {
 			if(!context.player().isCreative()) return;
 			
 			context.player().server.execute(() -> {
-				World world = context.player().getWorld();
+				ServerWorld world = (ServerWorld) context.player().getWorld();
+				EditHistory history = EditHistory.of(context.player(), world);
 				switch(payload.command()) {
 				case UNDO:
-					Undo.of(context.player(), world).undo(world).inform(context.player(), EditType.UNDO);
+					history.undo(world).inform(context.player(), EditType.UNDO);
+					context.responseSender().sendPacket(new CPHistoryInfo(List.of(), history.getIndex(), true));
 					break;
 				case REDO:
-					Undo.of(context.player(), world).redo(world).inform(context.player(), EditType.REDO);
+					history.redo(world).inform(context.player(), EditType.REDO);
+					context.responseSender().sendPacket(new CPHistoryInfo(List.of(), history.getIndex(), true));
 					break;
 				case LEFT_CLICK:
 					ItemStack stack = context.player().getMainHandStack();
@@ -117,55 +126,7 @@ public class ServerNetworking {
 		if(!player.isCreative()) return;
 		
 		ConfiguredTool tool = action.tool();
-		
-		// collect position sets
-		if(action.targets().size() > 1 && !tool.tool().properties().draggable()) {
-			player.sendMessage(Text.translatable("voxedit.feedback.notDraggable"), true);
-			return;
-		}
-		List<Set<BlockPos>> positions = new ArrayList<>();
-		for(int i=0; i<action.targets().size(); i++) {
-			positions.add(tool.tool().getBlockPositions(player.getWorld(), action.targets().get(i), action.context(), tool.config()));
-		}
-		
-		// run actions
-		EditStats result = EditStats.EMPTY;
-		if(action.action() == Action.PREVIEW) {
-			result = Editor.undoable(player, player.getServerWorld(), (editable) -> {
-				for(int i=0; i<action.targets().size(); i++) {
-					if(positions.get(i).isEmpty()) continue;
-					tool.tool().place(editable, player, action.targets().get(i), action.context(), tool.config(), positions.get(i));
-				}
-			}, action.targets().getFirst().pos(), true);
-			
-			ServerStates.get(player).schematic(VoxEdit.id("preview."+tool.tool().id().toTranslationKey()), result.schematic(), true);
-		} else if(action.action() == Action.APPLY_PREVIEW) {
-			Schematic preview = ServerStates.get(player).schematic(VoxEdit.id("preview."+action.tool().tool().id().toTranslationKey()));
-			if(preview == null) {
-				player.sendMessage(Text.translatable("voxedit.feedback.noPreview"), true);
-				return;
-			}
-			if(action.targets().size() != 1) {
-				player.sendMessage(Text.translatable("voxedit.feedback.previewSinglePosition"), true);
-				return;
-			}
-			
-			result = Editor.undoable(player, player.getServerWorld(), (editable) -> {
-				preview.apply(editable, action.targets().getFirst().pos());
-			}, action.targets().getFirst().pos(), false);
-		} else {
-			result = Editor.undoable(player, player.getServerWorld(), (editable) -> {
-				for(int i=0; i<action.targets().size(); i++) {
-					if(positions.get(i).isEmpty()) continue;
-					if(action.action() == Action.PLACE) {
-						tool.tool().place(editable, player, action.targets().get(i), action.context(), tool.config(), positions.get(i));
-					} else if(action.action() == Action.REMOVE) {
-						tool.tool().remove(editable, player, action.targets().get(i), action.context(), tool.config(), positions.get(i));
-					}
-				}
-			}, action.targets().getFirst().pos(), false);
-		}
-		result.inform(player, EditType.PERFORM);
+		tool.tool().performAction(player, action.action(), action.targets(), action.context(), tool.config(), ServerStates.get(player));
 	}
 	
 	public static void serverSendOpenNBTEditor(ServerPlayerEntity player, NbtCompound root, Consumer<NbtCompound> editTarget) {

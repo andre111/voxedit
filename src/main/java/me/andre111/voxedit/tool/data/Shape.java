@@ -22,15 +22,15 @@ public enum Shape {
 	CUBE((target, radius, x, y, z) -> true),
 	DISC((target, radius, x, y, z) -> {
 		if(Math.sqrt(x*x + y*y + z*z) > radius) return false;
-		if(target.side().getOffsetX() != 0 && x != 0) return false;
-		if(target.side().getOffsetY() != 0 && y != 0) return false;
-		if(target.side().getOffsetZ() != 0 && z != 0) return false;
+		if(target.getSide().getOffsetX() != 0 && x != 0) return false;
+		if(target.getSide().getOffsetY() != 0 && y != 0) return false;
+		if(target.getSide().getOffsetZ() != 0 && z != 0) return false;
 		return true;
 	}),
 	CYLINDER((target, radius, x, y, z) -> {
-		if(target.side().getOffsetX() != 0 && Math.sqrt(y*y + z*z) > radius) return false;
-		if(target.side().getOffsetY() != 0 && Math.sqrt(x*x + z*z) > radius) return false;
-		if(target.side().getOffsetZ() != 0 && Math.sqrt(x*x + y*y) > radius) return false;
+		if(target.getSide().getOffsetX() != 0 && Math.sqrt(y*y + z*z) > radius) return false;
+		if(target.getSide().getOffsetY() != 0 && Math.sqrt(x*x + z*z) > radius) return false;
+		if(target.getSide().getOffsetZ() != 0 && Math.sqrt(x*x + y*y) > radius) return false;
 		return true;
 	}),
 	HOLLOW_SPHERE((target, radius, x, y, z) -> {

@@ -15,13 +15,31 @@
  */
 package me.andre111.voxedit;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
+
 import me.andre111.voxedit.client.gui.screen.EditorScreen;
 import me.andre111.voxedit.item.VoxEditItem;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.data.DataProvider;
+import net.minecraft.data.DataWriter;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryWrapper.Impl;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
 import net.minecraft.util.math.BlockPos;
 
@@ -41,5 +59,33 @@ public class VoxEditUtil {
 		// create unlinked copy and adjust position
 		NbtCompound nbt = source.createNbtWithId(registryLookup);
 		return BlockEntity.createFromNbt(pos, state, nbt, registryLookup);
+	}
+	
+	public static <V> V readJson(Path path, Codec<V> codec, V defaultValue) {
+		if(!Files.exists(path)) return defaultValue;
+		
+		try(BufferedReader reader = Files.newBufferedReader(path)) {
+			JsonElement element = (new Gson()).fromJson(reader, JsonElement.class);
+			V value = codec.decode(JsonOps.INSTANCE, element).result().orElse(Pair.of(defaultValue, element)).getFirst();
+			return value;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return defaultValue;
+	}
+	
+	public static <V> void writeJson(Path path, Codec<V> codec, V value) {
+		DataProvider.writeCodecToPath(DataWriter.UNCACHED, new WrapperLookup() {
+			@Override
+			public Stream<RegistryKey<? extends Registry<?>>> streamAllRegistryKeys() {
+				return null;
+			}
+
+			@Override
+			public <T> Optional<Impl<T>> getOptionalWrapper(RegistryKey<? extends Registry<? extends T>> var1) {
+				return Optional.empty();
+			}
+		}, codec, value, path);
 	}
 }

@@ -39,6 +39,17 @@ public class EditorPanelPalette extends EditorPanel {
     public void refreshPositions() {
     	children.clear();
     	
+		// presets / saved configs
+		for(var preset : EditorState.persistant().palettePresets().entrySet()) {
+			children.add(ButtonWidget.builder(Text.of(preset.getKey()), (button) -> {
+				EditorState.blockPalette(preset.getValue());
+				paletteWidget.updateEntries();
+				updateRemoveEntryButton();
+			}).size(64, 32).build());
+		}
+		children.add(new LineHorizontal(width));
+    	
+		// palette editor
 		paletteWidget = new BlockPaletteListWidget();
 		children.add(paletteWidget);
     	removeEntryButton = ButtonWidget.builder(Text.translatable("voxedit.screen.blockPalette.remove"), button -> {
@@ -75,7 +86,7 @@ public class EditorPanelPalette extends EditorPanel {
 	@Environment(value=EnvType.CLIENT)
 	class BlockPaletteListWidget extends ModListWidget<BlockPaletteListWidget.BlockPaletteEntry> {
 		public BlockPaletteListWidget() {
-			super(MinecraftClient.getInstance(), EditorPanelPalette.this.width-1, 300, 20, 6);
+			super(MinecraftClient.getInstance(), EditorPanelPalette.this.width, 300, 20, 6);
 			updateEntries();
 		}
 

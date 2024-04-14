@@ -18,27 +18,43 @@ package me.andre111.voxedit.editor;
 import java.util.List;
 
 import me.andre111.voxedit.editor.action.EditAction;
-import net.minecraft.world.World;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 
-public class UndoState {
-	private final List<EditAction> actions;
+public class EditHistoryState {
+	private final EditStats stats;
+	private final List<EditAction<?>> actions;
 	
-	public UndoState(List<EditAction> actions) {
+	public EditHistoryState(EditStats stats, List<EditAction<?>> actions) {
+		this.stats = stats;
 		this.actions = List.copyOf(actions);
 	}
 	
-	public EditStats undo(World world) {
-		EditStats stats = new EditStats();
+	public EditStats getStats() {
+		return stats;
+	}
+	
+	public EditStats undo(ServerWorld world) {
+		EditStats stats = new EditStats(Text.empty());
 		for(int i=actions.size()-1; i>=0; i--) {
 			actions.get(i).undo(world, stats);
 		}
 		return stats;
 	}
-	public EditStats redo(World world) {
-		EditStats stats = new EditStats();
+	public EditStats redo(ServerWorld world) {
+		EditStats stats = new EditStats(Text.empty());
 		for(int i=0; i<actions.size(); i++) {
 			actions.get(i).redo(world, stats);
 		}
 		return stats;
+	}
+	
+	public void write(EditHistoryWriter writer) {
+		writer.writeStats(stats);
+		writer.writeActions(actions);
+	}
+	
+	public static EditHistoryState read(EditHistoryReader reader) {
+		return new EditHistoryState(reader.readStats(), reader.readActions());
 	}
 }
