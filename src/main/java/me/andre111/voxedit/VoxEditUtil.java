@@ -29,13 +29,11 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 
 import me.andre111.voxedit.client.gui.screen.EditorScreen;
-import me.andre111.voxedit.item.VoxEditItem;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.DataWriter;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
@@ -48,9 +46,6 @@ public class VoxEditUtil {
 		if(player != null && player.isCreative() && player.getAbilities().flying) {
 			//TODO: this refers to client code -> WILL CRASH ON SERVER -> FIX!!!
 			if(EditorScreen.get().isActive()) return true;
-			
-			ItemStack stack = player.getMainHandStack();
-			return stack.getItem() instanceof VoxEditItem item && item.useCustomControls();
 		}
 		return false;
 	}

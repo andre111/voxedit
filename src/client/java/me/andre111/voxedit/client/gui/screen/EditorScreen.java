@@ -8,28 +8,31 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 import com.mojang.blaze3d.platform.GlStateManager.Viewport;
 
 import me.andre111.voxedit.VoxEdit;
-import me.andre111.voxedit.client.ClientStates;
+import me.andre111.voxedit.VoxEditUtil;
+import me.andre111.voxedit.client.EditorLayout;
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.VoxEditClient;
-import me.andre111.voxedit.client.gui.widget.EditorPanel;
 import me.andre111.voxedit.client.gui.widget.EditorPanelHistory;
 import me.andre111.voxedit.client.gui.widget.EditorPanelPalette;
+import me.andre111.voxedit.client.gui.widget.EditorPanelSchematics;
 import me.andre111.voxedit.client.gui.widget.EditorPanelToolConfig;
-import me.andre111.voxedit.client.gui.widget.EditorSchematicWidget;
-import me.andre111.voxedit.client.gui.widget.EditorToolWidget;
+import me.andre111.voxedit.client.gui.widget.EditorPanelTools;
 import me.andre111.voxedit.client.gui.widget.EditorWidget;
 import me.andre111.voxedit.client.gui.widget.MenuWidget;
 import me.andre111.voxedit.client.renderer.SchematicRenderer;
 import me.andre111.voxedit.client.renderer.SchematicView;
+import me.andre111.voxedit.client.renderer.SelectionRenderer;
 import me.andre111.voxedit.network.CPAction;
 import me.andre111.voxedit.network.CPCommand;
 import me.andre111.voxedit.network.Command;
+import me.andre111.voxedit.selection.SelectionSet;
 import me.andre111.voxedit.tool.ConfiguredTool;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.Tool.Action;
@@ -39,6 +42,8 @@ import me.andre111.voxedit.tool.data.RaycastTargets;
 import me.andre111.voxedit.tool.data.Target;
 import me.andre111.voxedit.tool.data.ToolConfig;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -51,9 +56,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.RaycastContext;
 
-public class EditorScreen extends Screen {
+public class EditorScreen extends Screen implements UnscaledScreen {
 	private static EditorScreen INSTANCE;
 
 	public static EditorScreen get() {
@@ -66,6 +72,11 @@ public class EditorScreen extends Screen {
 	private int dragging = -1;
 	private Target lastTarget = null;
 	private int lastTargetTicks = 0;
+	
+	private Matrix4f modelViewMat;
+	private Matrix4f projectionMat;
+	private SelectionRenderer positionsRenderer = new SelectionRenderer();
+	private SchematicRenderer previewRenderer;
 
 	private EditorScreen() {
 		super(Text.translatable("voxedit.screen.main"));
@@ -78,24 +89,21 @@ public class EditorScreen extends Screen {
 			if(lastTarget == null) return;
 			if(lastTarget.pos().isEmpty()) return;
 			
-			if(VoxEditClient.previewRenderer != null) {
-				VoxEditClient.previewRenderer.close();
-				VoxEditClient.previewRenderer = null;
+			if(previewRenderer != null) {
+				previewRenderer.close();
+				previewRenderer = null;
 			}
 			
 			BlockPos pos = lastTarget.getBlockPos().add(schematic.getOffsetX(), schematic.getOffsetY(), schematic.getOffsetZ());
 			SchematicView view = new SchematicView(pos, schematic);
-			VoxEditClient.previewRenderer = new SchematicRenderer(view);
+			previewRenderer = new SchematicRenderer(view);
 		});
-	}
-
-	public void rebuild() {
-		
+    	WorldRenderEvents.LAST.register(this::renderInWorld);
 	}
 
 	@Override
 	public void init() {
-		MinecraftClient.getInstance().getWindow().setScaleFactor(1);
+		VoxEditClient.unscaleGui();
 		MinecraftClient.getInstance().options.hudHidden = true;
 		isActive = true;
 		
@@ -113,20 +121,14 @@ public class EditorScreen extends Screen {
 				.addEntry(Text.of("Clear"), () -> {})
 				.addEntry(Text.of("Save as Schematic"), () -> {});
 	
-			var toolPanel = widget.addPanel(EditorPanel.Location.LEFT, Text.translatable("voxedit.screen.panel.tools"));
-			widget.addPanel(parent -> new EditorPanelToolConfig(parent, EditorPanel.Location.LEFT));
-			widget.addPanel(parent -> new EditorPanelPalette(parent, EditorPanel.Location.LEFT));
+			widget.addPanel(parent -> new EditorPanelTools(parent), EditorWidget.Location.LEFT);
+			widget.addPanel(parent -> new EditorPanelToolConfig(parent), EditorWidget.Location.LEFT);
+			widget.addPanel(parent -> new EditorPanelPalette(parent), EditorWidget.Location.LEFT);
 			
-			widget.addPanel(parent -> new EditorPanelHistory(parent, EditorPanel.Location.RIGHT));
+			widget.addPanel(parent -> new EditorPanelHistory(parent), EditorWidget.Location.RIGHT);
+			widget.addPanel(parent -> new EditorPanelSchematics(parent), EditorWidget.Location.RIGHT);
 			
-			var schematicPanel = widget.addPanel(EditorPanel.Location.RIGHT, Text.translatable("voxedit.screen.panel.schematics"));
-			EditorState.CHANGE_SCHEMATIC.register((id, schematic) -> {
-				if(schematic != null) schematicPanel.addChild(new EditorSchematicWidget(schematic));
-			});
-			
-			VoxEdit.TOOL_REGISTRY.forEach(tool -> {
-				toolPanel.addChild(new EditorToolWidget(tool));
-			});
+			widget.loadLayout(VoxEditUtil.readJson(VoxEditClient.dataPath().resolve("editor_layout.json"), EditorLayout.CODEC, EditorLayout.EMPTY));
 		} else {
 			addDrawableChild(widget);
 		}
@@ -141,7 +143,7 @@ public class EditorScreen extends Screen {
 			MinecraftClient.getInstance().mouse.lockCursor();
 			return;
 		}
-		MinecraftClient.getInstance().getWindow().setScaleFactor(1);
+		VoxEditClient.unscaleGui();
 		
 		if(lastTarget != null && lastTargetTicks++ == VoxEdit.PREVIEW_DELAY) {
 			ConfiguredTool tool = EditorState.configuredTool();
@@ -176,6 +178,16 @@ public class EditorScreen extends Screen {
 				ClientPlayNetworking.send(new CPCommand(Command.REDO));
 				return true;
 			}
+		}
+		if(VoxEditClient.INCREASE_SPEED.wasPressed()) {
+			EditorState.cameraSpeed(Math.min(EditorState.cameraSpeed()+1, 10f));
+			statusMessage(Text.translatable("voxedit.feedback.cameraSpeed", EditorState.cameraSpeed()));
+			return true;
+		}
+		if(VoxEditClient.DECREASE_SPEED.wasPressed()) {
+			EditorState.cameraSpeed(Math.max(1f, EditorState.cameraSpeed()-1));
+			statusMessage(Text.translatable("voxedit.feedback.cameraSpeed", EditorState.cameraSpeed()));
+			return true;
 		}
 		if(VoxEditClient.INCREASE_RADIUS.matchesKey(keyCode, scanCode)) {
 			if(updateRadius(1)) return true;
@@ -262,8 +274,8 @@ public class EditorScreen extends Screen {
 		Vector3f origin = new Vector3f();
 		Vector3f dir = new Vector3f();
 		int[] viewport = new int[] { Viewport.getX(), Viewport.getY(), Viewport.getWidth(), Viewport.getHeight() };
-		VoxEditClient.projectionMat.unprojectRay(mx, my, viewport, origin, dir);
-		VoxEditClient.modelViewMat.invert().transformProject(dir);
+		projectionMat.unprojectRay(mx, my, viewport, origin, dir);
+		modelViewMat.invert().transformProject(dir);
 	
 		Vec3d start = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
 		Vec3d end = start.add(new Vec3d(dir.x, dir.y, dir.z).normalize().multiply(128));
@@ -326,7 +338,8 @@ public class EditorScreen extends Screen {
 				positions.addAll(voxelTool.getBlockPositions(MinecraftClient.getInstance().world, target, context, tool.config()));
 			}
 		}
-		ClientStates.instance().setPositions(positions);
+		EditorState.positions(positions);
+		positionsRenderer.rebuild(new SelectionSet(positions));
 	}
 	
 	private void performActions() {
@@ -371,9 +384,9 @@ public class EditorScreen extends Screen {
 		if(EditorState.tool() != null) {
 			EditorState.schematic(VoxEdit.id("preview."+EditorState.tool().id().toTranslationKey()), null);
 		}
-		if(VoxEditClient.previewRenderer != null) {
-			VoxEditClient.previewRenderer.close();
-			VoxEditClient.previewRenderer = null;
+		if(previewRenderer != null) {
+			previewRenderer.close();
+			previewRenderer = null;
 		}
 		lastTarget = target;
 		lastTargetTicks = 0;
@@ -382,26 +395,47 @@ public class EditorScreen extends Screen {
 	@Override
 	public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
 	}
+	
+	private void renderInWorld(WorldRenderContext context) {
+		modelViewMat = context.positionMatrix();
+		projectionMat = context.projectionMatrix();
+		if(!isActive) return;
+		
+		if(previewRenderer != null) {
+			previewRenderer.draw(Vec3i.ZERO, context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), true);
+		}
+		if(!EditorState.targets().isEmpty()) {
+			positionsRenderer.draw(context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), MinecraftClient.getInstance().getWindow());
+		}
+	}
 
 	@Override
 	public void onDisplayed() {
-		MinecraftClient.getInstance().getWindow().setScaleFactor(1);
+		VoxEditClient.unscaleGui();
 		isActive = true;
 	}
 
 	@Override
 	public void removed() {
-		ClientStates.instance().setPositions(Collections.emptySet());
+		EditorState.positions(Collections.emptySet());
 		MinecraftClient.getInstance().options.hudHidden = false;
 		VoxEditClient.restoreGuiScale();
 	}
 
 	@Override
 	public boolean shouldPause() {
-		return false;
+		return false; // would not update world rendering otherwise
+	}
+	
+	public void onLayoutChange() {
+		VoxEditUtil.writeJson(VoxEditClient.dataPath().resolve("editor_layout.json"), EditorLayout.CODEC, widget.getLayout());
 	}
 
 	public boolean isActive() {
 		return isActive;
+	}
+	
+	public void statusMessage(Text text) {
+		//TODO: implement
 	}
 }

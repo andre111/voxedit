@@ -5,6 +5,7 @@ import java.util.List;
 import me.andre111.voxedit.tool.data.ToolSetting;
 
 public record Properties(List<ToolSetting<?>> settings, boolean draggable, boolean showPreview) {
+	public static final Properties NONE = of().create();
 	
 	public static Builder of(ToolSetting<?>... settings) {
 		return new Builder(List.of(settings));
@@ -30,7 +31,7 @@ public record Properties(List<ToolSetting<?>> settings, boolean draggable, boole
 		}
 		
 		public Properties create() {
-			return new Properties(settings, draggable, showPreview);
+			return new Properties(List.copyOf(settings), draggable, showPreview);
 		}
 	}
 }

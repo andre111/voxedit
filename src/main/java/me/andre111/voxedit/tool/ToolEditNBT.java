@@ -15,13 +15,12 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 public class ToolEditNBT extends Tool {
 
 	public ToolEditNBT() {
-		super(Properties.of().create());
+		super(Properties.NONE);
 	}
 
 	@Override
@@ -31,7 +30,6 @@ public class ToolEditNBT extends Tool {
 
 	@Override
 	public void performAction(ServerPlayerEntity player, Action action, List<Target> targets, Context context, ToolConfig config, ServerState state) {
-		// TODO Auto-generated method stub
 		if(targets.size() != 1) return;
 		Target target = targets.get(0);
 		
@@ -43,18 +41,18 @@ public class ToolEditNBT extends Tool {
 			ServerNetworking.serverSendOpenNBTEditor(player, oldNbt, (nbt) -> {
 				if(nbt.equals(oldNbt)) return;
 				
-				Editor.undoableAction(player, player.getServerWorld(), Text.translatable("item.voxedit.editor"), new ModifyEntityAction(entity.getUuid(), oldNbt, nbt)).inform(player, EditType.PERFORM);
+				Editor.undoableAction(player, player.getServerWorld(), asText(), new ModifyEntityAction(entity.getUuid(), oldNbt, nbt)).inform(player, EditType.PERFORM);
 			});
 		} else if(target.pos().isPresent()) {
 			BlockPos targetPos = target.getBlockPos();
     		BlockEntity be = player.getServerWorld().getBlockEntity(targetPos);
     		if(be == null) return;
     		
-    			NbtCompound oldNbt = be.createNbtWithId(player.getServerWorld().getRegistryManager());
+    		NbtCompound oldNbt = be.createNbtWithId(player.getServerWorld().getRegistryManager());
 			ServerNetworking.serverSendOpenNBTEditor(player, be.createNbt(player.getServerWorld().getRegistryManager()), (nbt) -> {
 				if(nbt.equals(oldNbt)) return;
 				
-				Editor.undoable(player, player.getServerWorld(), Text.translatable("item.voxedit.editor"), (editable) -> {
+				Editor.undoable(player, player.getServerWorld(), asText(), (editable) -> {
 					BlockEntity newBe = editable.getBlockEntity(targetPos);
 					if(newBe != null) newBe.read(nbt, player.getServerWorld().getRegistryManager());
 				}, null, false).inform(player, EditType.PERFORM);

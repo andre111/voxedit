@@ -3,6 +3,7 @@ package me.andre111.voxedit.client.gui.widget;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.editor.EditStats;
@@ -17,21 +18,27 @@ import net.minecraft.text.Text;
 
 public class EditorPanelHistory extends EditorPanel {
 	private HistoryListWidget historyWidget;
+	private boolean refreshing = false;
 
-	public EditorPanelHistory(EditorWidget parent, Location location) {
-		super(parent, location, Text.translatable("voxedit.screen.panel.editHistory"));
+	public EditorPanelHistory(EditorWidget parent) {
+		super(parent, VoxEdit.id("history"), Text.translatable("voxedit.screen.panel.history"));
 		
 		EditorState.UPDATE_HISTORY.register(this::refreshPositions);
 	}
     
     @Override
     public void refreshPositions() {
-    	children.clear();
+    	if(refreshing) return;
+    	refreshing = true;
+    	
+    	clearContent();
     	
     	historyWidget = new HistoryListWidget();
-		children.add(historyWidget);
+    	addContent(historyWidget);
         
         super.refreshPositions();
+        
+        refreshing = false;
     }
 
 

@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.editor;
+package me.andre111.voxedit.editor.history;
 
 import java.util.List;
 
+import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.editor.action.EditAction;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;

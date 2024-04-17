@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import me.andre111.voxedit.client.VoxEditClient;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -41,23 +42,31 @@ public class InputScreen extends Screen {
 		super(Text.empty());
 		this.parent = parent;
 	}
+	
+	@Override
+	public void init() {
+		if(parent instanceof UnscaledScreen) VoxEditClient.unscaleGui();
+	}
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    	if(parent instanceof UnscaledScreen) VoxEditClient.unscaleGui();
     	parent.render(context, mouseX, mouseY, delta);
     	context.getMatrices().translate(0, 0, 200);
+    	if(parent instanceof UnscaledScreen) VoxEditClient.unscaleGui();
     	super.render(context, mouseX, mouseY, delta);
     }
     
     @Override
     public void close() {
+    	if(parent instanceof UnscaledScreen) VoxEditClient.restoreGuiScale();
         this.client.setScreen(parent);
     }
     
     public static <T extends Number> void getNumber(Screen parent, Text title, T value, Function<String, T> parser, Consumer<T> callback) {
     	MinecraftClient client = MinecraftClient.getInstance();
     	
-        TextFieldWidget input = new TextFieldWidget(client.textRenderer, 204, 20, Text.empty());
+        TextFieldWidget input = new TextFieldWidget(client.textRenderer, 260, 20, Text.empty());
         input.setMaxLength(128);
         input.setChangedListener(string -> {
         	try {
@@ -80,7 +89,7 @@ public class InputScreen extends Screen {
     public static void getString(Screen parent, Text title, String value, Consumer<String> callback) {
     	MinecraftClient client = MinecraftClient.getInstance();
     	
-        TextFieldWidget input = new TextFieldWidget(client.textRenderer, 204, 20, Text.empty());
+        TextFieldWidget input = new TextFieldWidget(client.textRenderer, 260, 20, Text.empty());
         input.setMaxLength(128);
         input.setText(value);
         
@@ -88,27 +97,34 @@ public class InputScreen extends Screen {
     }
     
     public static <T> void getSelector(Screen parent, Text title, Text label, T value, List<T> values, Function<T, Text> toText, Consumer<T> callback) {
-    	CyclingButtonWidget<T> button = CyclingButtonWidget.builder(toText).values(values).initially(value).build(0, 0, 204, 20, label, (b, v) -> {});
+    	CyclingButtonWidget<T> button = CyclingButtonWidget.builder(toText).values(values).initially(value).build(0, 0, 260, 20, label, (b, v) -> {});
         
         create(parent, title, () -> callback.accept(button.getValue()), (adder) -> adder.add(button, 2)).setFocused(button);
+    }
+    
+    public static void showConfirmation(Screen parent, Text title, Runnable action) {
+    	create(parent, title, () -> action.run(), (adder) -> {});
     }
     
     private static InputScreen create(Screen parent, Text title, Runnable callback, ContentCreator creator) {
     	InputScreen screen = new InputScreen(parent);
         
+    	if(parent instanceof UnscaledScreen) VoxEditClient.unscaleGui();
+    	else VoxEditClient.restoreGuiScale();
+    	
     	MinecraftClient client = MinecraftClient.getInstance();
         GridWidget gridWidget = new GridWidget();
         gridWidget.getMainPositioner().margin(4, 4, 4, 4);
         GridWidget.Adder adder = gridWidget.createAdder(2);
-        adder.add(new TextWidget(204, 20, title, client.textRenderer), 2, gridWidget.copyPositioner().marginTop(50));
+        adder.add(new TextWidget(260, 20, title, client.textRenderer), 2, gridWidget.copyPositioner().marginTop(50));
         creator.addContent(adder);
         adder.add(ButtonWidget.builder(ScreenTexts.DONE, button -> {
-        	callback.run();
             screen.close();
-        }).width(98).build());
+        	callback.run();
+        }).width(126).build());
         adder.add(ButtonWidget.builder(ScreenTexts.CANCEL, button -> {
             screen.close();
-        }).width(98).build());
+        }).width(126).build());
         gridWidget.refreshPositions();
         
         SimplePositioningWidget.setPos(gridWidget, 0, 0, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight(), 0.5f, 0.25f);

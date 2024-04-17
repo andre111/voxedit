@@ -25,6 +25,8 @@ import me.andre111.voxedit.VoxEditUtil;
 import me.andre111.voxedit.editor.action.EditAction;
 import me.andre111.voxedit.editor.action.ModifyBlockEntityAction;
 import me.andre111.voxedit.editor.action.SetBlockAction;
+import me.andre111.voxedit.editor.history.EditHistory;
+import me.andre111.voxedit.editor.history.EditHistoryState;
 import me.andre111.voxedit.network.CPHistoryInfo;
 import me.andre111.voxedit.state.Schematic;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;

@@ -40,7 +40,7 @@ public class HudRenderer implements HudRenderCallback {
 		if(currentScreen != null) return;
 		
 		if(EditorScreen.get().isActive()) {
-			MinecraftClient.getInstance().getWindow().setScaleFactor(1);
+			VoxEditClient.unscaleGui();
 			Matrix4f projMat = RenderSystem.getProjectionMatrix();
 			RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0.0f, (float) MinecraftClient.getInstance().getWindow().getFramebufferWidth(), (float) MinecraftClient.getInstance().getWindow().getFramebufferHeight(), 0.0f, 1000.0f, 21000.0f), VertexSorter.BY_Z);
 			EditorScreen.get().render(drawContext, -1, -1, tickDelta);

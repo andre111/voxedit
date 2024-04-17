@@ -159,7 +159,7 @@ public class SchematicRenderer implements AutoCloseable {
     }
     
     // This should be part of shaderprogramm class in future minecraft versions if I understand correctly
-    private static void setDefaultUniforms(ShaderProgram shader, VertexFormat.DrawMode mode, Matrix4f modelViewMat, Matrix4f projMat, Window window) {
+    public static void setDefaultUniforms(ShaderProgram shader, VertexFormat.DrawMode mode, Matrix4f modelViewMat, Matrix4f projMat, Window window) {
         for (int i = 0; i < 12; ++i) {
             int j = RenderSystem.getShaderTexture(i);
             shader.addSampler("Sampler" + i, j);

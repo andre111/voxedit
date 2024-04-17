@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.mojang.authlib.GameProfile;
 
 import me.andre111.voxedit.VoxEditUtil;
-import me.andre111.voxedit.client.ClientStates;
+import me.andre111.voxedit.client.EditorState;
 import net.minecraft.client.input.Input;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -59,7 +59,7 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 	        if (inputStrength < 1.0E-7) {
 	            setVelocity(Vec3d.ZERO);
 	        } else {
-		        Vec3d movementSpeed = (inputStrength > 1.0 ? movementInput.normalize() : movementInput).multiply(ClientStates.instance().getCameraSpeed());
+		        Vec3d movementSpeed = (inputStrength > 1.0 ? movementInput.normalize() : movementInput).multiply(EditorState.cameraSpeed());
 		        //float sin = MathHelper.sin(getYaw() * ((float)Math.PI / 180));
 		        //float cos = MathHelper.cos(getYaw() * ((float)Math.PI / 180));
 		        //setVelocity(new Vec3d(movementSpeed.x * cos - movementSpeed.z * sin, movementSpeed.y, movementSpeed.z * cos + movementSpeed.x * sin));

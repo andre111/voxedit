@@ -22,7 +22,6 @@ import com.mojang.datafixers.util.Pair;
 
 import me.andre111.voxedit.editor.EditorWorld;
 import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Shape;
 import me.andre111.voxedit.tool.data.Target;
 import me.andre111.voxedit.tool.data.ToolConfig;
 import me.andre111.voxedit.tool.data.ToolSetting;
@@ -35,11 +34,10 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 
 public class ToolSmooth extends VoxelTool {
-	private static final ToolSetting<Shape> SHAPE = ToolSetting.ofEnum("shape", Shape.class, Shape::asText);
 	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
 	
 	public ToolSmooth() {
-		super(Properties.of(SHAPE, RADIUS, ToolSettings.TARGET_FLUIDS).draggable());
+		super(Properties.of(ToolSettings.SHAPE, RADIUS, ToolSettings.TARGET_FLUIDS).draggable());
 	}
 
 	@Override
@@ -71,6 +69,6 @@ public class ToolSmooth extends VoxelTool {
 
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
-		return ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), SHAPE.get(config), null, context.filter());
+		return ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), ToolSettings.SHAPE.get(config), null, context.filter());
 	}
 }

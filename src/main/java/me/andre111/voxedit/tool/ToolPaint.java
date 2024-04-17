@@ -18,9 +18,9 @@ package me.andre111.voxedit.tool;
 import java.util.Map;
 import java.util.Set;
 
+import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.editor.EditorWorld;
 import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Shape;
 import me.andre111.voxedit.tool.data.Target;
 import me.andre111.voxedit.tool.data.ToolConfig;
 import me.andre111.voxedit.tool.data.ToolSetting;
@@ -34,13 +34,12 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 
 public class ToolPaint extends VoxelTool {
-	private static final ToolSetting<Shape> SHAPE = ToolSetting.ofEnum("shape", Shape.class, Shape::asText);
 	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
 	private static final ToolSetting<Boolean> TOP_ONLY = ToolSetting.ofBoolean("topOnly", false);
 	private static final ToolSetting<Boolean> CHECK_CAN_PLACE = ToolSetting.ofBoolean("checkCanPlace", false);
 	
 	public ToolPaint() {
-		super(Properties.of(SHAPE, RADIUS, TOP_ONLY, CHECK_CAN_PLACE, ToolSettings.TARGET_FLUIDS).draggable());
+		super(Properties.of(ToolSettings.SHAPE, RADIUS, TOP_ONLY, CHECK_CAN_PLACE, ToolSettings.TARGET_FLUIDS).draggable());
 	}
 
 	@Override
@@ -61,7 +60,7 @@ public class ToolPaint extends VoxelTool {
 
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
-		return ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), SHAPE.get(config), (innerTarget, innerWorld, pos) -> {
+		return ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), ToolSettings.SHAPE.get(config), (innerTarget, innerWorld, pos) -> {
 			if(ToolTargeting.isFree(innerWorld, pos)) return false;
 			if(TOP_ONLY.get(config)) return ToolTargeting.isFree(innerWorld, pos.offset(Direction.UP));
 			for(Direction d : Direction.values()) {
@@ -73,6 +72,6 @@ public class ToolPaint extends VoxelTool {
 	
 	@Override
 	public Map<String, ToolConfig> getPresets() {
-		return Map.of("Surface", getDefaultConfig().with(SHAPE, Shape.DISC).with(TOP_ONLY, true));
+		return Map.of("Surface", getDefaultConfig().with(ToolSettings.SHAPE, VoxEdit.SHAPE_DISC).with(TOP_ONLY, true));
 	}
 }

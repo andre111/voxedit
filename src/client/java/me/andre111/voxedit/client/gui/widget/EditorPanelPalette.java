@@ -3,7 +3,9 @@ package me.andre111.voxedit.client.gui.widget;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.EditorState;
+import me.andre111.voxedit.client.gui.screen.InputScreen;
 import me.andre111.voxedit.tool.data.BlockPalette;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -16,14 +18,16 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 public class EditorPanelPalette extends EditorPanel {
+	private SelectionWidget<String> presets;
 	private BlockPaletteListWidget paletteWidget;
     private ButtonWidget removeEntryButton;
     private int minSize = 1;
     private boolean includeProperties = true;
     private boolean showWeights = true;
+    private boolean refreshing = false;
 
-	public EditorPanelPalette(EditorWidget parent, Location location) {
-		super(parent, location, Text.translatable("voxedit.screen.panel.palette"));
+	public EditorPanelPalette(EditorWidget parent) {
+		super(parent, VoxEdit.id("palette"), Text.translatable("voxedit.screen.panel.palette"));
 	}
 
 
@@ -37,21 +41,26 @@ public class EditorPanelPalette extends EditorPanel {
     
     @Override
     public void refreshPositions() {
-    	children.clear();
+    	if(refreshing) return;
+    	refreshing = true;
+    	
+    	clearContent();
     	
 		// presets / saved configs
+		presets = new SelectionWidget<>(width, (width - 4*2)/3, 32, null, this::setPreset);
+		presets.setPadding(2);
+		presets.setGap(2);
 		for(var preset : EditorState.persistant().palettePresets().entrySet()) {
-			children.add(ButtonWidget.builder(Text.of(preset.getKey()), (button) -> {
-				EditorState.blockPalette(preset.getValue());
-				paletteWidget.updateEntries();
-				updateRemoveEntryButton();
-			}).size(64, 32).build());
+			presets.addOption(preset.getKey(), Text.of(preset.getKey()));
 		}
-		children.add(new LineHorizontal(width));
+		presets.withAdditionalButton(Text.of("+"), () -> true, this::savePreset);
+		presets.withAdditionalButton(Text.of("-"), () -> presets.getValue() != null, this::deletePreset);
+		addContent(presets);
+		addContent(new LineHorizontal(width));
     	
 		// palette editor
 		paletteWidget = new BlockPaletteListWidget();
-		children.add(paletteWidget);
+		addContent(paletteWidget);
     	removeEntryButton = ButtonWidget.builder(Text.translatable("voxedit.screen.blockPalette.remove"), button -> {
             if (!hasEntrySelected()) return;
             if(EditorState.blockPalette().size() <= minSize) return;
@@ -65,9 +74,9 @@ public class EditorPanelPalette extends EditorPanel {
             paletteWidget.updateEntries();
             updateRemoveEntryButton();
         }).size(width / 2 - gap, 20).build();
-    	children.add(removeEntryButton);
+    	addContent(removeEntryButton);
     	
-    	children.add(ButtonWidget.builder(Text.translatable("voxedit.screen.blockPalette.add"), button -> {
+    	addContent(ButtonWidget.builder(Text.translatable("voxedit.screen.blockPalette.add"), button -> {
             List<BlockPalette.Entry> list = EditorState.blockPalette().getEntries();
             list.add(new BlockPalette.Entry(Blocks.STONE.getDefaultState(), 1));
             
@@ -80,8 +89,48 @@ public class EditorPanelPalette extends EditorPanel {
         updateRemoveEntryButton();
         
         super.refreshPositions();
+        
+        refreshing = false;
     }
-
+    
+    private void setPreset(String name) {
+		if(name == null || name.isBlank()) return;
+		BlockPalette palette = EditorState.persistant().palettePresets().get(name);
+		if(palette == null) return;
+		
+    	EditorState.blockPalette(palette);
+		paletteWidget.updateEntries();
+		updateRemoveEntryButton();
+    }
+	
+	private void savePreset() {
+		InputScreen.getString(parent.getScreen(), Text.translatable("voxedit.prompt.preset.name"), "", (name) -> {
+			if(name == null || name.isBlank()) return;
+			BlockPalette existingPalette = EditorState.blockPalette();
+			if(existingPalette == null) return;
+			BlockPalette palette = new BlockPalette(existingPalette.getEntries());
+			
+			if(EditorState.persistant().palettePresets().containsKey(name)) {
+				InputScreen.showConfirmation(parent.getScreen(), Text.translatable("voxedit.prompt.preset.override", name), () -> {
+					EditorState.persistant().palettePreset(name, palette);
+					refreshPositions();
+				});
+			} else {
+				EditorState.persistant().palettePreset(name, palette);
+				refreshPositions();
+			}
+		});
+	}
+	
+	private void deletePreset() {
+		String name = presets.getValue();
+		if(name == null) return;
+		
+		InputScreen.showConfirmation(parent.getScreen(), Text.translatable("voxedit.prompt.preset.delete", name), () -> {
+			EditorState.persistant().deletePalettePreset(name);
+			refreshPositions();
+		});
+	}
 
 	@Environment(value=EnvType.CLIENT)
 	class BlockPaletteListWidget extends ModListWidget<BlockPaletteListWidget.BlockPaletteEntry> {

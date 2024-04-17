@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import me.andre111.voxedit.editor.action.EditAction;
+import me.andre111.voxedit.editor.history.EditHistory;
+import me.andre111.voxedit.editor.history.EditHistoryState;
 import me.andre111.voxedit.network.CPHistoryInfo;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.network.ServerPlayerEntity;

@@ -19,8 +19,8 @@ import java.util.UUID;
 
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.editor.EditStats;
-import me.andre111.voxedit.editor.EditHistoryReader;
-import me.andre111.voxedit.editor.EditHistoryWriter;
+import me.andre111.voxedit.editor.history.EditHistoryReader;
+import me.andre111.voxedit.editor.history.EditHistoryWriter;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;

@@ -20,21 +20,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import me.andre111.voxedit.VoxEdit;
-import me.andre111.voxedit.client.ClientStates;
 import me.andre111.voxedit.client.EditorState;
-import me.andre111.voxedit.client.VoxEditClient;
 import me.andre111.voxedit.client.gui.screen.NBTEditorScreen;
-import me.andre111.voxedit.client.renderer.SchematicRenderer;
-import me.andre111.voxedit.client.renderer.SchematicView;
-import me.andre111.voxedit.network.CPClearSelection;
 import me.andre111.voxedit.network.CPCommand;
 import me.andre111.voxedit.network.CPHistoryInfo;
 import me.andre111.voxedit.network.CPNBTEditor;
 import me.andre111.voxedit.network.CPRegistryList;
 import me.andre111.voxedit.network.CPRequestRegistry;
 import me.andre111.voxedit.network.CPSchematic;
-import me.andre111.voxedit.network.CPSetSelection;
 import me.andre111.voxedit.network.Command;
 import me.andre111.voxedit.state.Schematic;
 import net.fabricmc.api.EnvType;
@@ -44,7 +37,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
 
 @Environment(value=EnvType.CLIENT)
 public class ClientNetworking {
@@ -63,22 +55,11 @@ public class ClientNetworking {
 			}
 		});
 		
-		ClientPlayNetworking.registerGlobalReceiver(CPClearSelection.ID, (payload, context) -> {
-			ClientStates.instance().setSelection(null, false);
-		});
-		
-		ClientPlayNetworking.registerGlobalReceiver(CPSetSelection.ID, (payload, context) -> {
-			ClientStates.instance().setSelection(payload.selection(), false);
-		});
-		
 		ClientPlayNetworking.registerGlobalReceiver(CPSchematic.ID, (payload, context) -> {
 			NbtCompound nbt = payload.nbt();
 			Schematic schematic = nbt.isEmpty() ? null : Schematic.readNbt(context.client().world.getRegistryManager(), nbt);
 			
 			EditorState.schematic(payload.id(), schematic);
-			if(payload.id().equals(VoxEdit.id("copy_buffer"))) {
-				VoxEditClient.testRenderer = new SchematicRenderer(new SchematicView(new BlockPos(0, 0, 0), schematic));
-			}
 		});
 		
 		ClientPlayNetworking.registerGlobalReceiver(CPHistoryInfo.ID, (payload, context) -> {

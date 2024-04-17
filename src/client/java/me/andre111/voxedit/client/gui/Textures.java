@@ -49,4 +49,18 @@ public class Textures {
     
     public static final Identifier BACKGROUND = new Identifier("textures/gui/inworld_menu_background.png");
     public static final ButtonTextures BUTTON = new ButtonTextures(new Identifier("widget/button"), new Identifier("widget/button_disabled"), new Identifier("widget/button_highlighted"));
+
+    public static final Identifier MOVE_RIGHT_HIGHLIGHTED = new Identifier("voxedit", "layout/move_right_highlighted");
+    public static final Identifier MOVE_RIGHT = new Identifier("voxedit", "layout/move_right");
+    public static final Identifier MOVE_LEFT_HIGHLIGHTED = new Identifier("voxedit", "layout/move_left_highlighted");
+    public static final Identifier MOVE_LEFT = new Identifier("voxedit", "layout/move_left");
+    public static final Identifier MOVE_UP_HIGHLIGHTED = new Identifier("voxedit", "layout/move_up_highlighted");
+    public static final Identifier MOVE_UP = new Identifier("voxedit", "layout/move_up");
+    public static final Identifier MOVE_DOWN_HIGHLIGHTED = new Identifier("voxedit", "layout/move_down_highlighted");
+    public static final Identifier MOVE_DOWN = new Identifier("voxedit", "layout/move_down");
+    
+    public static final ButtonTextures BUTTON_MOVE_RIGHT = new ButtonTextures(MOVE_RIGHT, null, MOVE_RIGHT_HIGHLIGHTED);
+    public static final ButtonTextures BUTTON_MOVE_LEFT = new ButtonTextures(MOVE_LEFT, null, MOVE_LEFT_HIGHLIGHTED);
+    public static final ButtonTextures BUTTON_MOVE_UP = new ButtonTextures(MOVE_UP, null, MOVE_UP_HIGHLIGHTED);
+    public static final ButtonTextures BUTTON_MOVE_DOWN = new ButtonTextures(MOVE_DOWN, null, MOVE_DOWN_HIGHLIGHTED);
 }

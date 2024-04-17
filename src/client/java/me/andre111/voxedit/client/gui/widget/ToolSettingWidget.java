@@ -32,6 +32,7 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 	protected final TS setting;
 	protected final Supplier<ToolConfig> configGetter;
 	protected final Consumer<ToolConfig> configSetter;
+	protected boolean reloading = false;
 	
 	public ToolSettingWidget(TS setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
 		this.setting = setting;
@@ -44,11 +45,18 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 	}
 	
 	protected void write(V value) {
+		if(reloading) return;
 		configSetter.accept(setting.with(configGetter.get(), value));
 	}
 	
-	public abstract List<ClickableWidget> create(Screen screen, int x, int y, int width, int height);
-	public abstract void reload();
+	public void reload() {
+		reloading = true;
+		reloadValue();
+		reloading = false;
+	}
+	
+	protected abstract List<ClickableWidget> create(Screen screen, int x, int y, int width, int height);
+	protected abstract void reloadValue();
 	
 	@SuppressWarnings("unchecked")
 	public static ToolSettingWidget<?, ?> of(ToolSetting<?> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
@@ -56,6 +64,7 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 		if(setting instanceof ToolSetting.FixedValues enumSetting) return new FixedValues<>(enumSetting, configGetter, configSetter);
 		if(setting instanceof ToolSetting.Int intSetting) return new Int(intSetting, configGetter, configSetter);
 		if(setting instanceof ToolSetting.TSIdentifier identifierSetting) return new TSIdentifier<>(identifierSetting, configGetter, configSetter);
+		if(setting instanceof ToolSetting.TSRegistry registrySetting) return new TSRegistry<>(registrySetting, configGetter, configSetter);
 		return null;
 	}
 	
@@ -67,14 +76,14 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 		}
 		
 		@Override
-		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
+		protected List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
 			return List.of(button = CyclingButtonWidget.<Boolean>builder(value -> value ? ScreenTexts.ON : ScreenTexts.OFF).values(new Boolean[] { true, false }).initially(read()).build(x, y, width, height, setting.label(), (b, value) -> {
 	            write(value);
 	        }));
 		}
 		
 		@Override
-		public void reload() {
+		protected void reloadValue() {
 			button.setValue(read());
 		}
 	}
@@ -87,14 +96,14 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 		}
 		
 		@Override
-		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
+		protected List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
 			return List.of(button = CyclingButtonWidget.builder(setting.toText()).values(setting.values()).initially(read()).build(x, y, width, height, setting.label(), (b, value) -> {
 	            write(value);
 	        }));
 		}
 		
 		@Override
-		public void reload() {
+		protected void reloadValue() {
 			button.setValue(read());
 		}
 	}
@@ -107,14 +116,14 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 		}
 		
 		@Override
-		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
+		protected List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
 			return List.of(slider = new IntSliderWidget(x, y, width, height, setting.label(), setting.min(), setting.max(), read(), (value) -> {
 				write(value);
 			}));
 		}
 		
 		@Override
-		public void reload() {
+		protected void reloadValue() {
 			slider.setIntValue(read());
 		}
 	}
@@ -127,15 +136,48 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 		}
 		
 		@Override
-		public List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
-			return List.of(input = new RegistryEntryWidget<T>(MinecraftClient.getInstance().textRenderer, x, y, width, height, setting.registryKey(), read(), (value) -> {
+		protected List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
+			return List.of(input = RegistryEntryWidget.serverRetrieved(MinecraftClient.getInstance().textRenderer, x, y, width, height, setting.registryKey(), read(), (value) -> {
 				write(value);
 			}));
 		}
 		
 		@Override
-		public void reload() {
+		protected void reloadValue() {
 			input.setValue(read());
+		}
+	}
+	
+	public static class TSRegistry<T> extends ToolSettingWidget<T, ToolSetting.TSRegistry<T>> {
+		private Consumer<Identifier> input;
+		private boolean reloading = false;
+		
+		public TSRegistry(ToolSetting.TSRegistry<T> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
+			super(setting, configGetter, configSetter);
+		}
+		
+		@Override
+		protected List<ClickableWidget> create(Screen screen, int x, int y, int width, int height) {
+			if(setting.showFixedSelection()) {
+				var widget = new SelectionWidget<T>(width, width/3, height, read(), (value) -> {
+					if(reloading) return;
+					write(value);
+				});
+				for(var entry : setting.registry()) widget.addOption(entry, setting.toText().apply(entry));
+				input = (id) -> widget.setValue(setting.registry().get(id));
+				return List.of(widget);
+			} else {
+				var widget = RegistryEntryWidget.direct(MinecraftClient.getInstance().textRenderer, x, y, width, height, setting.registry(), read(), (value) -> {
+					write(value);
+				});
+				input = widget;
+				return List.of(widget);
+			}
+		}
+		
+		@Override
+		protected void reloadValue() {
+			input.accept(setting.registry().getId(read()));
 		}
 	}
 }

@@ -23,23 +23,17 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.editor.EditType;
-import me.andre111.voxedit.editor.EditHistory;
-import me.andre111.voxedit.editor.EditHistoryState;
-import me.andre111.voxedit.item.VoxEditItem;
-import me.andre111.voxedit.state.Schematic;
-import me.andre111.voxedit.state.Selection;
+import me.andre111.voxedit.editor.history.EditHistory;
+import me.andre111.voxedit.editor.history.EditHistoryState;
 import me.andre111.voxedit.state.ServerStates;
 import me.andre111.voxedit.tool.ConfiguredTool;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 
 public class ServerNetworking {
@@ -69,19 +63,7 @@ public class ServerNetworking {
 					history.redo(world).inform(context.player(), EditType.REDO);
 					context.responseSender().sendPacket(new CPHistoryInfo(List.of(), history.getIndex(), true));
 					break;
-				case LEFT_CLICK:
-					ItemStack stack = context.player().getMainHandStack();
-		    		if(stack.getItem() instanceof VoxEditItem item) {
-						//TODO: verify attack cooldown
-						item.leftClicked(world, context.player(), Hand.MAIN_HAND);
-					}
-					break;
 				case DEV:
-					Selection sel = ServerStates.get(context.player()).getSelection();
-					if(sel != null) {
-						Schematic copy = Schematic.create(world.getRegistryManager(), world, sel.toBlockBox());
-						ServerStates.get(context.player()).schematic(VoxEdit.id("copy_buffer"), copy, true);
-					}
 					break;
 				}
 			});

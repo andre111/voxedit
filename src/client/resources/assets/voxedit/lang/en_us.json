@@ -1,7 +1,4 @@
 {
-    "item.voxedit.tool": "VoxEdit Tool",
-    "item.voxedit.editor": "VoxEdit NBT Editor",
-    
     "voxedit.tool": "Tool",
     "voxedit.tool.voxedit.blend": "Blend",
     "voxedit.tool.voxedit.paint": "Paint",
@@ -23,16 +20,17 @@
     "voxedit.tool.settings.feature": "Feature",
     "voxedit.tool.settings.tries": "Tries",
     
-    "voxedit.shape.sphere": "Sphere",
-    "voxedit.shape.cube": "Cube",
-    "voxedit.shape.disc": "Disc",
-    "voxedit.shape.cylinder": "Cylinder",
-    "voxedit.shape.hollow_sphere": "Hollow Sphere",
-    "voxedit.shape.hollow_cube": "Hollow Cube",
+    "voxedit.shape.voxedit.sphere": "Sphere",
+    "voxedit.shape.voxedit.cube": "Cube",
+    "voxedit.shape.voxedit.disc": "Disc",
+    "voxedit.shape.voxedit.cylinder": "Cylinder",
+    "voxedit.shape.voxedit.hollow_sphere": "Hollow Sphere",
+    "voxedit.shape.voxedit.hollow_cube": "Hollow Cube",
     
     "voxedit.action.perform": "%s",
     "voxedit.action.undo": "Undo:%s",
     "voxedit.action.redo": "Redo:%s",
+	
     "voxedit.edit.block": "1 Block Change",
     "voxedit.edit.block.multiple": "%s Block Changes",
     "voxedit.edit.blockEntity": "1 Block Entity Change",
@@ -46,7 +44,7 @@
 	"voxedit.screen.panel.tools": "Tools",
 	"voxedit.screen.panel.toolConfig": "Tool Settings",
 	"voxedit.screen.panel.palette": "Block Palette",
-	"voxedit.screen.panel.editHistory": "Edit History",
+	"voxedit.screen.panel.history": "Edit History",
 	"voxedit.screen.panel.schematics": "Schematics",
     
     "voxedit.screen.blockPalette.add": "Add Entry",
@@ -74,13 +72,10 @@
     "voxedit.screen.nbtEditor.action.add.compound": "Add Compound Tag",
     "voxedit.screen.nbtEditor.input.tagName": "Enter Tag Name:",
     "voxedit.screen.nbtEditor.input.value": "Modify Value:",
-    
-    "voxedit.screen.selectTool.new": "Add New Tool",
-    "voxedit.screen.selectTool.next": "§b[ %s §b] §fNext",
-    
-    "voxedit.screen.toolSettings": "Tool Settings",
-    "voxedit.screen.toolSettings.changeTool": "Change Tool",
-    "voxedit.screen.toolSettings.changeToolTitle": "Change Tool - Will reset other settings!",
+	
+	"voxedit.prompt.preset.name": "Enter Preset Name:",
+    "voxedit.prompt.preset.override": "Override existing preset: %s ?",
+    "voxedit.prompt.preset.delete": "Delete Preset: %s ?",
     
     "key.category.voxedit": "VoxEdit",
     "key.voxedit.decreaseRadius": "Tool Radius Decrease",

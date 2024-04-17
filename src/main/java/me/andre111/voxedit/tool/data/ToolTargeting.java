@@ -18,6 +18,7 @@ package me.andre111.voxedit.tool.data;
 import java.util.HashSet;
 import java.util.Set;
 
+import me.andre111.voxedit.tool.shape.Shape;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 
@@ -39,7 +40,7 @@ public class ToolTargeting {
 		for(int x = -radius; x <= radius; x++) {
         	for(int y = -radius; y <= radius; y++) {
         		for(int z = -radius; z <= radius; z++) {
-                	if(shape != null && !shape.offsetPredicate.test(target, radius, x, y, z)) continue;
+                	if(shape != null && !shape.contains(x, y, z, target.getSide(), radius, radius, radius)) continue;
                 	
                 	pos.set(center.getX()+x, center.getY()+y, center.getZ()+z);
                 	

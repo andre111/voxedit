@@ -17,7 +17,6 @@ package me.andre111.voxedit;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.SimpleRegistry;
@@ -36,13 +35,12 @@ import org.slf4j.LoggerFactory;
 
 import com.mojang.serialization.Lifecycle;
 
-import me.andre111.voxedit.editor.EditHistoryReader;
-import me.andre111.voxedit.editor.EditHistoryWriter;
 import me.andre111.voxedit.editor.action.EditAction;
 import me.andre111.voxedit.editor.action.ModifyBlockEntityAction;
 import me.andre111.voxedit.editor.action.ModifyEntityAction;
 import me.andre111.voxedit.editor.action.SetBlockAction;
-import me.andre111.voxedit.item.SelectItem;
+import me.andre111.voxedit.editor.history.EditHistoryReader;
+import me.andre111.voxedit.editor.history.EditHistoryWriter;
 import me.andre111.voxedit.network.ServerNetworking;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.ToolBlend;
@@ -56,12 +54,39 @@ import me.andre111.voxedit.tool.ToolPlace;
 import me.andre111.voxedit.tool.ToolRaise;
 import me.andre111.voxedit.tool.ToolScatter;
 import me.andre111.voxedit.tool.ToolSmooth;
+import me.andre111.voxedit.tool.shape.Cube;
+import me.andre111.voxedit.tool.shape.Cylinder;
+import me.andre111.voxedit.tool.shape.Disc;
+import me.andre111.voxedit.tool.shape.HollowCube;
+import me.andre111.voxedit.tool.shape.HollowSphere;
+import me.andre111.voxedit.tool.shape.Shape;
+import me.andre111.voxedit.tool.shape.Sphere;
 
 public class VoxEdit implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("voxedit");
     
+    // Note: Order is important
+    // 1. registry keys
+    public static final RegistryKey<Registry<EditAction.Type<?>>> ACTION_TYPE_REGISTRY_KEY = RegistryKey.ofRegistry(id("action_type"));
+    public static final RegistryKey<Registry<Shape>> SHAPE_REGISTRY_KEY = RegistryKey.ofRegistry(id("shape"));
     public static final RegistryKey<Registry<Tool>> TOOL_REGISTRY_KEY = RegistryKey.ofRegistry(id("tool"));
+    
+    // 2. registries
+    public static final Registry<EditAction.Type<?>> ACTION_TYPE_REGISTRY = new SimpleRegistry<>(ACTION_TYPE_REGISTRY_KEY, Lifecycle.stable());
+    public static final Registry<Shape> SHAPE_REGISTRY = new SimpleRegistry<>(SHAPE_REGISTRY_KEY, Lifecycle.stable());
     public static final Registry<Tool> TOOL_REGISTRY = new SimpleRegistry<>(TOOL_REGISTRY_KEY, Lifecycle.stable());
+    
+    // 3. registry entries
+    public static final EditAction.Type<SetBlockAction> ACTION_SET_BLOCK = registerAction(id("set_block"), SetBlockAction::write, SetBlockAction::read);
+    public static final EditAction.Type<ModifyBlockEntityAction> ACTION_MODIFY_BLOCK_ENTITY = registerAction(id("modify_block_entity"), ModifyBlockEntityAction::write, ModifyBlockEntityAction::read);
+    public static final EditAction.Type<ModifyEntityAction> ACTION_MODIFY_ENTITY = registerAction(id("modify_entity"), ModifyEntityAction::write, ModifyEntityAction::read);
+    
+    public static final Shape SHAPE_CUBE = Registry.register(SHAPE_REGISTRY, id("cube"), new Cube());
+    public static final Shape SHAPE_SPHERE = Registry.register(SHAPE_REGISTRY, id("sphere"), new Sphere());
+    public static final Shape SHAPE_DISC = Registry.register(SHAPE_REGISTRY, id("disc"), new Disc());
+    public static final Shape SHAPE_CYLINDER = Registry.register(SHAPE_REGISTRY, id("cylinder"), new Cylinder());
+    public static final Shape SHAPE_HOLLOW_CUBE = Registry.register(SHAPE_REGISTRY, id("hollow_cube"), new HollowCube());
+    public static final Shape SHAPE_HOLLOW_SPHERE = Registry.register(SHAPE_REGISTRY, id("hollow_sphere"), new HollowSphere());
     
     public static final ToolBrush TOOL_BRUSH = Registry.register(TOOL_REGISTRY, id("brush"), new ToolBrush());
     public static final ToolPaint TOOL_PAINT = Registry.register(TOOL_REGISTRY, id("paint"), new ToolPaint());
@@ -73,17 +98,7 @@ public class VoxEdit implements ModInitializer {
     public static final ToolPlace TOOL_PLACE = Registry.register(TOOL_REGISTRY, id("place"), new ToolPlace());
     public static final ToolExtrude TOOL_EXTRUDE = Registry.register(TOOL_REGISTRY, id("extrude"), new ToolExtrude());
     public static final ToolRaise TOOL_RAISE = Registry.register(TOOL_REGISTRY, id("raise"), new ToolRaise());
-    
     public static final ToolEditNBT TOOL_EDITNBT = Registry.register(TOOL_REGISTRY, id("nbtedit"), new ToolEditNBT());
-    
-    public static final RegistryKey<Registry<EditAction.Type<?>>> ACTION_TYPE_REGISTRY_KEY = RegistryKey.ofRegistry(id("action_type"));
-    public static final Registry<EditAction.Type<?>> ACTION_TYPE_REGISTRY = new SimpleRegistry<>(ACTION_TYPE_REGISTRY_KEY, Lifecycle.stable());
-    
-    public static final EditAction.Type<SetBlockAction> ACTION_SET_BLOCK = registerAction(id("set_block"), SetBlockAction::write, SetBlockAction::read);
-    public static final EditAction.Type<ModifyBlockEntityAction> ACTION_MODIFY_BLOCK_ENTITY = registerAction(id("modify_block_entity"), ModifyBlockEntityAction::write, ModifyBlockEntityAction::read);
-    public static final EditAction.Type<ModifyEntityAction> ACTION_MODIFY_ENTITY = registerAction(id("modify_entity"), ModifyEntityAction::write, ModifyEntityAction::read);
-    
-    public static final SelectItem ITEM_SELECT = Registry.register(Registries.ITEM, id("select"), new SelectItem());
     
     public static final int MAX_TARGETS = 1024;
     public static final int PREVIEW_DELAY = 5;

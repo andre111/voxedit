@@ -17,6 +17,7 @@ package me.andre111.voxedit.client.gui.widget;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import org.lwjgl.glfw.GLFW;
@@ -32,19 +33,17 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 @Environment(value=EnvType.CLIENT)
-public class RegistryEntryWidget<T> extends TextFieldWidget {
+public class RegistryEntryWidget<T> extends TextFieldWidget implements Consumer<Identifier> {
 	private Identifier value;
 	private String suggestion;
 	
 	private List<Identifier> ids;
 
-    public RegistryEntryWidget(TextRenderer textRenderer, int x, int y, int width, int height, RegistryKey<? extends Registry<T>> registryKey, Identifier initialValue, Consumer<Identifier> consumer) {
+    private RegistryEntryWidget(TextRenderer textRenderer, int x, int y, int width, int height, Identifier initialValue, Consumer<Identifier> consumer, CompletableFuture<List<Identifier>> idsFuture) {
 		super(textRenderer, x, y, width, height, Text.empty());
 		this.value = initialValue;
 		
-		ClientNetworking.getServerRegistryIDs(registryKey).thenAccept(ids -> {
-			this.ids = ids;
-		});
+		idsFuture.thenAccept(ids -> this.ids = ids);
 		
 		setMaxLength(200);
 		setText(initialValue.toString());
@@ -88,6 +87,11 @@ public class RegistryEntryWidget<T> extends TextFieldWidget {
 		this.value = value;
 		this.setText(value.toString());
 	}
+
+	@Override
+	public void accept(Identifier value) {
+		setValue(value);
+	}
 	
 	@Override
     public void setSuggestion(String suggestion) {
@@ -106,5 +110,13 @@ public class RegistryEntryWidget<T> extends TextFieldWidget {
     		}
     	}
     	return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+    
+    public static <T> RegistryEntryWidget<T> direct(TextRenderer textRenderer, int x, int y, int width, int height, Registry<T> registry, T initialValue, Consumer<T> consumer) {
+    	return new RegistryEntryWidget<>(textRenderer, x, y, width, height, registry.getId(initialValue), id -> consumer.accept(registry.get(id)), CompletableFuture.completedFuture(new ArrayList<>(registry.getIds())));
+    }
+    
+    public static <T> RegistryEntryWidget<T> serverRetrieved(TextRenderer textRenderer, int x, int y, int width, int height, RegistryKey<? extends Registry<T>> registryKey, Identifier initialValue, Consumer<Identifier> consumer) {
+    	return new RegistryEntryWidget<>(textRenderer, x, y, width, height, initialValue, consumer, ClientNetworking.getServerRegistryIDs(registryKey));
     }
 }

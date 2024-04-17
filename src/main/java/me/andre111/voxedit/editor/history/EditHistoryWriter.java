@@ -1,4 +1,4 @@
-package me.andre111.voxedit.editor;
+package me.andre111.voxedit.editor.history;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.editor.action.EditAction;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.NbtByteArray;

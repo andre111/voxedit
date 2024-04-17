@@ -96,6 +96,10 @@ public sealed abstract class ToolSetting<V> {
 		return new TSIdentifier<>(key, defaultValue, registryKey);
 	}
 	
+	public static <T> ToolSetting<T> ofUnsynchedRegistry(String key, T defaultValue, Registry<T> registry, boolean showFixedSelection, Function<T, Text> toText) {
+		return new TSRegistry<>(key, defaultValue, registry, showFixedSelection, toText);
+	}
+	
 	public static final class Bool extends ToolSetting<Boolean> {
 		public Bool(String key, boolean defaultValue) {
 			super(key, defaultValue, Boolean::parseBoolean, b -> b.toString());
@@ -170,6 +174,37 @@ public sealed abstract class ToolSetting<V> {
 		@Override
 		protected boolean isValid(Identifier value) {
 			return value != null;
+		}
+	}
+	
+	public static final class TSRegistry<T> extends ToolSetting<T> {
+		private final Registry<T> registry;
+		private final boolean showFixedSelection;
+		private final Function<T, Text> toText;
+		
+		public TSRegistry(String key, T defaultValue, Registry<T> registry, boolean showFixedSelection, Function<T, Text> toText) {
+			super(key, defaultValue, s -> registry.get(Identifier.tryParse(s)), t -> registry.getId(t).toString());
+			if(registry == null) throw new IllegalArgumentException("Missing registry");
+			this.registry = registry;
+			this.showFixedSelection = showFixedSelection;
+			this.toText = toText;
+		}
+		
+		public Registry<T> registry() {
+			return registry;
+		}
+		
+		public boolean showFixedSelection() {
+			return showFixedSelection;
+		}
+		
+		public Function<T, Text> toText() {
+			return toText;
+		}
+		
+		@Override
+		protected boolean isValid(T value) {
+			return value != null && registry.getId(value) != null;
 		}
 	}
 }

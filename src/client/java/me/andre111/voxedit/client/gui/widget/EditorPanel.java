@@ -8,33 +8,57 @@ import me.andre111.voxedit.client.gui.Textures;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
+import net.minecraft.client.gui.screen.ButtonTextures;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
+import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.gui.widget.ContainerWidget;
 import net.minecraft.client.gui.widget.LayoutWidget;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 public class EditorPanel extends ContainerWidget implements LayoutWidget {
 	protected final EditorWidget parent;
-	private Location location;
+	protected final Identifier id;
 	protected int gap;
-	
-	protected List<ClickableWidget> children;
 
-	public EditorPanel(EditorWidget parent, Location location, Text text) {
+	private LayoutButton buttonMoveRight;
+	private LayoutButton buttonMoveLeft;
+	private LayoutButton buttonMoveUp;
+	private LayoutButton buttonMoveDown;
+	private List<ClickableWidget> content;
+	private List<ClickableWidget> children;
+
+	public EditorPanel(EditorWidget parent, Identifier id, Text text) {
 		super(0, 0, 100, 100, text);
 		this.parent = parent;
-		this.location = location;
+		this.id = id;
 		this.gap = 2;
+		this.content = new ArrayList<>();
 		this.children = new ArrayList<>();
+
+		init();
 	}
-	
-	public void addChild(ClickableWidget child) {
+
+	private void init() {
+		children.add(buttonMoveRight = new LayoutButton(Textures.BUTTON_MOVE_RIGHT, () -> parent.setLocation(this, EditorWidget.Location.RIGHT)));
+		children.add(buttonMoveLeft = new LayoutButton(Textures.BUTTON_MOVE_LEFT, () -> parent.setLocation(this, EditorWidget.Location.LEFT)));
+		children.add(buttonMoveUp = new LayoutButton(Textures.BUTTON_MOVE_UP, () -> parent.moveUp(this)));
+		children.add(buttonMoveDown = new LayoutButton(Textures.BUTTON_MOVE_DOWN, () -> parent.moveDown(this)));
+	}
+
+	public void addContent(ClickableWidget child) {
+		content.add(child);
 		children.add(child);
 		refreshPositions();
 		parent.refreshPositions();
+	}
+
+	public void clearContent() {
+		children.removeAll(content);
+		content.clear();
 	}
 
 	@Override
@@ -49,30 +73,50 @@ public class EditorPanel extends ContainerWidget implements LayoutWidget {
 
 	@Override
 	protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
-        context.drawTexture(Screen.INWORLD_HEADER_SEPARATOR_TEXTURE, getX(), getY(), 0.0f, 0.0f, width, 2, 32, 2);
+		context.drawTexture(Screen.INWORLD_HEADER_SEPARATOR_TEXTURE, getX(), getY(), 0.0f, 0.0f, width, 2, 32, 2);
 		context.drawTexture(Textures.BACKGROUND, getX(), getY()+2, 0, 0, width, 24-4);
-        context.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, getMessage(), getX()+width/2, getY()+8, 0xFFFFFFFF);
-        context.drawTexture(Screen.INWORLD_FOOTER_SEPARATOR_TEXTURE, getX(), getY()+24-2, 0.0f, 0.0f, width, 2, 32, 2);
-		
+		context.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, getMessage(), getX()+width/2, getY()+8, 0xFFFFFFFF);
+		context.drawTexture(Screen.INWORLD_FOOTER_SEPARATOR_TEXTURE, getX(), getY()+24-2, 0.0f, 0.0f, width, 2, 32, 2);
+
 		for(var child : children) {
 			child.render(context, mouseX, mouseY, delta);
 		}
-		
-        context.drawTexture(Screen.INWORLD_FOOTER_SEPARATOR_TEXTURE, getX(), getY()+height-2, 0.0f, 0.0f, width, 2, 32, 2);
+
+		context.drawTexture(Screen.INWORLD_FOOTER_SEPARATOR_TEXTURE, getX(), getY()+height-2, 0.0f, 0.0f, width, 2, 32, 2);
 	}
 
 	@Override
 	protected void appendClickableNarrations(NarrationMessageBuilder builder) {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 	@Override
 	public void refreshPositions() {
+		// buttons
+		if(parent.getLocation(this) == EditorWidget.Location.LEFT) {
+			buttonMoveRight.active = true;
+			buttonMoveRight.setPosition(getX()+getWidth()-24*1, getY());
+			buttonMoveDown.setPosition(getX()+getWidth()-24*2, getY());
+			buttonMoveUp.setPosition(getX()+getWidth()-24*3, getY());
+			
+			buttonMoveLeft.active = false;
+		} else {
+			buttonMoveLeft.active = true;
+			buttonMoveLeft.setPosition(getX()+24*0, getY());
+			buttonMoveUp.setPosition(getX()+24*1, getY());
+			buttonMoveDown.setPosition(getX()+24*2, getY());
+			
+			buttonMoveRight.active = false;
+		}
+		buttonMoveUp.active = !parent.isFirst(this);
+		buttonMoveDown.active = !parent.isLast(this);
+		
+		// content
 		int x = getX();
 		int y = getY() + 28;
 		int maxHeight = getY() + 28;
-		for(var child : children) {
+		for(var child : content) {
 			int childWidth = child.getWidth();
 			int childHeight = child.getHeight();
 			if(x + childWidth > getX()+width) {
@@ -88,18 +132,23 @@ public class EditorPanel extends ContainerWidget implements LayoutWidget {
 		LayoutWidget.super.refreshPositions();
 	}
 
-	public Location getLocation() {
-		return location;
+	public Identifier getID() {
+		return id;
 	}
 	
-	public void setLocation(Location location) {
-		if(location == this.location) return;
-		this.location = location;
-		parent.refreshPositions();
-	}
-	
-	public static enum Location {
-		LEFT,
-		RIGHT;
+	private static class LayoutButton extends ButtonWidget {
+		private final ButtonTextures textures;
+
+		protected LayoutButton(ButtonTextures textures, Runnable onPress) {
+			super(0, 0, 24, 24, Text.empty(), (button) -> onPress.run(), null);
+
+			this.textures = textures;
+		}
+
+		@Override
+		protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
+			Identifier texture = textures.get(active, isSelected());
+			if(texture != null) context.drawGuiTexture(texture, getX(), getY(), getWidth(), getHeight());
+		}
 	}
 }

@@ -19,7 +19,6 @@ import java.util.Set;
 
 import me.andre111.voxedit.editor.EditorWorld;
 import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Shape;
 import me.andre111.voxedit.tool.data.Target;
 import me.andre111.voxedit.tool.data.ToolConfig;
 import me.andre111.voxedit.tool.data.ToolSetting;
@@ -31,11 +30,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 
 public class ToolFlatten extends VoxelTool {
-	private static final ToolSetting<Shape> SHAPE = ToolSetting.ofEnum("shape", Shape.class, Shape::asText);
 	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
 	
 	public ToolFlatten() {
-		super(Properties.of(SHAPE, RADIUS, ToolSettings.TARGET_FLUIDS));
+		super(Properties.of(ToolSettings.SHAPE, RADIUS, ToolSettings.TARGET_FLUIDS));
 	}
 
 	@Override
@@ -58,7 +56,7 @@ public class ToolFlatten extends VoxelTool {
 		BlockPos center = target.getBlockPos();
 		if(ToolTargeting.isFree(world, center)) return Set.of();
 		
-		Set<BlockPos> positions = ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), SHAPE.get(config));
+		Set<BlockPos> positions = ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), ToolSettings.SHAPE.get(config));
 		positions.removeIf(pos -> {
 			int offset = switch(target.getSide()) {
 			case UP -> pos.getY() - center.getY();

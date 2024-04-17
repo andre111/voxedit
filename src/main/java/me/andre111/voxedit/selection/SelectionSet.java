@@ -18,7 +18,7 @@ public class SelectionSet implements Selection {
 	
 	public SelectionSet(Set<BlockPos> set) {
 		this.set = Set.copyOf(set);
-		this.boundingBox = BlockBox.encompassPositions(set).get();
+		this.boundingBox = BlockBox.encompassPositions(set).orElseGet(() -> new BlockBox(BlockPos.ORIGIN));
 	}
 
 	@Override

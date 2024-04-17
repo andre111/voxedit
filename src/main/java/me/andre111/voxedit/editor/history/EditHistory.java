@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.editor;
+package me.andre111.voxedit.editor.history;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.network.CPHistoryInfo;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
@@ -43,7 +44,6 @@ public class EditHistory {
 	private EditHistory(Path path) {
 		this.path = path;
 
-		System.out.println(path);
 		try {
 			if(!Files.exists(path)) {
 				Files.createDirectories(path);

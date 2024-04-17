@@ -18,6 +18,5 @@ package me.andre111.voxedit.network;
 public enum Command {
 	UNDO,
 	REDO,
-	LEFT_CLICK,
 	DEV;
 }
