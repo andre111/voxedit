@@ -11,6 +11,7 @@
     "voxedit.tool.voxedit.extrude": "Extrude",
     "voxedit.tool.voxedit.raise": "Raise",
     "voxedit.tool.voxedit.nbtedit": "NBT Edit",
+    "voxedit.tool.voxedit.select": "Select",
     
     "voxedit.tool.settings.radius": "Radius",
     "voxedit.tool.settings.shape": "Shape",

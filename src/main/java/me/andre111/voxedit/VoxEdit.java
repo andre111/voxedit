@@ -45,7 +45,8 @@ import me.andre111.voxedit.network.ServerNetworking;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.ToolBlend;
 import me.andre111.voxedit.tool.ToolBrush;
-import me.andre111.voxedit.tool.ToolEditNBT;
+import me.andre111.voxedit.tool.EditNBTTool;
+import me.andre111.voxedit.tool.SelectTool;
 import me.andre111.voxedit.tool.ToolExtrude;
 import me.andre111.voxedit.tool.ToolFill;
 import me.andre111.voxedit.tool.ToolFlatten;
@@ -98,7 +99,8 @@ public class VoxEdit implements ModInitializer {
     public static final ToolPlace TOOL_PLACE = Registry.register(TOOL_REGISTRY, id("place"), new ToolPlace());
     public static final ToolExtrude TOOL_EXTRUDE = Registry.register(TOOL_REGISTRY, id("extrude"), new ToolExtrude());
     public static final ToolRaise TOOL_RAISE = Registry.register(TOOL_REGISTRY, id("raise"), new ToolRaise());
-    public static final ToolEditNBT TOOL_EDITNBT = Registry.register(TOOL_REGISTRY, id("nbtedit"), new ToolEditNBT());
+    public static final EditNBTTool TOOL_EDITNBT = Registry.register(TOOL_REGISTRY, id("nbtedit"), new EditNBTTool());
+    public static final SelectTool TOOL_SELECT = Registry.register(TOOL_REGISTRY, id("select"), new SelectTool());
     
     public static final int MAX_TARGETS = 1024;
     public static final int PREVIEW_DELAY = 5;

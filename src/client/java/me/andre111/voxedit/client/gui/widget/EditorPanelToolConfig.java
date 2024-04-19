@@ -49,16 +49,18 @@ public class EditorPanelToolConfig extends EditorPanel {
 		Tool tool = EditorState.tool();
 		if(tool != null && !tool.getSettings().isEmpty()) {
 			// presets / saved configs
-			presets = new SelectionWidget<>(width, (width - 4*2)/3, 32, null, this::setPreset);
-			presets.setPadding(2);
-			presets.setGap(2);
-			for(var e : EditorState.persistant().presets(tool).entrySet()) {
-				presets.addOption(e.getKey(), Text.of(e.getKey()));
+			if(!tool.properties().noPresets()) {
+				presets = new SelectionWidget<>(width, (width - 4*2)/3, 32, null, this::setPreset);
+				presets.setPadding(2);
+				presets.setGap(2);
+				for(var e : EditorState.persistant().presets(tool).entrySet()) {
+					presets.addOption(e.getKey(), Text.of(e.getKey()));
+				}
+				presets.withAdditionalButton(Text.of("+"), () -> true, this::savePreset);
+				presets.withAdditionalButton(Text.of("-"), () -> presets.getValue() != null, this::deletePreset);
+				addContent(presets);
+				addContent(new LineHorizontal(width));
 			}
-			presets.withAdditionalButton(Text.of("+"), () -> true, this::savePreset);
-			presets.withAdditionalButton(Text.of("-"), () -> presets.getValue() != null, this::deletePreset);
-			addContent(presets);
-			addContent(new LineHorizontal(width));
 			
 			// settings
 			for(var toolSetting : tool.getSettings()) {

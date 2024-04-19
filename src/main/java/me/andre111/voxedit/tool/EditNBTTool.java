@@ -32,9 +32,9 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 
-public class ToolEditNBT extends Tool {
+public class EditNBTTool extends Tool {
 
-	public ToolEditNBT() {
+	public EditNBTTool() {
 		super(Properties.NONE);
 	}
 

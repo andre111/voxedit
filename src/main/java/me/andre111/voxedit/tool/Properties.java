@@ -19,7 +19,7 @@ import java.util.List;
 
 import me.andre111.voxedit.tool.data.ToolSetting;
 
-public record Properties(List<ToolSetting<?>> settings, boolean draggable, boolean showPreview) {
+public record Properties(List<ToolSetting<?>> settings, boolean draggable, boolean showPreview, boolean noPresets) {
 	public static final Properties NONE = of().create();
 	
 	public static Builder of(ToolSetting<?>... settings) {
@@ -30,6 +30,7 @@ public record Properties(List<ToolSetting<?>> settings, boolean draggable, boole
 		private List<ToolSetting<?>> settings;
 		private boolean draggable = false;
 		private boolean showPreview = false;
+		private boolean noPresets = false;
 		
 		private Builder(List<ToolSetting<?>> settings) {
 			this.settings = settings;
@@ -45,8 +46,13 @@ public record Properties(List<ToolSetting<?>> settings, boolean draggable, boole
 			return this;
 		}
 		
+		public Builder noPresets() {
+			noPresets = true;
+			return this;
+		}
+		
 		public Properties create() {
-			return new Properties(List.copyOf(settings), draggable, showPreview);
+			return new Properties(List.copyOf(settings), draggable, showPreview, noPresets);
 		}
 	}
 }
