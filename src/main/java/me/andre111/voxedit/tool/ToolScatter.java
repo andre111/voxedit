@@ -32,11 +32,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 
 public class ToolScatter extends VoxelTool {
-	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 5, 1, 16);
 	private static final ToolSetting<Boolean> CHECK_CAN_PLACE = ToolSetting.ofBoolean("checkCanPlace", false);
 	
 	public ToolScatter() {
-		super(Properties.of(ToolSettings.SHAPE, RADIUS, CHECK_CAN_PLACE, ToolSettings.TARGET_FLUIDS).draggable());
+		super(Properties.of(ToolSettings.SHAPE, CHECK_CAN_PLACE, ToolSettings.TARGET_FLUIDS).draggable());
 	}
 
 	@Override
@@ -57,7 +56,7 @@ public class ToolScatter extends VoxelTool {
 
 	@Override
 	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
-		return ToolTargeting.getBlockPositions(world, target, RADIUS.get(config), ToolSettings.SHAPE.get(config), (innerTarget, innerWorld, pos) -> {
+		return ToolTargeting.getBlockPositions(world, target, ToolSettings.SHAPE.get(config), (innerTarget, innerWorld, pos) -> {
 			if(!innerWorld.getBlockState(pos).isAir()) return false;
 			return !ToolTargeting.isFree(innerWorld, pos.offset(innerTarget.getSide().getOpposite()));
 		}, context.filter());
@@ -65,6 +64,6 @@ public class ToolScatter extends VoxelTool {
 	
 	@Override
 	public Map<String, ToolConfig> getPresets() {
-		return Map.of("Place Valid", getDefaultConfig().with(RADIUS, 6).with(CHECK_CAN_PLACE, true));
+		return Map.of("Place Valid", getDefaultConfig().modify(ToolSettings.SHAPE, s -> s.size(6)).with(CHECK_CAN_PLACE, true));
 	}
 }

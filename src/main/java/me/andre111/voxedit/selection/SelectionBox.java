@@ -17,10 +17,15 @@ package me.andre111.voxedit.selection;
 
 import java.util.Iterator;
 
+import com.mojang.serialization.Codec;
+
+import me.andre111.voxedit.VoxEdit;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 
 public class SelectionBox implements Selection {
+	public static final Codec<SelectionBox> CODEC = BlockBox.CODEC.xmap(SelectionBox::new, SelectionBox::getBoundingBox);
+	
 	private final BlockBox box;
 	
 	public SelectionBox(BlockBox box) {
@@ -54,7 +59,7 @@ public class SelectionBox implements Selection {
 				returnable.set(next);
 				if(next.getY() < box.getMaxY()) next.set(next.getX(), next.getY() + 1, next.getZ());
 				else if(next.getZ() < box.getMaxZ()) next.set(next.getX(), box.getMinY(), next.getZ() + 1);
-				else if(next.getX() > box.getMinX()) next.set(next.getX()-1, box.getMinY(), box.getMinZ());
+				else if(next.getX() < box.getMaxX()) next.set(next.getX() + 1, box.getMinY(), box.getMinZ());
 				else next = null;
 				return returnable;
 			}
@@ -73,7 +78,7 @@ public class SelectionBox implements Selection {
 				returnable.set(next);
 				if(next.getY() < box.getMaxY()) next.set(next.getX(), next.getY() + 1, next.getZ());
 				else if(next.getZ() < box.getMaxZ()) next.set(next.getX(), box.getMinY(), next.getZ() + 1);
-				else if(next.getX() < box.getMaxX()) next.set(next.getX()+1, box.getMinY(), box.getMinZ());
+				else if(next.getX() > box.getMinX()) next.set(next.getX() - 1, box.getMinY(), box.getMinZ());
 				else next = null;
 				return returnable;
 			}
@@ -109,7 +114,7 @@ public class SelectionBox implements Selection {
 			@Override
 			public BlockPos next() {
 				returnable.set(next);
-				if(next.getX() < box.getMaxX()) next.set(next.getX()+1, next.getY(), next.getZ());
+				if(next.getX() < box.getMaxX()) next.set(next.getX() + 1, next.getY(), next.getZ());
 				else if(next.getZ() < box.getMaxZ()) next.set(box.getMinX(), next.getY(), next.getZ() + 1);
 				else if(next.getY() > box.getMinY()) next.set(box.getMinX(), next.getY() - 1, box.getMinZ());
 				else next = null;
@@ -128,7 +133,7 @@ public class SelectionBox implements Selection {
 			@Override
 			public BlockPos next() {
 				returnable.set(next);
-				if(next.getX() < box.getMaxX()) next.set(next.getX()+1, next.getY(), next.getZ());
+				if(next.getX() < box.getMaxX()) next.set(next.getX() + 1, next.getY(), next.getZ());
 				else if(next.getY() < box.getMaxY()) next.set(box.getMinX(), next.getY() + 1, next.getZ());
 				else if(next.getZ() < box.getMaxZ()) next.set(box.getMinX(), box.getMinY(), next.getZ() + 1);
 				else next = null;
@@ -147,7 +152,7 @@ public class SelectionBox implements Selection {
 			@Override
 			public BlockPos next() {
 				returnable.set(next);
-				if(next.getX() < box.getMaxX()) next.set(next.getX()+1, next.getY(), next.getZ());
+				if(next.getX() < box.getMaxX()) next.set(next.getX() + 1, next.getY(), next.getZ());
 				else if(next.getY() < box.getMaxY()) next.set(box.getMinX(), next.getY() + 1, next.getZ());
 				else if(next.getZ() > box.getMinZ()) next.set(box.getMinX(), box.getMinY(), next.getZ() - 1);
 				else next = null;
@@ -156,5 +161,10 @@ public class SelectionBox implements Selection {
 		};
 		default -> throw new IllegalArgumentException("Unexpected value: " + order);
 		};
+	}
+
+	@Override
+	public SelectionType<?> type() {
+		return VoxEdit.SEL_BOX;
 	}
 }

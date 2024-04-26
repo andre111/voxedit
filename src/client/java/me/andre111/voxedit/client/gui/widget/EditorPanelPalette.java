@@ -45,8 +45,7 @@ public class EditorPanelPalette extends EditorPanel {
 		super(parent, VoxEdit.id("palette"), Text.translatable("voxedit.screen.panel.palette"));
 	}
 
-
-    private void updateRemoveEntryButton() {
+    private void updateButtons() {
     	removeEntryButton.active = hasEntrySelected() && EditorState.blockPalette().size() > minSize;
     }
 
@@ -71,7 +70,7 @@ public class EditorPanelPalette extends EditorPanel {
 		presets.withAdditionalButton(Text.of("+"), () -> true, this::savePreset);
 		presets.withAdditionalButton(Text.of("-"), () -> presets.getValue() != null, this::deletePreset);
 		addContent(presets);
-		addContent(new LineHorizontal(width));
+		addContent(new LineHorizontal(width, null));
     	
 		// palette editor
 		paletteWidget = new BlockPaletteListWidget();
@@ -87,7 +86,7 @@ public class EditorPanelPalette extends EditorPanel {
             paletteWidget.setSelected(list.isEmpty() ? null : paletteWidget.children().get(Math.min(index, list.size() - 1)));
             EditorState.blockPalette(new BlockPalette(list));
             paletteWidget.updateEntries();
-            updateRemoveEntryButton();
+            updateButtons();
         }).size(width / 2 - gap, 20).build();
     	addContent(removeEntryButton);
     	
@@ -98,10 +97,10 @@ public class EditorPanelPalette extends EditorPanel {
             EditorState.blockPalette(new BlockPalette(list));
             paletteWidget.updateEntries();
             paletteWidget.setSelected(paletteWidget.children().get(paletteWidget.children().size()-1));
-            updateRemoveEntryButton();
+            updateButtons();
         }).size(width / 2 - gap, 20).build());
     	
-        updateRemoveEntryButton();
+        updateButtons();
         
         super.refreshPositions();
         
@@ -115,7 +114,7 @@ public class EditorPanelPalette extends EditorPanel {
 		
     	EditorState.blockPalette(palette);
 		paletteWidget.updateEntries();
-		updateRemoveEntryButton();
+		updateButtons();
     }
 	
 	private void savePreset() {
@@ -157,7 +156,7 @@ public class EditorPanelPalette extends EditorPanel {
 		@Override
 		public void setSelected(BlockPaletteEntry entry) {
 			super.setSelected(entry);
-			updateRemoveEntryButton();
+			updateButtons();
 		}
 
 	    @Override

@@ -37,12 +37,20 @@ public class SelectionRenderer {
 	private VertexBuffer faceBuffer = null;
 	
 	public void rebuild(Selection selection) {
+		if(selection == null) {
+			if(lineBuffer != null) lineBuffer.close();
+			lineBuffer = null;
+			if(faceBuffer != null) faceBuffer.close();
+			faceBuffer = null;
+			return;
+		}
+		
 		BufferBuilder lineBuilder = new BufferBuilder(4096);
 		lineBuilder.begin(VertexFormat.DrawMode.LINES, VertexFormats.LINES);
 		BufferBuilder faceBuilder = new BufferBuilder(4096);
         faceBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
 		
-        final float alpha = 0.15f;
+        final float alpha = 1f;
         final float lineExpand = 0;
         final float lineSize = 1 + lineExpand * 2;
         final float faceExpand = 0.001f;
@@ -179,16 +187,21 @@ public class SelectionRenderer {
 		if(lineBuffer == null || faceBuffer == null) return;
 		
 		modelViewMat = modelViewMat.translate((float) -cameraPos.x, (float) -cameraPos.y, (float) -cameraPos.z, new Matrix4f());
+
+        final float alpha = 0.15f;
         
 		RenderLayer.getDebugQuads().startDrawing();
         RenderSystem.enableBlend();
+        RenderSystem.depthMask(false);
         ShaderProgram shader = RenderSystem.getShader();
         SchematicRenderer.setDefaultUniforms(shader, VertexFormat.DrawMode.QUADS, modelViewMat, projMat, window);
+        if(shader.colorModulator != null) shader.colorModulator.set(1f, 1f, 1f, alpha);
         shader.bind();
         faceBuffer.bind();
         faceBuffer.draw();
         VertexBuffer.unbind();
         shader.unbind();
+        RenderSystem.depthMask(true);
         RenderLayer.getDebugQuads().endDrawing();
 		
 		RenderLayer.getLines().startDrawing();

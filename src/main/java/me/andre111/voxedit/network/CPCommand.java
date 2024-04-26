@@ -22,9 +22,13 @@ import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.network.packet.CustomPayload;
 
-public record CPCommand(Command command) implements CustomPayload {
+public record CPCommand(Command command, String data) implements CustomPayload {
 	public static final Id<CPCommand> ID = new Id<>(VoxEdit.id("command"));
-	public static final PacketCodec<ByteBuf, CPCommand> CODEC = PacketCodecs.BYTE.xmap(b -> new CPCommand(Command.values()[b]), c -> (byte) c.command().ordinal());
+	public static final PacketCodec<ByteBuf, CPCommand> CODEC = PacketCodec.tuple(
+		Command.PACKET_CODEC, CPCommand::command,
+		PacketCodecs.STRING, CPCommand::data,
+		CPCommand::new);
+	
 	static {
 		PayloadTypeRegistry.playC2S().register(ID, CODEC);
 	}

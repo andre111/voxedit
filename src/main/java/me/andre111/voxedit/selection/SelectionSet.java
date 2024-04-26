@@ -23,11 +23,16 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
+import com.mojang.serialization.Codec;
+
+import me.andre111.voxedit.VoxEdit;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 
 public class SelectionSet implements Selection {
+	public static final Codec<SelectionSet> CODEC = BlockPos.CODEC.listOf().xmap(list -> new SelectionSet(new HashSet<>(list)), sel -> new ArrayList<>(sel.set));
+	
 	private final Set<BlockPos> set;
 	private final BlockBox boundingBox;
 	
@@ -113,5 +118,10 @@ public class SelectionSet implements Selection {
 				if(!toCheck.contains(nb)) toCheck.add(nb);
 			}
 		}
+	}
+
+	@Override
+	public SelectionType<?> type() {
+		return VoxEdit.SEL_SET;
 	}
 }

@@ -21,9 +21,12 @@ import java.nio.file.Path;
 
 import org.lwjgl.glfw.GLFW;
 
+import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.gui.screen.EditorScreen;
 import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.client.renderer.HudRenderer;
+import me.andre111.voxedit.client.tool.ObjectTool;
+import me.andre111.voxedit.client.tool.SelectTool;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -33,6 +36,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.registry.Registry;
 
 @Environment(value=EnvType.CLIENT)
 public class VoxEditClient implements ClientModInitializer {
@@ -44,6 +48,9 @@ public class VoxEditClient implements ClientModInitializer {
     public static final KeyBinding REDO = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.redo", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_Y, "key.category.voxedit"));
     public static final KeyBinding OPEN_MENU = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.voxedit.openMenu", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.category.voxedit"));
 	
+    public static final SelectTool TOOL_SELECT = Registry.register(VoxEdit.TOOL_REGISTRY, VoxEdit.id("select"), new SelectTool());
+    public static final ObjectTool TOOL_OBJECT = Registry.register(VoxEdit.TOOL_REGISTRY, VoxEdit.id("object"), new ObjectTool());
+    
 	@Override
 	public void onInitializeClient() {
 		ClientNetworking.init();

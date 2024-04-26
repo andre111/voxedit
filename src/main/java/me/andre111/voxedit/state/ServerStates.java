@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import me.andre111.voxedit.VoxEdit;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -28,7 +29,7 @@ public class ServerStates {
 	public static ServerState get(ServerPlayerEntity player) {
 		if(!STATES.containsKey(player.getUuid())) STATES.put(player.getUuid(), new ServerState(player.getRegistryManager(), cp -> {
 			ServerPlayNetworking.send(player, cp);
-		}));
+		}, VoxEdit.dataPath(player.getServer()).resolve(player.getUuidAsString()+"/")));
 		return STATES.get(player.getUuid());
 	}
 }

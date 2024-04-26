@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.state;
+package me.andre111.voxedit.schematic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +25,8 @@ import java.util.Set;
 
 import me.andre111.voxedit.VoxEditUtil;
 import me.andre111.voxedit.editor.EditorWorld;
+import me.andre111.voxedit.selection.Selection;
+import me.andre111.voxedit.selection.SelectionBox;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
@@ -35,6 +37,7 @@ import net.minecraft.nbt.NbtIntArray;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
+import net.minecraft.util.BlockRotation;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
@@ -62,6 +65,10 @@ public class Schematic implements BlockView {
 		this.sizeZ = sizeZ;
 		this.blockStates = Collections.unmodifiableList(new ArrayList<>(blockStates));
 		this.blockEntities = Collections.unmodifiableMap(new HashMap<>(blockEntities));
+	}
+	
+	public SchematicInfo getInfo() {
+		return new SchematicInfo(sizeX, sizeY, sizeZ);
 	}
 	
 	public int getOffsetX() {
@@ -113,6 +120,45 @@ public class Schematic implements BlockView {
 	@Override
 	public FluidState getFluidState(BlockPos pos) {
 		return getBlockState(pos).getFluidState();
+	}
+	
+	public Schematic rotated(WrapperLookup registryLookup, BlockRotation rotation) {
+		if(rotation == BlockRotation.NONE) return this;
+		
+		BlockPos rotatedMax = new BlockPos(sizeX-1, sizeY-1, sizeZ-1).rotate(rotation);
+		int newSizeX = Math.abs(rotatedMax.getX())+1;
+		int newSizeY = Math.abs(rotatedMax.getY())+1;
+		int newSizeZ = Math.abs(rotatedMax.getZ())+1;
+		int translateX = -Math.min(rotatedMax.getX(), 0);
+		int translateY = -Math.min(rotatedMax.getY(), 0);
+		int translateZ = -Math.min(rotatedMax.getZ(), 0);
+		BlockPos rotatedOffset = new BlockPos(offsetX, offsetY, offsetZ).rotate(rotation);
+
+		List<BlockState> rotatedBlockStates = new ArrayList<>(blockStates);
+		BlockPos.Mutable schematicPos = new BlockPos.Mutable();
+		int index = 0;
+		for(int y=0; y<sizeY; y++) {
+			for(int z=0; z<sizeZ; z++) {
+				for(int x=0; x<sizeX; x++) {
+					BlockState state = blockStates.get(index);
+
+					BlockPos rotatedPos = schematicPos.set(x, y, z).rotate(rotation).add(translateX, translateY, translateZ);
+					int rotatedIndex = rotatedPos.getY() * newSizeZ * newSizeX + rotatedPos.getZ() * newSizeX + rotatedPos.getX();
+					rotatedBlockStates.set(rotatedIndex, state.rotate(rotation));
+					
+					index++;
+				}
+			}
+		}
+		
+		Map<BlockPos, BlockEntity> rotatedBlockEntities = new HashMap<>();
+		for(var e : blockEntities.entrySet()) {
+			BlockPos rotatedPos = e.getKey().rotate(rotation).add(translateX, translateY, translateZ);
+			BlockEntity rotatedBE = VoxEditUtil.copyBlockEntity(registryLookup, getBlockState(e.getKey()), e.getValue(), rotatedPos);
+			rotatedBlockEntities.put(rotatedPos, rotatedBE);
+		}
+		
+		return new Schematic(rotatedOffset.getX(), rotatedOffset.getY(), rotatedOffset.getZ(), newSizeX, newSizeY, newSizeZ, rotatedBlockStates, rotatedBlockEntities);
 	}
 	
 	public void apply(EditorWorld world, BlockPos pos) {
@@ -197,7 +243,13 @@ public class Schematic implements BlockView {
 		return new Schematic(offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ, blockStates, blockEntities);
 	}
 	
+
 	public static Schematic create(WrapperLookup registryLookup, BlockView view, BlockBox area) {
+		return create(registryLookup, view, new SelectionBox(area));
+	}
+	
+	public static Schematic create(WrapperLookup registryLookup, BlockView view, Selection selection) {
+		BlockBox area = selection.getBoundingBox();
 		BlockPos.Mutable sourcePos = new BlockPos.Mutable();
 		BlockPos.Mutable schematicPos = new BlockPos.Mutable();
 		List<BlockState> blockStates = new ArrayList<>();
@@ -208,7 +260,7 @@ public class Schematic implements BlockView {
 					sourcePos.set(area.getMinX()+x, area.getMinY()+y, area.getMinZ()+z);
 					schematicPos.set(x, y, z);
 					
-					BlockState state = view.getBlockState(sourcePos);
+					BlockState state = selection.contains(sourcePos) ? view.getBlockState(sourcePos) : Blocks.STRUCTURE_VOID.getDefaultState();
 					blockStates.add(state);
 					BlockEntity blockEntity = view.getBlockEntity(sourcePos);
 					if(blockEntity != null) {

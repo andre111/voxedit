@@ -28,13 +28,13 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 
-import me.andre111.voxedit.client.gui.screen.EditorScreen;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.DataWriter;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtSizeTracker;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryWrapper.Impl;
@@ -42,14 +42,6 @@ import net.minecraft.registry.RegistryWrapper.WrapperLookup;
 import net.minecraft.util.math.BlockPos;
 
 public class VoxEditUtil {
-	public static boolean shouldUseCustomControls(PlayerEntity player) {
-		if(player != null && player.isCreative() && player.getAbilities().flying) {
-			//TODO: this refers to client code -> WILL CRASH ON SERVER -> FIX!!!
-			if(EditorScreen.get().isActive()) return true;
-		}
-		return false;
-	}
-	
 	public static BlockEntity copyBlockEntity(WrapperLookup registryLookup, BlockState state, BlockEntity source, BlockPos pos) {
 		// create unlinked copy and adjust position
 		NbtCompound nbt = source.createNbtWithId(registryLookup);
@@ -82,5 +74,31 @@ public class VoxEditUtil {
 				return Optional.empty();
 			}
 		}, codec, value, path);
+	}
+	
+	public static NbtCompound readNbt(Path path) {
+		try {
+			return NbtIo.readCompressed(path, NbtSizeTracker.ofUnlimitedBytes());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static void writeNbt(Path path, NbtCompound nbt) {
+		try {
+			Files.createDirectories(path.getParent());
+			if(!Files.exists(path)) Files.createFile(path);
+			
+			NbtIo.writeCompressed(nbt, path);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public static String removeInvalidChars(String name) {
+		return name.replace("/", "_").replace("\\", "_").replace(":", "_");
 	}
 }

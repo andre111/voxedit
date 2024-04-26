@@ -19,12 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.editor.EditType;
 import me.andre111.voxedit.editor.Editor;
 import me.andre111.voxedit.editor.EditorWorld;
-import me.andre111.voxedit.state.Schematic;
+import me.andre111.voxedit.schematic.Schematic;
 import me.andre111.voxedit.state.ServerState;
 import me.andre111.voxedit.tool.data.Context;
 import me.andre111.voxedit.tool.data.RaycastTargets;
@@ -76,9 +75,9 @@ public abstract class VoxelTool extends Tool {
 				}
 			}, targets.getFirst().getBlockPos(), true);
 
-			state.schematic(VoxEdit.id("preview."+id().toTranslationKey()), result.schematic(), true);
+			state.schematic("voxedit.preview."+id().toTranslationKey(), result.schematic(), true, false);
 		} else if(action == Action.APPLY_PREVIEW) {
-			Schematic preview = state.schematic(VoxEdit.id("preview."+id().toTranslationKey()));
+			Schematic preview = state.schematic("voxedit.preview."+id().toTranslationKey());
 			if(preview == null) {
 				player.sendMessage(Text.translatable("voxedit.feedback.noPreview"), true);
 				return;

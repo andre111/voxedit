@@ -21,7 +21,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Direction;
 
 public abstract class Shape {
-	public abstract boolean contains(int x, int y, int z, Direction direction, int sizeX, int sizeY, int sizeZ);
+	public abstract boolean contains(int x, int y, int z, Direction direction, double sizeX, double sizeY, double sizeZ);
 	
 	public Identifier id() {
 		return VoxEdit.SHAPE_REGISTRY.getId(this);

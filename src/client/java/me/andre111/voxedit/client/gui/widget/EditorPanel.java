@@ -132,6 +132,8 @@ public class EditorPanel extends ContainerWidget implements LayoutWidget {
 		int y = getY() + 28;
 		int maxHeight = getY() + 28;
 		for(var child : content) {
+			if(!child.visible) continue;
+			
 			int childWidth = child.getWidth();
 			int childHeight = child.getHeight();
 			if(x + childWidth > getX()+width) {

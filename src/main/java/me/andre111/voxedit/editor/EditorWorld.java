@@ -28,7 +28,7 @@ import me.andre111.voxedit.editor.action.SetBlockAction;
 import me.andre111.voxedit.editor.history.EditHistory;
 import me.andre111.voxedit.editor.history.EditHistoryState;
 import me.andre111.voxedit.network.CPHistoryInfo;
-import me.andre111.voxedit.state.Schematic;
+import me.andre111.voxedit.schematic.Schematic;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockEntityProvider;
@@ -295,7 +295,7 @@ public class EditorWorld implements StructureWorldAccess {
 		if(oldBe == null) return null;
 		
 		BlockEntity newBe = BlockEntity.createFromNbt(pos, getBlockState(pos), oldBe.createNbtWithIdentifyingData(world.getRegistryManager()), world.getRegistryManager());
-		changedBlockEntities.put(pos, new ModifiedBlockEntity(world, newBe));
+		changedBlockEntities.put(pos.toImmutable(), new ModifiedBlockEntity(world, newBe));
 		return newBe;
 	}
 
@@ -338,7 +338,7 @@ public class EditorWorld implements StructureWorldAccess {
 		changedBlockStates.put(immutablePos, state);
 		
 		if(state.hasBlockEntity()) {
-			changedBlockEntities.put(pos, new ModifiedBlockEntity(world, ((BlockEntityProvider) state.getBlock()).createBlockEntity(pos, state)));
+			changedBlockEntities.put(immutablePos, new ModifiedBlockEntity(world, ((BlockEntityProvider) state.getBlock()).createBlockEntity(pos, state)));
 		}
 		
 		return true;

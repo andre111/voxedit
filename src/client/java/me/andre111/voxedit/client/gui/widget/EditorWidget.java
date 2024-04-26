@@ -38,6 +38,7 @@ import net.minecraft.util.Identifier;
 
 public class EditorWidget extends ContainerWidget implements LayoutWidget {
     private final EditorScreen screen;
+    private final OverlayWidget overlay;
     private final MenuWidget menu;
 	private final Map<Location, List<EditorPanel>> panels = new HashMap<>();
 	private final Map<Identifier, EditorPanel> panelMap = new HashMap<>();
@@ -46,10 +47,11 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 	private int rightWidth = 300;
 
 	public EditorWidget(EditorScreen screen) {
-		super(0, 0, 100, 100, Text.empty());
+		super(0, 0, screen.width, screen.height, Text.empty());
 		
 		this.screen = screen;
-		this.menu = new MenuWidget(0, 0, screen.width, 20);
+		this.overlay = new OverlayWidget(0, 0, screen.width, screen.height);
+		this.menu = new MenuWidget(0, 0, screen.width, 20, overlay);
 	}
 	
 	public EditorScreen getScreen() {
@@ -176,15 +178,17 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 	public List<? extends Element> children() {
 		//TODO: improve
 		List<Element> children = new ArrayList<>();
-		for(var list : panels.values()) children.addAll(list);
+		children.add(overlay);
 		children.add(menu);
+		for(var list : panels.values()) children.addAll(list);
 		return children;
 	}
 
 	@Override
 	public void forEachElement(Consumer<Widget> consumer) {
-		for(var list : panels.values()) list.forEach(consumer);
+		consumer.accept(overlay);
 		consumer.accept(menu);
+		for(var list : panels.values()) list.forEach(consumer);
 	}
 
 	@Override
@@ -205,6 +209,8 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 			}
 		}
 		menu.render(context, mouseX, mouseY, delta);
+		
+		overlay.render(context, mouseX, mouseY, delta);
 	}
 
 	@Override
@@ -219,6 +225,7 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 	@Override
 	public void refreshPositions() {
 		menu.setWidth(screen.width);
+		overlay.setDimensions(screen.width, screen.height);
 
 		for(EditorPanel panel : getPanels(Location.LEFT)) panel.setWidth(leftWidth);
 		for(EditorPanel panel : getPanels(Location.RIGHT)) panel.setWidth(rightWidth);
@@ -244,6 +251,7 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 		if(mouseY <= menu.getHeight()) return true;
 		if(mouseX <= leftWidth) return true;
 		if(mouseX >= width-rightWidth) return true;
+		if(overlay.visible) return true;
 		return false;
 	}
 

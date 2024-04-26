@@ -20,21 +20,29 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import me.andre111.voxedit.client.gui.Textures;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.widget.ClickableWidget;
+import net.minecraft.client.gui.widget.AxisGridWidget;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.ContainerWidget;
+import net.minecraft.client.gui.widget.LayoutWidget;
+import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.text.Text;
 
-public class MenuWidget extends ClickableWidget {
+public class MenuWidget extends ContainerWidget implements LayoutWidget {
+	private final OverlayWidget overlayWidget;
 	private final List<Category> categories = new ArrayList<>();
 	
-	public MenuWidget(int x, int y, int width, int height) {
+	public MenuWidget(int x, int y, int width, int height, OverlayWidget overlayWidget) {
 		super(x, y, width, height, Text.empty());
+		this.overlayWidget = overlayWidget;
 	}
 	
 	public Category addCategory(Text text) {
-		Category category = new Category(text);
+		Category category = new Category(this, text);
 		categories.add(category);
 		return category;
 	}
@@ -44,6 +52,22 @@ public class MenuWidget extends ClickableWidget {
 		// background
 		context.drawTexture(Textures.BACKGROUND, getX(), getY(), 0, 0, getWidth(), getHeight());
         context.drawTexture(Screen.INWORLD_HEADER_SEPARATOR_TEXTURE, getX(), getY()+getHeight(), 0.0f, 0.0f, getWidth(), 2, 32, 2);
+
+		for(Category category : categories) {
+			category.button.render(context, mouseX, mouseY, delta);
+		}
+	}
+	
+	@Override
+	public List<? extends Element> children() {
+		return categories.stream().map(c -> c.button).toList();
+	}
+	
+	@Override
+	public void forEachElement(Consumer<Widget> consumer) {
+		for(Category category : categories) {
+			consumer.accept(category.button);
+		}
 	}
 
 	@Override
@@ -51,30 +75,56 @@ public class MenuWidget extends ClickableWidget {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
-	public SelectionType getType() {
-		return SelectionType.NONE;
-	}
-
-	@Override
-	public void forEachChild(Consumer<ClickableWidget> var1) {
-		// TODO Auto-generated method stub
-		
+	public void refreshPositions() {
+		int x = getX();
+		int y = getY();
+		for(Category category : categories) {
+			category.button.setX(x);
+			category.button.setY(y);
+			category.button.setHeight(height);
+			category.button.setWidth(MinecraftClient.getInstance().textRenderer.getWidth(category.button.getMessage())+8);
+			x += category.button.getWidth();
+		}
+		LayoutWidget.super.refreshPositions();
 	}
 
 	public static final class Category {
-		//private final Text text;
+		private final MenuWidget menu;
+		private final ButtonWidget button;
 		private final List<Entry> entries;
+		private AxisGridWidget entriesWidget;
 		
-		private Category(Text text) {
-			//this.text = text;
+		private Category(MenuWidget menu, Text text) {
+			this.menu = menu;
+			this.button = ButtonWidget.builder(text, (b) -> {
+					menu.overlayWidget.openOverlay(getButton(), getEntriesWidget());
+				}).width(MinecraftClient.getInstance().textRenderer.getWidth(text)+8).build();
 			this.entries = new ArrayList<>();
 		}
 		
 		public Category addEntry(Text text, Runnable onSelect) {
 			this.entries.add(new Entry(text, onSelect));
+			entriesWidget = null;
 			return this;
+		}
+		
+		private Widget getButton() {
+			return button;
+		}
+		
+		private Widget getEntriesWidget() {
+			if(entriesWidget == null) {
+				entriesWidget = new AxisGridWidget(200, entries.size()*20, AxisGridWidget.DisplayAxis.VERTICAL);
+				for(Entry entry : entries) {
+					entriesWidget.add(ButtonWidget.builder(entry.text, (b) -> {
+						menu.overlayWidget.closeOverlay();
+						entry.onSelect.run(); 
+					}).size(200, 20).build());
+				}
+			}
+			return entriesWidget;
 		}
 	}
 	private static final record Entry(Text text, Runnable onSelect) {

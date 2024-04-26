@@ -18,10 +18,21 @@ package me.andre111.voxedit.selection;
 import java.util.Iterator;
 import java.util.List;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+import me.andre111.voxedit.VoxEdit;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 
 public class SelectionAdd implements Selection {
+	public static final Codec<SelectionAdd> CODEC = RecordCodecBuilder.create(instance -> instance
+			.group(
+				Selection.CODEC.fieldOf("first").forGetter(sel -> sel.first),
+				Selection.CODEC.fieldOf("second").forGetter(sel -> sel.second)
+			)
+			.apply(instance, SelectionAdd::new));
+	
 	private final Selection first;
 	private final Selection second;
 	private final BlockBox boundingBox;
@@ -72,6 +83,7 @@ public class SelectionAdd implements Selection {
 			private void findNext() {
 				while(firstNext == null && firstIterator.hasNext()) firstNext = firstIterator.next();
 				while((secondNext == null || first.contains(secondNext)) && secondIterator.hasNext()) secondNext = secondIterator.next();
+				if(secondNext != null && first.contains(secondNext)) secondNext = null;
 				
 				if(firstNext == null && secondNext == null) {
 					next = null;
@@ -92,5 +104,10 @@ public class SelectionAdd implements Selection {
 				}
 			}
 		};
+	}
+
+	@Override
+	public SelectionType<?> type() {
+		return VoxEdit.SEL_ADD;
 	}
 }

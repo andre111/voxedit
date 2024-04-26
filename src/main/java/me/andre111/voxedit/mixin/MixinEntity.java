@@ -21,10 +21,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import me.andre111.voxedit.VoxEditUtil;
+import me.andre111.voxedit.state.ServerStates;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.MovementType;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.Vec3d;
 
 @Mixin(Entity.class)
@@ -34,7 +34,7 @@ public abstract class MixinEntity {
 
 	@Inject(method = "move", at = @At("HEAD"))
     public void move(MovementType movementType, Vec3d movement, CallbackInfo ci) {
-		if((Object) this instanceof PlayerEntity player && VoxEditUtil.shouldUseCustomControls(player)) {
+		if((Object) this instanceof ServerPlayerEntity player && ServerStates.get(player).editorActive()) {
 			noClip = true;
 		}
 	}

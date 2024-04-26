@@ -15,17 +15,159 @@
  */
 package me.andre111.voxedit.client.gui.widget;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.EditorState;
+import me.andre111.voxedit.client.VoxEditClient;
+import me.andre111.voxedit.client.gui.Textures;
+import me.andre111.voxedit.client.gui.screen.InputScreen;
+import me.andre111.voxedit.client.network.ClientNetworking;
+import me.andre111.voxedit.client.renderer.SchematicRenderer;
+import me.andre111.voxedit.client.schematic.SchematicPlacement;
+import me.andre111.voxedit.client.tool.ObjectTool;
+import me.andre111.voxedit.network.Command;
+import me.andre111.voxedit.schematic.Schematic;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Element;
+import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextWidget;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 
 public class EditorPanelSchematics extends EditorPanel {
+	private SchematicListWidget schematicList;
+	private ButtonWidget placeButton;
+	private ButtonWidget deleteButton;
 
 	public EditorPanelSchematics(EditorWidget parent) {
 		super(parent, VoxEdit.id("schematics"), Text.translatable("voxedit.screen.panel.schematics"));
+
+		schematicList = new SchematicListWidget();
+		placeButton = ButtonWidget.builder(Text.translatable("voxedit.schematic.place"), (b) -> {
+			var selected = schematicList.getSelectedOrNull();
+			if(selected == null) return;
+			
+			EditorState.selected(new SchematicPlacement(selected.name, BlockPos.ORIGIN));
+			EditorState.tool(VoxEditClient.TOOL_OBJECT);
+			EditorState.toolConfig(EditorState.toolConfig().with(ObjectTool.MODE, ObjectTool.Mode.MOVE));
+		}).build();
+		deleteButton = ButtonWidget.builder(Text.translatable("voxedit.schematic.delete"), (b) -> {
+			var selected = schematicList.getSelectedOrNull();
+			if(selected == null) return;
+			
+			InputScreen.showConfirmation(parent.getScreen(), Text.translatable("voxedit.prompt.schematic.delete", selected.name), () -> {
+				ClientNetworking.sendCommand(Command.DELETE_SCHEMATIC, selected.name);
+			});
+		}).build();
+		
+		addContent(schematicList);
+		addContent(placeButton);
+		addContent(deleteButton);
+		updateButtons();
 		
 		EditorState.CHANGE_SCHEMATIC.register((id, schematic) -> {
-			if(schematic != null) addContent(new EditorSchematicWidget(schematic));
+			schematicList.updateEntries();
+			updateButtons();
 		});
+	}
+
+    private void updateButtons() {
+    	placeButton.active = schematicList.getSelectedOrNull() != null;
+    	deleteButton.active = schematicList.getSelectedOrNull() != null;
+    }
+	
+	@Override
+	public void refreshPositions() {
+		schematicList.setWidth(width);
+		placeButton.setWidth((width-gap)/2);
+		deleteButton.setWidth((width-gap)/2);
+		super.refreshPositions();
+	}
+
+	@Environment(value=EnvType.CLIENT)
+	class SchematicListWidget extends ModListWidget<SchematicListWidget.SchematicEntry> {
+		public SchematicListWidget() {
+			super(MinecraftClient.getInstance(), EditorPanelSchematics.this.width, 500, 20, 6);
+			updateEntries();
+		}
+
+		public void updateEntries() {
+			int i = children().indexOf(getSelectedOrNull());
+			clearEntries();
+			
+			for(var e : EditorState.schematics().entrySet()) {
+				addEntry(new SchematicEntry(e.getKey(), e.getValue()));
+			}
+			
+			List<SchematicEntry> list = children();
+			if (i >= 0 && i < list.size()) {
+				setSelected(list.get(i));
+			}
+		}
+
+		@Override
+		public void setSelected(SchematicEntry entry) {
+			super.setSelected(entry);
+			updateButtons();
+		}
+
+		@Environment(value=EnvType.CLIENT)
+		class SchematicEntry extends ModListWidget.Entry<SchematicEntry> {
+			private List<Element> children = new ArrayList<>();
+			
+			private final String name;
+			
+			private Identifier previewID;
+			
+			private final TextWidget nameWidget;
+			private final TextWidget dimensionsWidget;
+
+			private SchematicEntry(String name, Schematic schematic) {
+				this.name = name;
+				
+				this.nameWidget = new TextWidget(Text.of(name), MinecraftClient.getInstance().textRenderer);
+				this.dimensionsWidget = new TextWidget(Text.of(schematic.getSizeX()+" x "+schematic.getSizeY()+" x "+schematic.getSizeZ()), MinecraftClient.getInstance().textRenderer);
+				
+				children.add(nameWidget);
+				children.add(dimensionsWidget);
+				
+				SchematicRenderer.getPreview(schematic, 256, 256).thenAccept(id -> previewID = id);
+			}
+
+			@Override
+			public int getHeight() {
+				return 80;
+			}
+
+			@Override
+			public void positionChildren() {
+				nameWidget.setPosition(getX()+8, getY()+8);
+				dimensionsWidget.setPosition(getX()+8, getY()+8+12+8);
+			}
+
+			@Override
+			protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
+				context.drawGuiTexture(Textures.BUTTON.enabled(), getX(), getY(), getWidth(), getHeight()-4);
+				nameWidget.render(context, mouseX, mouseY, delta);
+				dimensionsWidget.render(context, mouseX, mouseY, delta);
+				if(previewID != null) context.drawTexture(previewID, getX()+getWidth()-64-6, getY()+6, 0, 0, 64, 64);
+			}
+
+			@Override
+			protected void appendClickableNarrations(NarrationMessageBuilder builder) {
+			}
+
+			@Override
+			public List<? extends Element> children() {
+				return children;
+			}
+		}
 	}
 }

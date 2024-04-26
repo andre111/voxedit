@@ -17,6 +17,7 @@ package me.andre111.voxedit.tool.data;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import com.mojang.serialization.Codec;
 
@@ -36,5 +37,9 @@ public record ToolConfig(Map<String, String> values) {
 	
 	public <V> ToolConfig with(ToolSetting<V> setting, V value) {
 		return setting.with(this, value);
+	}
+	
+	public <V> ToolConfig modify(ToolSetting<V> setting, Function<V, V> modifier) {
+		return setting.with(this, modifier.apply(setting.get(this)));
 	}
 }

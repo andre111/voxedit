@@ -25,8 +25,11 @@ import java.util.function.Consumer;
 
 import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.editor.EditType;
+import me.andre111.voxedit.editor.Editor;
 import me.andre111.voxedit.editor.history.EditHistory;
 import me.andre111.voxedit.editor.history.EditHistoryState;
+import me.andre111.voxedit.schematic.Schematic;
+import me.andre111.voxedit.state.ServerState;
 import me.andre111.voxedit.state.ServerStates;
 import me.andre111.voxedit.tool.ConfiguredTool;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -34,6 +37,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 public class ServerNetworking {
@@ -41,11 +45,18 @@ public class ServerNetworking {
 	
 	public static void init() {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+			// history
 			EditHistory history = EditHistory.of(handler.getPlayer(), handler.getPlayer().getServerWorld());
 			List<EditStats> stats = history.getStates().stream().map(EditHistoryState::getStats).toList();
 			int index = history.getIndex();
+			sender.sendPacket(new CPHistoryInfo(stats, index, false, history.getSize()));
 			
-			sender.sendPacket(new CPHistoryInfo(stats, index, false));
+			// schematics //TODO: improve to not send all data all the time
+			for(var e : ServerStates.get(handler.getPlayer()).schematics().entrySet()) {
+				NbtCompound nbt = new NbtCompound();
+				e.getValue().writeNbt(server.getRegistryManager(), nbt);
+				sender.sendPacket(new CPSchematic(e.getKey(), nbt));
+			}
 		});
 		
 		ServerPlayNetworking.registerGlobalReceiver(CPCommand.ID, (payload, context) -> {
@@ -53,15 +64,36 @@ public class ServerNetworking {
 			
 			context.player().server.execute(() -> {
 				ServerWorld world = (ServerWorld) context.player().getWorld();
+				ServerState state = ServerStates.get(context.player());
 				EditHistory history = EditHistory.of(context.player(), world);
 				switch(payload.command()) {
 				case UNDO:
 					history.undo(world).inform(context.player(), EditType.UNDO);
-					context.responseSender().sendPacket(new CPHistoryInfo(List.of(), history.getIndex(), true));
+					context.responseSender().sendPacket(new CPHistoryInfo(List.of(), history.getIndex(), true, history.getSize()));
 					break;
 				case REDO:
 					history.redo(world).inform(context.player(), EditType.REDO);
-					context.responseSender().sendPacket(new CPHistoryInfo(List.of(), history.getIndex(), true));
+					context.responseSender().sendPacket(new CPHistoryInfo(List.of(), history.getIndex(), true, history.getSize()));
+					break;
+				case CLEAR_HISTORY:
+					history.clear();
+					context.responseSender().sendPacket(new CPHistoryInfo(List.of(), -1, false, history.getSize()));
+					break;
+				case EDITOR_ACTIVATE:
+					state.editorActive(true);
+					break;
+				case EDITOR_DEACTIVATE:
+					state.editorActive(false);
+					break;
+				case SAVE_SCHEMATIC:
+					if(payload.data().isBlank()) return;
+					if(state.selection() == null) return;
+					Schematic schematic = Schematic.create(world.getRegistryManager(), world, state.selection());
+					state.schematic(payload.data(), schematic, true, true);
+					break;
+				case DELETE_SCHEMATIC:
+					if(payload.data().isBlank()) return;
+					state.schematicDelete(payload.data());
 					break;
 				case DEV:
 					break;
@@ -101,6 +133,25 @@ public class ServerNetworking {
 		
 		ServerPlayNetworking.registerGlobalReceiver(CPAction.ID, (payload, context) -> {
 			performAction(payload, context.player());
+		});
+		
+		ServerPlayNetworking.registerGlobalReceiver(CPSelection.ID, (payload, context) -> {
+			ServerStates.get(context.player()).selection(payload.selection());
+		});
+		
+		ServerPlayNetworking.registerGlobalReceiver(CPPlaceSchematic.ID, (payload, context) -> {
+			if(!context.player().isCreative()) return;
+			
+			context.player().server.execute(() -> {
+				ServerWorld world = (ServerWorld) context.player().getWorld();
+				ServerState state = ServerStates.get(context.player());
+				Schematic schematic = state.schematic(payload.name());
+				if(schematic == null) return;
+				
+				Editor.undoable(context.player(), world, Text.translatable("voxedit.schematic.name", payload.name()), (editable) -> {
+					schematic.rotated(editable.getRegistryManager(), payload.rotation()).apply(editable, payload.pos());
+				}, payload.pos(), false).inform(context.player(), EditType.PERFORM);
+			});
 		});
 	}
 	

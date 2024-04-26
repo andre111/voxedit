@@ -29,7 +29,7 @@ import me.andre111.voxedit.network.CPRegistryList;
 import me.andre111.voxedit.network.CPRequestRegistry;
 import me.andre111.voxedit.network.CPSchematic;
 import me.andre111.voxedit.network.Command;
-import me.andre111.voxedit.state.Schematic;
+import me.andre111.voxedit.schematic.Schematic;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -59,26 +59,31 @@ public class ClientNetworking {
 			NbtCompound nbt = payload.nbt();
 			Schematic schematic = nbt.isEmpty() ? null : Schematic.readNbt(context.client().world.getRegistryManager(), nbt);
 			
-			EditorState.schematic(payload.id(), schematic);
+			EditorState.schematic(payload.name(), schematic);
 		});
 		
 		ClientPlayNetworking.registerGlobalReceiver(CPHistoryInfo.ID, (payload, context) -> {
-			EditorState.history(payload.history(), payload.index(), payload.append());
+			EditorState.history(payload.history(), payload.index(), payload.append(), payload.size());
 		});
 	}
 	
+
 	public static void sendCommand(Command command) {
-		ClientPlayNetworking.send(new CPCommand(command));
+		sendCommand(command, "");
+	}
+	
+	public static void sendCommand(Command command, String data) {
+		ClientPlayNetworking.send(new CPCommand(command, data));
 	}
 	
 	public static void sendHistorySelect(int index) {
 		int offset = index - EditorState.historyIndex();
 		while(offset > 0) { 
-			sendCommand(Command.REDO);
+			sendCommand(Command.REDO, "");
 			offset--;
 		}
 		while(offset < 0) {
-			sendCommand(Command.UNDO);
+			sendCommand(Command.UNDO, "");
 			offset++;
 		}
 	}

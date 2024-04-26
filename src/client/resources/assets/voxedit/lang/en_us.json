@@ -12,22 +12,48 @@
     "voxedit.tool.voxedit.raise": "Raise",
     "voxedit.tool.voxedit.nbtedit": "NBT Edit",
     "voxedit.tool.voxedit.select": "Select",
+    "voxedit.tool.voxedit.object": "Object",
     
     "voxedit.tool.settings.radius": "Radius",
-    "voxedit.tool.settings.shape": "Shape",
     "voxedit.tool.settings.topOnly": "Top surfaces only",
     "voxedit.tool.settings.checkCanPlace": "Prevent invalid placement",
     "voxedit.tool.settings.targetFluids": "Target fluids",
     "voxedit.tool.settings.feature": "Feature",
     "voxedit.tool.settings.tries": "Tries",
     
+    "voxedit.shape": "Shape",
     "voxedit.shape.voxedit.sphere": "Sphere",
     "voxedit.shape.voxedit.cube": "Cube",
     "voxedit.shape.voxedit.disc": "Disc",
     "voxedit.shape.voxedit.cylinder": "Cylinder",
     "voxedit.shape.voxedit.hollow_sphere": "Hollow Sphere",
     "voxedit.shape.voxedit.hollow_cube": "Hollow Cube",
+	
+    "voxedit.shape.settings.splitSize": "Separate Sizes",
+    "voxedit.shape.settings.size": "Size",
+    "voxedit.shape.settings.width": "Width",
+    "voxedit.shape.settings.height": "Height",
+    "voxedit.shape.settings.length": "Length",
+    "voxedit.shape.settings.offset": "Enable Offset",
     
+	"voxedit.selection.mode.replace": "Replace",
+	"voxedit.selection.mode.add": "Add",
+	"voxedit.selection.mode.subtract": "Subtract",
+	
+	"voxedit.schematic.name": "Schematic: %s",
+	"voxedit.schematic.place": "Place Schematic",
+	"voxedit.schematic.delete": "Delete Schematic",
+	
+	"voxedit.gizmo.position": "Position",
+	"voxedit.gizmo.rotation": "Rotation",
+	"voxedit.gizmo.rotation.left": "Rotate Left",
+	"voxedit.gizmo.rotation.right": "Rotate Right",
+	"voxedit.gizmo.place": "Place",
+	"voxedit.gizmo.delete": "Delete",
+	
+	"voxedit.object.mode.select": "Select",
+	"voxedit.object.mode.move": "Move",
+	
     "voxedit.action.perform": "%s",
     "voxedit.action.undo": "Undo:%s",
     "voxedit.action.redo": "Redo:%s",
@@ -47,6 +73,7 @@
 	"voxedit.screen.panel.palette": "Block Palette",
 	"voxedit.screen.panel.history": "Edit History",
 	"voxedit.screen.panel.schematics": "Schematics",
+	"voxedit.screen.panel.selectedGizmo": "Selected Object",
     
     "voxedit.screen.blockPalette.add": "Add Entry",
     "voxedit.screen.blockPalette.remove": "Remove Entry",
@@ -77,6 +104,13 @@
 	"voxedit.prompt.preset.name": "Enter Preset Name:",
     "voxedit.prompt.preset.override": "Override existing preset: %s ?",
     "voxedit.prompt.preset.delete": "Delete Preset: %s ?",
+    "voxedit.prompt.history.clear": "Clear/Delete all history state?",
+    "voxedit.prompt.schematic.delete": "Delete Schematic: %s ?",
+	
+	"voxedit.history.size": "History Size: %s",
+	"voxedit.history.clear": "Clear",
+	"voxedit.history.undo": "Undo",
+	"voxedit.history.redo": "Redo",
     
     "key.category.voxedit": "VoxEdit",
     "key.voxedit.decreaseRadius": "Tool Radius Decrease",

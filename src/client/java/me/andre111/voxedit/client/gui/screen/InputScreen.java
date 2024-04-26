@@ -78,7 +78,7 @@ public class InputScreen extends Screen {
         });
         input.setText(value+"");
         
-        create(parent, title, () -> {
+        create(parent, title, ScreenTexts.DONE, ScreenTexts.CANCEL, () -> {
         	try {
         		callback.accept(parser.apply(input.getText()));
         	} catch(NumberFormatException e) {
@@ -93,20 +93,20 @@ public class InputScreen extends Screen {
         input.setMaxLength(128);
         input.setText(value);
         
-        create(parent, title, () -> callback.accept(input.getText()), (adder) -> adder.add(input, 2)).setFocused(input);
+        create(parent, title, ScreenTexts.DONE, ScreenTexts.CANCEL, () -> callback.accept(input.getText()), (adder) -> adder.add(input, 2)).setFocused(input);
     }
     
     public static <T> void getSelector(Screen parent, Text title, Text label, T value, List<T> values, Function<T, Text> toText, Consumer<T> callback) {
     	CyclingButtonWidget<T> button = CyclingButtonWidget.builder(toText).values(values).initially(value).build(0, 0, 260, 20, label, (b, v) -> {});
         
-        create(parent, title, () -> callback.accept(button.getValue()), (adder) -> adder.add(button, 2)).setFocused(button);
+        create(parent, title, ScreenTexts.DONE, ScreenTexts.CANCEL, () -> callback.accept(button.getValue()), (adder) -> adder.add(button, 2)).setFocused(button);
     }
     
     public static void showConfirmation(Screen parent, Text title, Runnable action) {
-    	create(parent, title, () -> action.run(), (adder) -> {});
+    	create(parent, title, ScreenTexts.YES, ScreenTexts.NO, () -> action.run(), (adder) -> {});
     }
     
-    private static InputScreen create(Screen parent, Text title, Runnable callback, ContentCreator creator) {
+    private static InputScreen create(Screen parent, Text title, Text confirmText, Text cancelText, Runnable callback, ContentCreator creator) {
     	InputScreen screen = new InputScreen(parent);
         
     	if(parent instanceof UnscaledScreen) VoxEditClient.unscaleGui();
@@ -118,11 +118,11 @@ public class InputScreen extends Screen {
         GridWidget.Adder adder = gridWidget.createAdder(2);
         adder.add(new TextWidget(260, 20, title, client.textRenderer), 2, gridWidget.copyPositioner().marginTop(50));
         creator.addContent(adder);
-        adder.add(ButtonWidget.builder(ScreenTexts.DONE, button -> {
+        adder.add(ButtonWidget.builder(confirmText, button -> {
             screen.close();
         	callback.run();
         }).width(126).build());
-        adder.add(ButtonWidget.builder(ScreenTexts.CANCEL, button -> {
+        adder.add(ButtonWidget.builder(cancelText, button -> {
             screen.close();
         }).width(126).build());
         gridWidget.refreshPositions();

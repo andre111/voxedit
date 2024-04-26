@@ -59,14 +59,15 @@ public class EditorPanelToolConfig extends EditorPanel {
 				presets.withAdditionalButton(Text.of("+"), () -> true, this::savePreset);
 				presets.withAdditionalButton(Text.of("-"), () -> presets.getValue() != null, this::deletePreset);
 				addContent(presets);
-				addContent(new LineHorizontal(width));
+				addContent(new LineHorizontal(width, null));
 			}
 			
 			// settings
 			for(var toolSetting : tool.getSettings()) {
 				ToolSettingWidget<?, ?> toolSettingWidget = ToolSettingWidget.of(toolSetting, () -> EditorState.toolConfig(), (config) -> {
-					presets.setValue(null);
+					if(!tool.properties().noPresets()) presets.setValue(null);
 					EditorState.toolConfig(config);
+					parent.refreshPositions();
 				});
 				toolSettingWidgets.add(toolSettingWidget);
 				
@@ -100,6 +101,7 @@ public class EditorPanelToolConfig extends EditorPanel {
 		if(config == null || !tool.isValid(config)) return;
 		
 		EditorState.toolConfig(config);
+		parent.refreshPositions();
 	}
 	
 	private void savePreset() {

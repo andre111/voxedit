@@ -40,6 +40,7 @@ public class EditHistory {
 	private final Path path;
 	private List<EditHistoryState> states = new ArrayList<>();
 	private int index = -1;
+	private long cachedSize = -1;
 	
 	private EditHistory(Path path) {
 		this.path = path;
@@ -115,10 +116,11 @@ public class EditHistory {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		cachedSize = -1;
 		
 		// construct update packet
-		if(append) return new CPHistoryInfo(List.of(state.getStats()), index, true);
-		else return new CPHistoryInfo(states.stream().map(EditHistoryState::getStats).toList(), index, false);
+		if(append) return new CPHistoryInfo(List.of(state.getStats()), index, true, getSize());
+		else return new CPHistoryInfo(states.stream().map(EditHistoryState::getStats).toList(), index, false, getSize());
 	}
 	
 	public EditStats undo(ServerWorld world) {
@@ -133,12 +135,53 @@ public class EditHistory {
 		return states.get(index).redo(world);
 	}
 	
+	public void clear() {
+		int itIndex = 0;
+		Path statePath;
+		while(Files.exists(statePath = getPath(itIndex))) {
+			try {
+				Files.delete(statePath);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			itIndex++;
+		}
+		try {
+			Files.deleteIfExists(path.resolve("index.nbt"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		index = -1;
+		cachedSize = 0;
+	}
+	
 	public List<EditHistoryState> getStates() {
 		return Collections.unmodifiableList(states);
 	}
 	
 	public int getIndex() {
 		return index;
+	}
+	
+	public long getSize() {
+		if(cachedSize < 0) {
+			cachedSize = 0;
+			
+			int itIndex = 0;
+			Path statePath;
+			while(Files.exists(statePath = getPath(itIndex))) {
+				try {
+					cachedSize += Files.size(statePath);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				itIndex++;
+			}
+		}
+		return cachedSize;
 	}
 	
 	private void setIndex(int newIndex) {

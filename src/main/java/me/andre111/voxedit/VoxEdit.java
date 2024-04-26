@@ -42,11 +42,16 @@ import me.andre111.voxedit.editor.action.SetBlockAction;
 import me.andre111.voxedit.editor.history.EditHistoryReader;
 import me.andre111.voxedit.editor.history.EditHistoryWriter;
 import me.andre111.voxedit.network.ServerNetworking;
+import me.andre111.voxedit.selection.SelectionAdd;
+import me.andre111.voxedit.selection.SelectionBox;
+import me.andre111.voxedit.selection.SelectionSet;
+import me.andre111.voxedit.selection.SelectionShape;
+import me.andre111.voxedit.selection.SelectionSubtract;
+import me.andre111.voxedit.selection.SelectionType;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.ToolBlend;
 import me.andre111.voxedit.tool.ToolBrush;
 import me.andre111.voxedit.tool.EditNBTTool;
-import me.andre111.voxedit.tool.SelectTool;
 import me.andre111.voxedit.tool.ToolExtrude;
 import me.andre111.voxedit.tool.ToolFill;
 import me.andre111.voxedit.tool.ToolFlatten;
@@ -71,11 +76,13 @@ public class VoxEdit implements ModInitializer {
     public static final RegistryKey<Registry<EditAction.Type<?>>> ACTION_TYPE_REGISTRY_KEY = RegistryKey.ofRegistry(id("action_type"));
     public static final RegistryKey<Registry<Shape>> SHAPE_REGISTRY_KEY = RegistryKey.ofRegistry(id("shape"));
     public static final RegistryKey<Registry<Tool>> TOOL_REGISTRY_KEY = RegistryKey.ofRegistry(id("tool"));
+    public static final RegistryKey<Registry<SelectionType<?>>> SELECTION_TYPE_REGISTRY_KEY = RegistryKey.ofRegistry(id("selection_type"));
     
     // 2. registries
     public static final Registry<EditAction.Type<?>> ACTION_TYPE_REGISTRY = new SimpleRegistry<>(ACTION_TYPE_REGISTRY_KEY, Lifecycle.stable());
     public static final Registry<Shape> SHAPE_REGISTRY = new SimpleRegistry<>(SHAPE_REGISTRY_KEY, Lifecycle.stable());
     public static final Registry<Tool> TOOL_REGISTRY = new SimpleRegistry<>(TOOL_REGISTRY_KEY, Lifecycle.stable());
+    public static final Registry<SelectionType<?>> SELECTION_TYPE_REGISTRY = new SimpleRegistry<>(SELECTION_TYPE_REGISTRY_KEY, Lifecycle.stable());
     
     // 3. registry entries
     public static final EditAction.Type<SetBlockAction> ACTION_SET_BLOCK = registerAction(id("set_block"), SetBlockAction::write, SetBlockAction::read);
@@ -100,7 +107,12 @@ public class VoxEdit implements ModInitializer {
     public static final ToolExtrude TOOL_EXTRUDE = Registry.register(TOOL_REGISTRY, id("extrude"), new ToolExtrude());
     public static final ToolRaise TOOL_RAISE = Registry.register(TOOL_REGISTRY, id("raise"), new ToolRaise());
     public static final EditNBTTool TOOL_EDITNBT = Registry.register(TOOL_REGISTRY, id("nbtedit"), new EditNBTTool());
-    public static final SelectTool TOOL_SELECT = Registry.register(TOOL_REGISTRY, id("select"), new SelectTool());
+    
+    public static final SelectionType<SelectionBox> SEL_BOX = Registry.register(SELECTION_TYPE_REGISTRY, id("box"), SelectionType.of(SelectionBox.CODEC));
+    public static final SelectionType<SelectionShape> SEL_SHAPE = Registry.register(SELECTION_TYPE_REGISTRY, id("shape"), SelectionType.of(SelectionShape.CODEC));
+    public static final SelectionType<SelectionSet> SEL_SET = Registry.register(SELECTION_TYPE_REGISTRY, id("set"), SelectionType.of(SelectionSet.CODEC));
+    public static final SelectionType<SelectionAdd> SEL_ADD = Registry.register(SELECTION_TYPE_REGISTRY, id("add"), SelectionType.of(SelectionAdd.CODEC));
+    public static final SelectionType<SelectionSubtract> SEL_SUBTRACT = Registry.register(SELECTION_TYPE_REGISTRY, id("subtract"), SelectionType.of(SelectionSubtract.CODEC));
     
     public static final int MAX_TARGETS = 1024;
     public static final int PREVIEW_DELAY = 5;

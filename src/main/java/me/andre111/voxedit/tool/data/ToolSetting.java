@@ -19,10 +19,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.mojang.serialization.JsonOps;
+
+import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.tool.shape.ConfiguredShape;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.JsonHelper;
 
 public sealed abstract class ToolSetting<V> {
 	private final String key;
@@ -84,8 +91,8 @@ public sealed abstract class ToolSetting<V> {
 		return new Bool(key, defaultValue);
 	}
 
-	public static <E extends Enum<E>> ToolSetting<E> ofEnum(String key, Class<E> enumCls, Function<E, Text> toText) {
-		return new FixedValues<E>(key, enumCls.getEnumConstants()[0], enumCls.getEnumConstants(), toText, name -> Enum.valueOf(enumCls, name), e -> e.name());
+	public static <E extends Enum<E>> ToolSetting<E> ofEnum(String key, Class<E> enumCls, Function<E, Text> toText, boolean showFixedSelection) {
+		return new FixedValues<E>(key, enumCls.getEnumConstants()[0], enumCls.getEnumConstants(), toText, showFixedSelection, name -> Enum.valueOf(enumCls, name), e -> e.name());
 	}
 	
 	public static ToolSetting<Integer> ofInt(String key, int defaultValue, int min, int max) {
@@ -114,10 +121,13 @@ public sealed abstract class ToolSetting<V> {
 	public static final class FixedValues<E> extends ToolSetting<E> {
 		private final E[] values;
 		private final Function<E, Text> toText;
-		public FixedValues(String key, E defaultValue, E[] values, Function<E, Text> toText, Function<String, E> reader, Function<E, String> writer) {
+		private final boolean showFixedSelection;
+		
+		public FixedValues(String key, E defaultValue, E[] values, Function<E, Text> toText, boolean showFixedSelection, Function<String, E> reader, Function<E, String> writer) {
 			super(key, defaultValue, reader, writer);
 			this.values = values;
 			this.toText = toText;
+			this.showFixedSelection = showFixedSelection;
 		}
 		
 		public E[] values() {
@@ -126,6 +136,10 @@ public sealed abstract class ToolSetting<V> {
 		
 		public Function<E, Text> toText() {
 			return toText;
+		}
+		
+		public boolean showFixedSelection() {
+			return showFixedSelection;
 		}
 
 		@Override
@@ -205,6 +219,34 @@ public sealed abstract class ToolSetting<V> {
 		@Override
 		protected boolean isValid(T value) {
 			return value != null && registry.getId(value) != null;
+		}
+	}
+	
+	public static final class TSShape extends ToolSetting<ConfiguredShape> {
+		private static final Gson GSON = new Gson();
+		private final boolean showConfig;
+		
+		public TSShape(String key, boolean showConfig) {
+			super(key, new ConfiguredShape(VoxEdit.SHAPE_SPHERE, false, 5, 5, 5, false, 0, 0, 0), TSShape::parse, TSShape::toJson);
+			this.showConfig = showConfig;
+		}
+		
+		public boolean showConfig() {
+			return showConfig;
+		}
+
+		@Override
+		protected boolean isValid(ConfiguredShape value) {
+			return value != null && value.isValid();
+		}
+		
+		private static ConfiguredShape parse(String json) {
+			JsonElement jsonElement = JsonHelper.deserialize(GSON, json, JsonElement.class);
+			return ConfiguredShape.CODEC.decode(JsonOps.INSTANCE, jsonElement).result().get().getFirst();
+		}
+		
+		private static String toJson(ConfiguredShape shape) {
+			return ConfiguredShape.CODEC.encodeStart(JsonOps.INSTANCE, shape).result().get().toString();
 		}
 	}
 }

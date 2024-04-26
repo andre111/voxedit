@@ -19,15 +19,14 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-import me.andre111.voxedit.VoxEditUtil;
-import net.minecraft.client.MinecraftClient;
+import me.andre111.voxedit.client.gui.screen.EditorScreen;
 import net.minecraft.client.render.WorldRenderer;
 
 @Mixin(WorldRenderer.class)
 public class MixinWorldRenderer {
 	@ModifyVariable(method = "setupTerrain", argsOnly = true, at = @At("HEAD"), ordinal = 1)
 	private boolean forceSpectatorView(boolean old) {
-		if(VoxEditUtil.shouldUseCustomControls(MinecraftClient.getInstance().player)) {
+		if(EditorScreen.get().isActive()) {
 			return true;
 		} else {
 			return old;

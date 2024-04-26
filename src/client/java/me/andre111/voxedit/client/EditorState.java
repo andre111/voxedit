@@ -31,8 +31,11 @@ import java.util.function.Consumer;
 import me.andre111.voxedit.Presets;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.VoxEditUtil;
+import me.andre111.voxedit.client.data.Gizmo;
 import me.andre111.voxedit.editor.EditStats;
-import me.andre111.voxedit.state.Schematic;
+import me.andre111.voxedit.schematic.Schematic;
+import me.andre111.voxedit.selection.Selection;
+import me.andre111.voxedit.selection.SelectionShape;
 import me.andre111.voxedit.tool.ConfiguredTool;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.data.BlockPalette;
@@ -70,12 +73,32 @@ public class EditorState {
 			callback.accept(blockPalette);
 		}
 	});
-	public static final Event<BiConsumer<Identifier, Schematic>> CHANGE_SCHEMATIC = EventFactory.createArrayBacked(BiConsumer.class, callbacks -> (id, schematic) -> {
-		for (BiConsumer<Identifier, Schematic> callback : callbacks) {
-			callback.accept(id, schematic);
+	public static final Event<Consumer<Gizmo>> CHANGE_SELECTED = EventFactory.createArrayBacked(Consumer.class, callbacks -> selected -> {
+		for (Consumer<Gizmo> callback : callbacks) {
+			callback.accept(selected);
+		}
+	});
+	public static final Event<Consumer<Gizmo>> MODIFY_GIZMO = EventFactory.createArrayBacked(Consumer.class, callbacks -> gizmo -> {
+		for (Consumer<Gizmo> callback : callbacks) {
+			callback.accept(gizmo);
+		}
+	});
+	public static final Event<BiConsumer<String, Schematic>> CHANGE_SCHEMATIC = EventFactory.createArrayBacked(BiConsumer.class, callbacks -> (name, schematic) -> {
+		for (BiConsumer<String, Schematic> callback : callbacks) {
+			callback.accept(name, schematic);
 		}
 	});
 	public static final Event<Runnable> UPDATE_HISTORY = EventFactory.createArrayBacked(Runnable.class, callbacks -> () -> {
+		for (Runnable callback : callbacks) {
+			callback.run();
+		}
+	});
+	public static final Event<Runnable> CHANGE_SELECTION = EventFactory.createArrayBacked(Runnable.class, callbacks -> () -> {
+		for (Runnable callback : callbacks) {
+			callback.run();
+		}
+	});
+	public static final Event<Runnable> CHANGE_ACTIVE_SELECTION = EventFactory.createArrayBacked(Runnable.class, callbacks -> () -> {
 		for (Runnable callback : callbacks) {
 			callback.run();
 		}
@@ -85,11 +108,15 @@ public class EditorState {
 	private static List<Target> targets = new ArrayList<>();
 	private static Set<BlockPos> positions = new HashSet<>();
 	private static BlockPalette filter = new BlockPalette();
-	private static Map<Identifier, Schematic> schematics = new HashMap<>();
+	private static Gizmo selected = null;
+	private static Set<Gizmo> gizmos = new HashSet<>();
+	private static Map<String, Schematic> schematics = new HashMap<>();
 	private static List<EditStats> history = new ArrayList<>();
 	private static int historyIndex = -1;
+	private static long historySize = -1;
 	private static float cameraSpeed = 2f;
 
+	private static TransientToolState toolState;
 	private static Persistant persistant;
 	private static int ticks;
 
@@ -101,6 +128,7 @@ public class EditorState {
 		EditorState.tool = tool;
 		ToolConfig toolConfig = persistant().active(tool);
 		EditorState.targets.clear();
+		EditorState.toolState = new TransientToolState();
 
 		CHANGE_TOOL.invoker().accept(tool);
 		CHANGE_TOOL_CONFIG.invoker().accept(toolConfig);
@@ -127,6 +155,10 @@ public class EditorState {
 		if(!tool.isValid(toolConfig)) return null;
 
 		return new ConfiguredTool(tool, toolConfig);
+	}
+	
+	public static TransientToolState toolState() {
+		return toolState;
 	}
 
 	public static List<Target> targets() {
@@ -170,15 +202,45 @@ public class EditorState {
 		EditorState.filter = filter;
 		CHANGE_FILTER.invoker().accept(filter);
 	}
-
-	public static Schematic schematic(Identifier id) {
-		return schematics.get(id);
+	
+	public static Gizmo selected() {
+		return selected;
+	}
+	
+	public static void selected(Gizmo selected) {
+		addGizmo(selected);
+		EditorState.selected = selected;
+		CHANGE_SELECTED.invoker().accept(selected);
+	}
+	
+	public static Set<Gizmo> gizmos() {
+		return Collections.unmodifiableSet(gizmos);
+	}
+	
+	public static void addGizmo(Gizmo gizmo) {
+		if(gizmo == null) return;
+		gizmos.add(gizmo);
+	}
+	
+	public static void removeGizmo(Gizmo gizmo) {
+		gizmos.remove(gizmo);
+		if(selected == gizmo) {
+			selected(null);
+		}
 	}
 
-	public static void schematic(Identifier id, Schematic schematic) {
-		if(schematic == null) EditorState.schematics.remove(id);
-		else EditorState.schematics.put(id, schematic);
-		CHANGE_SCHEMATIC.invoker().accept(id, schematic);
+	public static Schematic schematic(String name) {
+		return schematics.get(name);
+	}
+
+	public static void schematic(String name, Schematic schematic) {
+		if(schematic == null) EditorState.schematics.remove(name);
+		else EditorState.schematics.put(name, schematic);
+		CHANGE_SCHEMATIC.invoker().accept(name, schematic);
+	}
+	
+	public static Map<String, Schematic> schematics() {
+		return Collections.unmodifiableMap(EditorState.schematics);
 	}
 
 	public static Context context() {
@@ -192,11 +254,16 @@ public class EditorState {
 	public static int historyIndex() {
 		return historyIndex;
 	}
+	
+	public static long historySize() {
+		return historySize;
+	}
 
-	public static void history(List<EditStats> history, int historyIndex, boolean append) {
+	public static void history(List<EditStats> history, int historyIndex, boolean append, long historySize) {
 		if(!append) EditorState.history.clear();
 		EditorState.history.addAll(history);
 		EditorState.historyIndex = historyIndex;
+		EditorState.historySize = historySize;
 		UPDATE_HISTORY.invoker().run();
 	}
 
@@ -226,7 +293,10 @@ public class EditorState {
 
 		private BlockPalette PALETTE_ACTIVE = new BlockPalette(BlockPalette.DEFAULT.getEntries());
 		private Map<String, BlockPalette> PALETTE_PRESETS = new HashMap<>();
-
+		
+		private Selection selection;
+		private SelectionShape activeSelection;
+		
 		private boolean modified = false;
 
 		private Persistant() {
@@ -297,6 +367,8 @@ public class EditorState {
 				e.printStackTrace();
 			}
 			Presets.addPalettesIfAbsent(PALETTE_PRESETS);
+			
+			// TODO: other state
 		}
 
 		private void persistIfModified() {
@@ -389,6 +461,41 @@ public class EditorState {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+		
+		public Selection selection() {
+			return selection;
+		}
+		
+		public void selection(Selection selection) {
+			this.selection = selection;
+			CHANGE_SELECTION.invoker().run();
+		}
+		
+		public SelectionShape activeSelection() {
+			return activeSelection;
+		}
+		
+		public void activeSelection(SelectionShape activeSelection) {
+			this.activeSelection = activeSelection;
+			CHANGE_ACTIVE_SELECTION.invoker().run();
+		}
+	}
+	
+	public static class TransientToolState {
+		private List<BlockPos> positions = new ArrayList<>();
+		private Map<String, Boolean> flags = new HashMap<>();
+		
+		public List<BlockPos> positions() {
+			return positions;
+		}
+		
+		public boolean getFlag(String name) {
+			return flags.getOrDefault(name, false);
+		}
+		
+		public void setFlag(String name, boolean flag) {
+			flags.put(name, flag);
 		}
 	}
 

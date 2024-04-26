@@ -18,29 +18,76 @@ package me.andre111.voxedit.tool.data;
 import java.util.HashSet;
 import java.util.Set;
 
-import me.andre111.voxedit.tool.shape.Shape;
+import me.andre111.voxedit.tool.shape.ConfiguredShape;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.world.BlockView;
 
 public class ToolTargeting {
-	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, int radius) {
-		return getBlockPositions(world, target, radius, null, null, null);
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target) {
+		return getBlockPositions(world, target, null, null, null);
 	}
-	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, int radius, Shape shape) {
-		return getBlockPositions(world, target, radius, shape, null, null);
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, ConfiguredShape shape) {
+		return getBlockPositions(world, target, shape, null, null);
 	}
-	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, int radius, Shape shape, TestPredicate testPredicate) {
-		return getBlockPositions(world, target, radius, shape, testPredicate, null);
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, ConfiguredShape shape, TestPredicate testPredicate) {
+		return getBlockPositions(world, target, shape, testPredicate, null);
 	}
-	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, int radius, Shape shape, TestPredicate testPredicate, BlockPalette filter) {
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, ConfiguredShape shape, TestPredicate testPredicate, BlockPalette filter) {
 		Set<BlockPos> positions = new HashSet<>();
 		
+		// size
+		int radiusX = shape.width();
+		int radiusY = shape.width();
+		int radiusZ = shape.width();
+		if(shape.splitSize()) {
+			Axis axis = target.side().get().getAxis();
+			if(axis == Axis.X) {
+				radiusX = shape.height();
+				radiusY = shape.length();
+				radiusZ = shape.width();
+			} else if(axis == Axis.Y) {
+				radiusX = shape.width();
+				radiusY = shape.height();
+				radiusZ = shape.length();
+			} else if(axis == Axis.Z) {
+				radiusX = shape.width();
+				radiusY = shape.length();
+				radiusZ = shape.height();
+			}
+		}
+		
+		// center + offset
 		BlockPos center = target.getBlockPos();
+		if(shape.offset()) {
+			switch(target.side().get()) {
+			case UP:
+				center = center.add(shape.offsetW(), shape.offsetH(), shape.offsetL());
+				break;
+			case DOWN:
+				center = center.add(shape.offsetW(), -shape.offsetH(), shape.offsetL());
+				break;
+			case NORTH:
+				center = center.add(shape.offsetW(), shape.offsetL(), -shape.offsetH());
+				break;
+			case EAST:
+				center = center.add(shape.offsetH(), shape.offsetL(), shape.offsetW());
+				break;
+			case SOUTH:
+				center = center.add(shape.offsetW(), shape.offsetL(), shape.offsetH());
+				break;
+			case WEST:
+				center = center.add(-shape.offsetH(), shape.offsetL(), shape.offsetW());
+				break;
+			}
+		}
+		
+		// iterate box and do shape checks
 		BlockPos.Mutable pos = new BlockPos.Mutable();
-		for(int x = -radius; x <= radius; x++) {
-        	for(int y = -radius; y <= radius; y++) {
-        		for(int z = -radius; z <= radius; z++) {
-                	if(shape != null && !shape.contains(x, y, z, target.getSide(), radius, radius, radius)) continue;
+		for(int x = -radiusX; x <= radiusX; x++) {
+        	for(int y = -radiusY; y <= radiusY; y++) {
+        		for(int z = -radiusZ; z <= radiusZ; z++) {
+                	if(shape != null && !shape.shape().contains(x, y, z, target.getSide(), radiusX, radiusY, radiusZ)) continue;
                 	
                 	pos.set(center.getX()+x, center.getY()+y, center.getZ()+z);
                 	

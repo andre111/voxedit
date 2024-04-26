@@ -23,8 +23,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.mojang.authlib.GameProfile;
 
-import me.andre111.voxedit.VoxEditUtil;
 import me.andre111.voxedit.client.EditorState;
+import me.andre111.voxedit.client.gui.screen.EditorScreen;
 import net.minecraft.client.input.Input;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -39,17 +39,24 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 	
 	@Shadow
     public Input input;
+	
+	@Inject(method = "tickMovement", at = @At("HEAD"))
+    public void tickMovement(CallbackInfo ci) {
+		if(EditorScreen.get().isActive()) {
+			noClip = true;
+		}
+	}
 
 	@Inject(method = "pushOutOfBlocks", at = @At("HEAD"), cancellable = true)
 	private void onPushOutOfBlocks(double x, double z, CallbackInfo ci) {
-		if(VoxEditUtil.shouldUseCustomControls(this)) {
+		if(EditorScreen.get().isActive()) {
 			ci.cancel();
 		}
 	}
 	
 	@Inject(method = "tickNewAi", at = @At("TAIL"))
     public void onTickNewAi(CallbackInfo ci) {
-		if(VoxEditUtil.shouldUseCustomControls(this)) {
+		if(EditorScreen.get().isActive()) {
 			float movementVertical = 0;
 			if(input.jumping) movementVertical += 1;
 			if(input.sneaking) movementVertical -= 1;

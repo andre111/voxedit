@@ -15,6 +15,7 @@
  */
 package me.andre111.voxedit.client.renderer;
 
+import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 
 import org.joml.Matrix4f;
@@ -24,7 +25,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
-import me.andre111.voxedit.state.Schematic;
+import me.andre111.voxedit.schematic.Schematic;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -141,9 +142,18 @@ public class SchematicRenderer implements AutoCloseable {
         }
     }
 	
+    private static WeakHashMap<Schematic, CompletableFuture<Identifier>> cachedPreviews = new WeakHashMap<>();
     public static CompletableFuture<Identifier> getPreview(Schematic schematic, int width, int height) {
-    	CompletableFuture<Identifier> future = new CompletableFuture<>();
+    	// avoid re-rendering existing previews
+    	if(cachedPreviews.containsKey(schematic)) {
+    		return cachedPreviews.get(schematic);
+    	}
     	
+    	// create future
+    	CompletableFuture<Identifier> future = new CompletableFuture<>();
+    	cachedPreviews.put(schematic, future);
+    	
+    	// render preview
     	SchematicView view = new SchematicView(new BlockPos(0, 0, 0), schematic);
     	SchematicRenderer renderer = new SchematicRenderer(view);
     	renderer.build();
@@ -155,7 +165,8 @@ public class SchematicRenderer implements AutoCloseable {
                 framebuffer.beginWrite(true);
                 
                 Vec3d cameraPos = new Vec3d(-100, 50, -100);
-                Matrix4f modelViewMat = new Matrix4f().rotationXYZ((float) Math.toRadians(-45), (float) Math.toRadians(180 + 45), 0);
+                Matrix4f modelViewMat = new Matrix4f();
+                modelViewMat.rotateXYZ((float) Math.toRadians(-45), (float) Math.toRadians(180 + 45), 0);
                 modelViewMat.translate((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z);
                 Matrix4f projMat = new Matrix4f().perspective((float)(90 * 0.01745329238474369), (float) width / (float) height, 0.05f, 16 * 16 * 4);
                 

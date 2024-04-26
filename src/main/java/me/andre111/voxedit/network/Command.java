@@ -15,8 +15,19 @@
  */
 package me.andre111.voxedit.network;
 
+import io.netty.buffer.ByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
+
 public enum Command {
 	UNDO,
 	REDO,
+	CLEAR_HISTORY,
+	EDITOR_ACTIVATE,
+	EDITOR_DEACTIVATE,
+	SAVE_SCHEMATIC,
+	DELETE_SCHEMATIC,
 	DEV;
+	
+	public static final PacketCodec<ByteBuf, Command> PACKET_CODEC = PacketCodecs.BYTE.xmap(b -> Command.values()[b], c -> (byte) c.ordinal());
 }

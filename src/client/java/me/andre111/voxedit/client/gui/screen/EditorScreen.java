@@ -34,18 +34,24 @@ import me.andre111.voxedit.VoxEditUtil;
 import me.andre111.voxedit.client.EditorLayout;
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.VoxEditClient;
+import me.andre111.voxedit.client.data.Gizmo;
+import me.andre111.voxedit.client.data.Renderable;
 import me.andre111.voxedit.client.gui.widget.EditorPanelHistory;
 import me.andre111.voxedit.client.gui.widget.EditorPanelPalette;
 import me.andre111.voxedit.client.gui.widget.EditorPanelSchematics;
+import me.andre111.voxedit.client.gui.widget.EditorPanelSelectedGizmo;
 import me.andre111.voxedit.client.gui.widget.EditorPanelToolConfig;
 import me.andre111.voxedit.client.gui.widget.EditorPanelTools;
 import me.andre111.voxedit.client.gui.widget.EditorWidget;
 import me.andre111.voxedit.client.gui.widget.MenuWidget;
+import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.client.renderer.SchematicRenderer;
 import me.andre111.voxedit.client.renderer.SchematicView;
 import me.andre111.voxedit.client.renderer.SelectionRenderer;
+import me.andre111.voxedit.client.tool.ClientTool;
 import me.andre111.voxedit.network.CPAction;
 import me.andre111.voxedit.network.CPCommand;
+import me.andre111.voxedit.network.CPSelection;
 import me.andre111.voxedit.network.Command;
 import me.andre111.voxedit.selection.SelectionSet;
 import me.andre111.voxedit.tool.ConfiguredTool;
@@ -56,6 +62,7 @@ import me.andre111.voxedit.tool.data.Context;
 import me.andre111.voxedit.tool.data.RaycastTargets;
 import me.andre111.voxedit.tool.data.Target;
 import me.andre111.voxedit.tool.data.ToolConfig;
+import me.andre111.voxedit.tool.data.ToolSettings;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
@@ -87,10 +94,14 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	private int dragging = -1;
 	private Target lastTarget = null;
 	private int lastTargetTicks = 0;
+	private Vec3d lastRayStart = null;
+	private Vec3d lastRayEnd = null;
 	
-	private Matrix4f modelViewMat;
-	private Matrix4f projectionMat;
+	private Matrix4f modelViewMat = new Matrix4f();
+	private Matrix4f projectionMat = new Matrix4f();
 	private SelectionRenderer positionsRenderer = new SelectionRenderer();
+	private SelectionRenderer selectionRenderer = new SelectionRenderer();
+	private SelectionRenderer activeSelRenderer = new SelectionRenderer();
 	private SchematicRenderer previewRenderer;
 
 	private EditorScreen() {
@@ -99,7 +110,7 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		EditorState.CHANGE_SCHEMATIC.register((id, schematic) -> {
 			Tool tool = EditorState.tool();
 			if(tool == null) return;
-			if(!id.equals(VoxEdit.id("preview."+tool.id().toTranslationKey()))) return;
+			if(!id.equals("voxedit.preview."+tool.id().toTranslationKey())) return;
 			if(schematic == null) return;
 			if(lastTarget == null) return;
 			if(lastTarget.pos().isEmpty()) return;
@@ -113,6 +124,12 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			SchematicView view = new SchematicView(pos, schematic);
 			previewRenderer = new SchematicRenderer(view);
 		});
+		EditorState.CHANGE_SELECTION.register(() -> {
+			selectionRenderer.rebuild(EditorState.persistant().selection());
+		});
+		EditorState.CHANGE_ACTIVE_SELECTION.register(() -> {
+			activeSelRenderer.rebuild(EditorState.persistant().activeSelection());
+		});
     	WorldRenderEvents.LAST.register(this::renderInWorld);
 	}
 
@@ -121,6 +138,9 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		VoxEditClient.unscaleGui();
 		MinecraftClient.getInstance().options.hudHidden = true;
 		isActive = true;
+		ClientNetworking.sendCommand(Command.EDITOR_ACTIVATE);
+		width = MinecraftClient.getInstance().getWindow().getFramebufferWidth();
+		height = MinecraftClient.getInstance().getWindow().getFramebufferHeight();
 		
 		if(widget == null) {
 			widget = new EditorWidget(this);
@@ -130,11 +150,19 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			//TODO: translatable
 			MenuWidget menu = widget.getMenu();
 			menu.addCategory(Text.of("Edit"))
-				.addEntry(Text.of("Undo"), () -> {})
-				.addEntry(Text.of("Redo"), () -> {});
+				.addEntry(Text.of("Undo"), () -> { ClientNetworking.sendCommand(Command.UNDO); })
+				.addEntry(Text.of("Redo"), () -> { ClientNetworking.sendCommand(Command.REDO); });
 			menu.addCategory(Text.of("Selection"))
-				.addEntry(Text.of("Clear"), () -> {})
-				.addEntry(Text.of("Save as Schematic"), () -> {});
+				.addEntry(Text.of("Clear"), () -> { EditorState.persistant().selection(null); EditorState.persistant().activeSelection(null); })
+				.addEntry(Text.of("Save as Schematic"), () -> {
+					if(EditorState.persistant().selection() != null) {
+						InputScreen.getString(this, Text.translatable("voxedit.prompt.schematic.name"), "", name -> {
+							if(name == null || name.isBlank()) return;
+							ClientPlayNetworking.send(new CPSelection(EditorState.persistant().selection()));
+							ClientNetworking.sendCommand(Command.SAVE_SCHEMATIC, name);
+						});
+					}
+				});
 	
 			widget.addPanel(parent -> new EditorPanelTools(parent), EditorWidget.Location.LEFT);
 			widget.addPanel(parent -> new EditorPanelToolConfig(parent), EditorWidget.Location.LEFT);
@@ -142,9 +170,11 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			
 			widget.addPanel(parent -> new EditorPanelHistory(parent), EditorWidget.Location.RIGHT);
 			widget.addPanel(parent -> new EditorPanelSchematics(parent), EditorWidget.Location.RIGHT);
+			widget.addPanel(parent -> new EditorPanelSelectedGizmo(parent), EditorWidget.Location.RIGHT);
 			
 			widget.loadLayout(VoxEditUtil.readJson(VoxEditClient.dataPath().resolve("editor_layout.json"), EditorLayout.CODEC, EditorLayout.EMPTY));
 		} else {
+			widget.setDimensions(width, height);
 			addDrawableChild(widget);
 		}
 
@@ -177,8 +207,11 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 				dragging = -1;
 				EditorState.clearTargets();
 				updatePositions();
+			} else if(EditorState.tool() instanceof ClientTool clientTool && clientTool.cancel()) {
+				// handled in tool
 			} else {
 				isActive = false;
+				ClientNetworking.sendCommand(Command.EDITOR_DEACTIVATE);
 				setLastTarget(null);
 				close();
 			}
@@ -186,11 +219,11 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		}
 		if(Screen.hasControlDown()) {
 			if(VoxEditClient.UNDO.matchesKey(keyCode, scanCode)) {
-				ClientPlayNetworking.send(new CPCommand(Command.UNDO));
+				ClientPlayNetworking.send(new CPCommand(Command.UNDO, ""));
 				return true;
 			}
 			if(VoxEditClient.REDO.matchesKey(keyCode, scanCode)) {
-				ClientPlayNetworking.send(new CPCommand(Command.REDO));
+				ClientPlayNetworking.send(new CPCommand(Command.REDO, ""));
 				return true;
 			}
 		}
@@ -216,7 +249,8 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	@Override
 	public void mouseMoved(double mouseX, double mouseY) {
 		if(!widget.isOverGui(mouseX, mouseY)) {
-			if(dragging == -1) updateTarget(mouseX, mouseY, false);
+			//if(dragging == -1) updateTarget(mouseX, mouseY, false);
+			updateTarget(mouseX, mouseY, dragging != -1);
 			return;
 		}
 		
@@ -228,8 +262,9 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		if(!widget.isOverGui(mouseX, mouseY)) {
 			var tool = EditorState.configuredTool();
 			if(tool == null) return false;
-			
-			updateTarget(mouseX, mouseY, false);
+
+			//TODO: NOTE: for some reason the mouse coordinates in clicked, dragged and released are unreliable?
+			//updateTarget(mouseX, mouseY, false);
 
 			dragging = button;
 			if(!tool.tool().properties().draggable()) {
@@ -245,7 +280,8 @@ public class EditorScreen extends Screen implements UnscaledScreen {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
 		if(!widget.isOverGui(mouseX, mouseY)) {
-			updateTarget(mouseX, mouseY, dragging != -1);
+			//TODO: NOTE: for some reason the mouse coordinates in clicked, dragged and released are unreliable?
+			//updateTarget(mouseX, mouseY, dragging != -1);
 			return true;
 		}
 		
@@ -255,7 +291,8 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		if(dragging != -1) {
-			updateTarget(mouseX, mouseY, true);
+			//TODO: NOTE: for some reason the mouse coordinates in clicked, dragged and released are unreliable?
+			//updateTarget(mouseX, mouseY, true);
 			performActions();
 			dragging = -1;
 			return true;
@@ -284,6 +321,7 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		if(!raycastTargets.targetBlocks() && !raycastTargets.targetEntities()) return;
 		
 		// build ray from mouse coords
+		double maxDist = 256;
 		float mx = (float) mouseX;
 		float my = MinecraftClient.getInstance().getWindow().getHeight() - (float) mouseY;
 		Vector3f origin = new Vector3f();
@@ -291,12 +329,22 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		int[] viewport = new int[] { Viewport.getX(), Viewport.getY(), Viewport.getWidth(), Viewport.getHeight() };
 		projectionMat.unprojectRay(mx, my, viewport, origin, dir);
 		modelViewMat.invert().transformProject(dir);
-	
+
+		// TODO: these dir comparisons do not fix the root cause but avoids the targeting glitches it many cases
+		/*float pitch = MinecraftClient.getInstance().gameRenderer.getCamera().getPitch() * ((float)Math.PI / 180);
+        float yaw = -MinecraftClient.getInstance().gameRenderer.getCamera().getYaw() * ((float)Math.PI / 180);
+        float cosPitch = MathHelper.cos(pitch);
+        Vector3f camDir = new Vector3f(MathHelper.sin(yaw) * cosPitch, -MathHelper.sin(pitch), MathHelper.cos(yaw) * cosPitch);
+        if(camDir.angle(dir) > Math.PI/2) return;*/
+		
 		Vec3d start = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
-		Vec3d end = start.add(new Vec3d(dir.x, dir.y, dir.z).normalize().multiply(128));
+		Vec3d end = start.add(new Vec3d(dir.x, dir.y, dir.z).normalize().multiply(maxDist));
+		
+		lastRayStart = start;
+		lastRayEnd = end;
 		
 		// prepare
-		double nearestDist = 128;
+		double nearestDist = maxDist;
 		UUID nearestEntity = null;
 		BlockPos blockPos = null;
 		Direction blockSide = null;
@@ -321,14 +369,14 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			RaycastContext.FluidHandling fluidHandling = raycastTargets.targetFluids() ? RaycastContext.FluidHandling.ANY : RaycastContext.FluidHandling.NONE;
 			RaycastContext context = new RaycastContext(start, end, RaycastContext.ShapeType.VISUAL, fluidHandling, MinecraftClient.getInstance().cameraEntity);
 			HitResult result = MinecraftClient.getInstance().world.raycast(context);
-			if(result instanceof BlockHitResult blockHit) {
+			if(result instanceof BlockHitResult blockHit && blockHit.getType() != HitResult.Type.MISS) {
 				blockPos = blockHit.getBlockPos();
 				blockSide = blockHit.getSide();
 			}
 		}
 		
 		// set target
-		if(blockPos == null && nearestEntity == null) return;
+		if(!raycastTargets.targetOther() && blockPos == null && nearestEntity == null) return;
 		
 		Target target = new Target(Optional.ofNullable(blockPos), Optional.ofNullable(blockSide), Optional.ofNullable(nearestEntity));
 		if(target.equals(lastTarget)) return;
@@ -365,7 +413,9 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		List<Target> targets = List.copyOf(EditorState.targets());
 		if(targets.isEmpty()) return;
 		
-		if(EditorState.schematic(VoxEdit.id("preview."+tool.tool().id().toTranslationKey())) != null && dragging == 1) {
+		if(tool.tool() instanceof ClientTool clientTool) {
+			clientTool.mouseClicked(dragging, targets.getLast(), context, tool.config());
+		} else if(EditorState.schematic("voxedit.preview."+tool.tool().id().toTranslationKey()) != null && dragging == 1) {
 			CPAction action = new CPAction(tool, targets, context, Action.APPLY_PREVIEW);
 			ClientPlayNetworking.send(action);
 		} else if(dragging == 1) {
@@ -381,14 +431,24 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	}
 	
 	private boolean updateRadius(int change) {
-		if(EditorState.toolConfig().values().containsKey("radius")) {
-			int radius = Integer.parseInt(EditorState.toolConfig().values().get("radius"));
-			ToolConfig newConfig = EditorState.toolConfig().withRaw("radius", Integer.toString(radius+change));
-			if(EditorState.tool().isValid(newConfig)) {
-				EditorState.toolConfig(newConfig);
-				updatePositions();
-				return true;
+		if(EditorState.tool() == null) return false;
+		if(EditorState.toolConfig() == null) return false;
+		
+		ToolConfig newConfig = null;
+		if(EditorState.tool().has(ToolSettings.SHAPE)) {
+			var config = EditorState.toolConfig();
+			var shape = ToolSettings.SHAPE.get(config);
+			if(!shape.splitSize()) {
+				newConfig = config.with(ToolSettings.SHAPE, shape.size(shape.width()+change));
 			}
+		} else if(EditorState.toolConfig().values().containsKey("radius")) {
+			int radius = Integer.parseInt(EditorState.toolConfig().values().get("radius"));
+			newConfig = EditorState.toolConfig().withRaw("radius", Integer.toString(radius+change));
+		}
+		if(newConfig != null && EditorState.tool().isValid(newConfig)) {
+			EditorState.toolConfig(newConfig);
+			updatePositions();
+			return true;
 		}
 		return false;
 	}
@@ -397,7 +457,7 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		if(Objects.equals(target, lastTarget)) return;
 		
 		if(EditorState.tool() != null) {
-			EditorState.schematic(VoxEdit.id("preview."+EditorState.tool().id().toTranslationKey()), null);
+			EditorState.schematic("voxedit.preview."+EditorState.tool().id().toTranslationKey(), null);
 		}
 		if(previewRenderer != null) {
 			previewRenderer.close();
@@ -405,6 +465,10 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		}
 		lastTarget = target;
 		lastTargetTicks = 0;
+		
+		if(EditorState.tool() instanceof ClientTool clientTool) {
+			clientTool.mouseMoved(target, EditorState.context(), EditorState.toolConfig());
+		}
 	}
 
 	@Override
@@ -412,15 +476,26 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	}
 	
 	private void renderInWorld(WorldRenderContext context) {
-		modelViewMat = context.positionMatrix();
-		projectionMat = context.projectionMatrix();
+		modelViewMat.set(context.positionMatrix());
+		projectionMat.set(context.projectionMatrix());
 		if(!isActive) return;
 		
 		if(previewRenderer != null) {
 			previewRenderer.draw(Vec3i.ZERO, context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), true);
 		}
+		for(Gizmo gizmo : EditorState.gizmos()) {
+			if(gizmo instanceof Renderable renderable) {
+				renderable.render(context);
+			}
+		}
 		if(!EditorState.targets().isEmpty()) {
 			positionsRenderer.draw(context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), MinecraftClient.getInstance().getWindow());
+		}
+		if(EditorState.persistant().selection() != null) {
+			selectionRenderer.draw(context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), MinecraftClient.getInstance().getWindow());
+		}
+		if(EditorState.persistant().activeSelection() != null) {
+			activeSelRenderer.draw(context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), MinecraftClient.getInstance().getWindow());
 		}
 	}
 
@@ -428,6 +503,7 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	public void onDisplayed() {
 		VoxEditClient.unscaleGui();
 		isActive = true;
+		ClientNetworking.sendCommand(Command.EDITOR_ACTIVATE);
 	}
 
 	@Override
@@ -452,5 +528,13 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	
 	public void statusMessage(Text text) {
 		//TODO: implement
+	}
+	
+	public Vec3d getLastRayStart() {
+		return lastRayStart;
+	}
+	
+	public Vec3d getLastRayEnd() {
+		return lastRayEnd;
 	}
 }

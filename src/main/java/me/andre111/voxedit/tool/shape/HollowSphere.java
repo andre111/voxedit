@@ -20,10 +20,10 @@ import net.minecraft.util.math.Direction;
 public class HollowSphere extends Shape {
 
 	@Override
-	public boolean contains(int x, int y, int z, Direction direction, int sizeX, int sizeY, int sizeZ) {
-		double xp = x / (double) sizeX;
-		double yp = y / (double) sizeY;
-		double zp = z / (double) sizeZ;
+	public boolean contains(int x, int y, int z, Direction direction, double sizeX, double sizeY, double sizeZ) {
+		double xp = x / sizeX;
+		double yp = y / sizeY;
+		double zp = z / sizeZ;
 		double dist = Math.sqrt(xp*xp + yp*yp + zp*zp);
 		
 		double edge = 0;
