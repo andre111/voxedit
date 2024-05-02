@@ -19,10 +19,12 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import io.netty.buffer.ByteBuf;
+import me.andre111.voxedit.network.CPStatusMessage;
 import me.andre111.voxedit.schematic.Schematic;
-import net.minecraft.entity.player.PlayerEntity;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.codec.PacketCodecs;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextCodecs;
@@ -91,30 +93,34 @@ public class EditStats {
 		this.schematic = schematic;
 	}
 	
-	public Text fullText() {
-		MutableText contentText = text.copy().append(":");
+	private Text contentText() {
+		MutableText contentText = Text.empty();
 		
-		if(blockChanges == 1) contentText.append(" ").append(Text.translatable("voxedit.edit.block"));
-		if(blockChanges > 1) contentText.append(" ").append(Text.translatable("voxedit.edit.block.multiple", blockChanges));
+		if(blockChanges == 1) contentText.append(Text.translatable("voxedit.edit.block")).append(" ");
+		if(blockChanges > 1) contentText.append(Text.translatable("voxedit.edit.block.multiple", blockChanges)).append(" ");
 
-		if(blockEntityChanges == 1) contentText.append(" ").append(Text.translatable("voxedit.edit.blockEntity"));
-		if(blockEntityChanges > 1) contentText.append(" ").append(Text.translatable("voxedit.edit.blockEntity.multiple", blockChanges));
+		if(blockEntityChanges == 1) contentText.append(Text.translatable("voxedit.edit.blockEntity")).append(" ");
+		if(blockEntityChanges > 1) contentText.append(Text.translatable("voxedit.edit.blockEntity.multiple", blockChanges)).append(" ");
 
-		if(entityChanges == 1) contentText.append(" ").append(Text.translatable("voxedit.edit.entity"));
-		if(entityChanges > 1) contentText.append(" ").append(Text.translatable("voxedit.edit.entity.multiple", blockChanges));
+		if(entityChanges == 1) contentText.append(Text.translatable("voxedit.edit.entity")).append(" ");
+		if(entityChanges > 1) contentText.append(Text.translatable("voxedit.edit.entity.multiple", blockChanges)).append(" ");
 		
 		return contentText;
 	}
 	
-	public void inform(PlayerEntity player, EditType type) {
-		Text contentText = fullText();
+	public Text fullText() {
+		return Text.translatable("voxedit.action.perform", text, contentText());
+	}
+	
+	public void inform(ServerPlayerEntity player, EditType type) {
+		Text contentText = contentText();
 		
 		MutableText fullText = switch(type) {
-		case PERFORM -> Text.translatable("voxedit.action.perform", contentText);
-		case UNDO -> Text.translatable("voxedit.action.undo", contentText);
-		case REDO -> Text.translatable("voxedit.action.redo", contentText);
+		case PERFORM -> Text.translatable("voxedit.action.perform", text, contentText);
+		case UNDO -> Text.translatable("voxedit.action.undo", text, contentText);
+		case REDO -> Text.translatable("voxedit.action.redo", text, contentText);
 		};
 		
-		player.sendMessage(fullText, true);
+		ServerPlayNetworking.send(player, new CPStatusMessage(fullText));
 	}
 }

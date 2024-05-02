@@ -58,9 +58,9 @@
 	"voxedit.object.mode.select": "Select",
 	"voxedit.object.mode.move": "Move",
 	
-    "voxedit.action.perform": "%s",
-    "voxedit.action.undo": "Undo:%s",
-    "voxedit.action.redo": "Redo:%s",
+    "voxedit.action.perform": "%s - %s",
+    "voxedit.action.undo": "Undo: %s - %s",
+    "voxedit.action.redo": "Redo: %s - %s",
 	
     "voxedit.edit.block": "1 Block Change",
     "voxedit.edit.block.multiple": "%s Block Changes",
@@ -78,6 +78,15 @@
 	"voxedit.screen.panel.history": "Edit History",
 	"voxedit.screen.panel.schematics": "Schematics",
 	"voxedit.screen.panel.selectedGizmo": "Selected Object",
+	
+	"voxedit.screen.menu.edit": "Edit",
+	"voxedit.screen.menu.edit.undo": "Undo",
+	"voxedit.screen.menu.edit.redo": "Redo",
+	"voxedit.screen.menu.selection": "Selection",
+	"voxedit.screen.menu.selection.clear": "Clear",
+	"voxedit.screen.menu.selection.save": "Save as Schematic",
+	"voxedit.screen.menu.settings": "Settings",
+	"voxedit.screen.menu.settings.kes": "Key Bindings",
     
     "voxedit.screen.blockPalette.add": "Add Entry",
     "voxedit.screen.blockPalette.remove": "Remove Entry",

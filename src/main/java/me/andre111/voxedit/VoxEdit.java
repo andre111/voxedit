@@ -120,6 +120,7 @@ public class VoxEdit implements ModInitializer {
 	@Override
 	public void onInitialize() {
     	ServerNetworking.init();
+    	//TODO: Remove general tick freezing (only when editor is active? and provide option to disable)
 		ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
     		server.getTickManager().setFrozen(true);
     	});

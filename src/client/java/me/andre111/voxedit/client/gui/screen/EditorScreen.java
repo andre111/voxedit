@@ -144,17 +144,16 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			widget.setDimensions(width, height);
 			addDrawableChild(widget);
 			
-			//TODO: translatable
 			MenuBarWidget menu = widget.getMenu();
-			menu.addCategory(Text.of("Edit"))
-				.addEntry(Text.of("Undo"), () -> { ClientNetworking.sendCommand(Command.UNDO); })
-				.addEntry(Text.of("Redo"), () -> { ClientNetworking.sendCommand(Command.REDO); });
-			menu.addCategory(Text.of("Selection"))
-				.addEntry(Text.of("Clear"), () -> { 
+			menu.addCategory(Text.translatable("voxedit.screen.menu.edit"))
+				.addEntry(Text.translatable("voxedit.screen.menu.edit.undo"), () -> { ClientNetworking.sendCommand(Command.UNDO); })
+				.addEntry(Text.translatable("voxedit.screen.menu.edit.redo"), () -> { ClientNetworking.sendCommand(Command.REDO); });
+			menu.addCategory(Text.translatable("voxedit.screen.menu.selection"))
+				.addEntry(Text.translatable("voxedit.screen.menu.selection.clear"), () -> { 
 					if(EditorState.selected() instanceof ActiveSelection sel) sel.cancel(); 
 					EditorState.persistant().selection(null);
 				})
-				.addEntry(Text.of("Save as Schematic"), () -> {
+				.addEntry(Text.translatable("voxedit.screen.menu.selection.save"), () -> {
 					if(EditorState.selected() instanceof ActiveSelection sel) sel.apply();
 					if(EditorState.persistant().selection() != null) {
 						InputScreen.getString(this, Text.translatable("voxedit.prompt.schematic.name"), "", name -> {
@@ -164,8 +163,8 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 						});
 					}
 				});
-			menu.addCategory(Text.of("Settings"))
-				.addEntry(Text.of("Keybindings"), () -> {});
+			menu.addCategory(Text.translatable("voxedit.screen.menu.settings"))
+				.addEntry(Text.translatable("voxedit.screen.menu.settings.keys"), () -> {});
 	
 			widget.addPanel(parent -> new EditorPanelTools(parent), EditorWidget.Location.LEFT);
 			widget.addPanel(parent -> new EditorPanelToolConfig(parent), EditorWidget.Location.LEFT);
@@ -332,13 +331,6 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		int[] viewport = new int[] { Viewport.getX(), Viewport.getY(), Viewport.getWidth(), Viewport.getHeight() };
 		projectionMat.unprojectRay(mx, my, viewport, origin, dir);
 		modelViewMat.invert().transformProject(dir);
-
-		// TODO: these dir comparisons do not fix the root cause but avoids the targeting glitches it many cases
-		/*float pitch = MinecraftClient.getInstance().gameRenderer.getCamera().getPitch() * ((float)Math.PI / 180);
-        float yaw = -MinecraftClient.getInstance().gameRenderer.getCamera().getYaw() * ((float)Math.PI / 180);
-        float cosPitch = MathHelper.cos(pitch);
-        Vector3f camDir = new Vector3f(MathHelper.sin(yaw) * cosPitch, -MathHelper.sin(pitch), MathHelper.cos(yaw) * cosPitch);
-        if(camDir.angle(dir) > Math.PI/2) return;*/
 		
 		Vec3d start = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
 		Vec3d end = start.add(new Vec3d(dir.x, dir.y, dir.z).normalize().multiply(maxDist));
@@ -527,7 +519,7 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	}
 	
 	public void statusMessage(Text text) {
-		//TODO: implement
+		widget.getStatusBar().setStatus(text);
 	}
 	
 	public Vec3d getLastRayStart() {

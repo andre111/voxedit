@@ -20,7 +20,6 @@ import java.util.List;
 import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.editor.action.EditAction;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
 
 public class EditHistoryState {
 	private final EditStats stats;
@@ -36,14 +35,14 @@ public class EditHistoryState {
 	}
 	
 	public EditStats undo(ServerWorld world) {
-		EditStats stats = new EditStats(Text.empty());
+		EditStats stats = new EditStats(this.stats.text());
 		for(int i=actions.size()-1; i>=0; i--) {
 			actions.get(i).undo(world, stats);
 		}
 		return stats;
 	}
 	public EditStats redo(ServerWorld world) {
-		EditStats stats = new EditStats(Text.empty());
+		EditStats stats = new EditStats(this.stats.text());
 		for(int i=0; i<actions.size(); i++) {
 			actions.get(i).redo(world, stats);
 		}

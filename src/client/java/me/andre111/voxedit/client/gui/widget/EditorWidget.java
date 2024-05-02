@@ -64,6 +64,10 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 		return menu;
 	}
 	
+	public StatusBarWidget getStatusBar() {
+		return statusBar;
+	}
+	
 	public void addPanel(Function<EditorWidget, EditorPanel> creator, Location location) {
 		addPanel(creator.apply(this), location);
 	}

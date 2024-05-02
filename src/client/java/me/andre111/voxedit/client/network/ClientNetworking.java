@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import me.andre111.voxedit.client.EditorState;
+import me.andre111.voxedit.client.gui.screen.EditorScreen;
 import me.andre111.voxedit.client.gui.screen.NBTEditorScreen;
 import me.andre111.voxedit.network.CPCommand;
 import me.andre111.voxedit.network.CPHistoryInfo;
@@ -28,6 +29,7 @@ import me.andre111.voxedit.network.CPNBTEditor;
 import me.andre111.voxedit.network.CPRegistryList;
 import me.andre111.voxedit.network.CPRequestRegistry;
 import me.andre111.voxedit.network.CPSchematic;
+import me.andre111.voxedit.network.CPStatusMessage;
 import me.andre111.voxedit.network.Command;
 import me.andre111.voxedit.schematic.Schematic;
 import net.fabricmc.api.EnvType;
@@ -64,6 +66,10 @@ public class ClientNetworking {
 		
 		ClientPlayNetworking.registerGlobalReceiver(CPHistoryInfo.ID, (payload, context) -> {
 			EditorState.history(payload.history(), payload.index(), payload.append(), payload.size());
+		});
+		
+		ClientPlayNetworking.registerGlobalReceiver(CPStatusMessage.ID, (payload, context) -> {
+			EditorScreen.get().statusMessage(payload.status());
 		});
 	}
 	
