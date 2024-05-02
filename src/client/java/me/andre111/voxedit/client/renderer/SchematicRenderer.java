@@ -20,8 +20,10 @@ import java.util.concurrent.CompletableFuture;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.VertexSorter;
 
 import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
@@ -43,6 +45,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 
@@ -163,17 +166,30 @@ public class SchematicRenderer implements AutoCloseable {
                 framebuffer.setClearColor(0, 0, 0, 0);
                 framebuffer.clear(MinecraftClient.IS_SYSTEM_MAC);
                 framebuffer.beginWrite(true);
-                
-                Vec3d cameraPos = new Vec3d(-100, 50, -100);
-                Matrix4f modelViewMat = new Matrix4f();
-                modelViewMat.rotateXYZ((float) Math.toRadians(-45), (float) Math.toRadians(180 + 45), 0);
-                modelViewMat.translate((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z);
-                Matrix4f projMat = new Matrix4f().perspective((float)(90 * 0.01745329238474369), (float) width / (float) height, 0.05f, 16 * 16 * 4);
-                
-                float size = (float) Math.max(Math.max(schematic.getSizeX(), schematic.getSizeY()), schematic.getSizeZ()) * 2;
-                projMat = new Matrix4f().setOrthoSymmetric(size, size, 0.05f, 16 * 16 * 4);
-                renderer.draw(Vec3i.ZERO, cameraPos, null, modelViewMat, projMat, false);
 
+                float centerX = schematic.getSizeX()/2f;
+                float centerY = schematic.getSizeY()/2f;
+                float centerZ = schematic.getSizeZ()/2f;
+                Vec3i origin = new Vec3i(0, 0, 0);
+                Vec3d cameraPos = new Vec3d(0, 0, 0);
+                
+                Matrix4f modelViewMat = new Matrix4f();
+                modelViewMat = modelViewMat.rotateX(54.736f * ((float)Math.PI / 180));
+                modelViewMat = modelViewMat.rotateY((180f - 45f) * ((float)Math.PI / 180));
+                modelViewMat = modelViewMat.translate(-centerX, -centerY, -centerZ);
+                
+                Vector4f minYPos = modelViewMat.transform(new Vector4f(0, 0, 0, 1f));
+                Vector4f maxYPos = modelViewMat.transform(new Vector4f(schematic.getSizeX(), schematic.getSizeY(), schematic.getSizeZ(), 1f));
+                
+                float sizeX = Math.max(schematic.getSizeX() * MathHelper.SQUARE_ROOT_OF_TWO / 2, schematic.getSizeZ() * MathHelper.SQUARE_ROOT_OF_TWO / 2);
+                float sizeY = Math.max(Math.abs(minYPos.y), Math.abs(maxYPos.y));
+                float size = Math.max(sizeX, sizeY) * 2;
+                
+                Matrix4f projMat = new Matrix4f().setOrthoSymmetric(size, size, -16 * 16 * 4.0f, 16 * 16 * 4.0f);
+                projMat.scaleLocal(0.25f, 0.25f, 1f).translateLocal(-0.75f, 0.75f, 0); //TODO: why is this scale and offset needed?
+                RenderSystem.setProjectionMatrix(projMat, VertexSorter.BY_DISTANCE);
+                renderer.draw(origin, cameraPos, null, modelViewMat, projMat, false);
+                
                 NativeImage nativeImage = ScreenshotRecorder.takeScreenshot(framebuffer);
                 Identifier id = MinecraftClient.getInstance().getTextureManager().registerDynamicTexture("voxedit_schematic_preview_", new NativeImageBackedTexture(nativeImage));
                 future.complete(id);
