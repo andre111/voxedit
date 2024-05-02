@@ -98,21 +98,21 @@ public class SchematicRenderer implements AutoCloseable {
         float colorMult = 2.5f + (float) Math.sin(System.currentTimeMillis() / 1000.0 * Math.PI) * 0.5f;
         if(xRay) {
         	float xRayAlpha = 0.15f;
-            drawLayer(RenderLayer.getTranslucent(), viewOffset, modelViewMat, projMat, window, true, colorMult, xRayAlpha);
-            drawLayer(RenderLayer.getTripwire(), viewOffset, modelViewMat, projMat, window, true, colorMult, xRayAlpha);
             drawLayer(RenderLayer.getSolid(), viewOffset, modelViewMat, projMat, window, true, colorMult, xRayAlpha);
             drawLayer(RenderLayer.getCutoutMipped(), viewOffset, modelViewMat, projMat, window, true, colorMult, xRayAlpha);
             drawLayer(RenderLayer.getCutout(), viewOffset, modelViewMat, projMat, window, true, colorMult, xRayAlpha);
+            drawLayer(RenderLayer.getTripwire(), viewOffset, modelViewMat, projMat, window, true, colorMult, xRayAlpha);
+            drawLayer(RenderLayer.getTranslucent(), viewOffset, modelViewMat, projMat, window, true, colorMult, xRayAlpha);
         } else {
         	colorMult = 1f;
         }
         
         float alpha = 1f;
-        drawLayer(RenderLayer.getTranslucent(), viewOffset, modelViewMat, projMat, window, false, colorMult, alpha);
-        drawLayer(RenderLayer.getTripwire(), viewOffset, modelViewMat, projMat, window, false, colorMult, alpha);
         drawLayer(RenderLayer.getSolid(), viewOffset, modelViewMat, projMat, window, false, colorMult, alpha);
         drawLayer(RenderLayer.getCutoutMipped(), viewOffset, modelViewMat, projMat, window, false, colorMult, alpha);
         drawLayer(RenderLayer.getCutout(), viewOffset, modelViewMat, projMat, window, false, colorMult, alpha);
+        drawLayer(RenderLayer.getTripwire(), viewOffset, modelViewMat, projMat, window, false, colorMult, alpha);
+        drawLayer(RenderLayer.getTranslucent(), viewOffset, modelViewMat, projMat, window, false, colorMult, alpha);
     }
 
     private void drawLayer(RenderLayer layer, Vector3f viewOffset, Matrix4f modelViewMat, Matrix4f projMat, Window window, boolean disableDepthTest, float colorMult, float alpha) {

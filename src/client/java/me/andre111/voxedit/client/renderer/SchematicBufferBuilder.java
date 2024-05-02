@@ -54,13 +54,18 @@ public class SchematicBufferBuilder {
             FluidState fluidState = blockState.getFluidState();
             if (!fluidState.isEmpty()) {
             	BufferBuilder bufferBuilder = SchematicBufferBuilder.startBuilding(buffers, RenderLayers.getFluidLayer(fluidState));
-                blockRenderer.renderFluid(blockPos, schematicView, bufferBuilder, blockState, fluidState);
+            	
+            	// "fixes" liquid renderer only working in 16x16x16 sections by externally adding the correct offset to the vertices
+            	OffsetVertexConsumer offsetConsumer = new OffsetVertexConsumer(bufferBuilder);
+            	offsetConsumer.setOffset(blockPos.getX() / 16 * 16, blockPos.getY() / 16 * 16, blockPos.getZ() / 16 * 16);
+            	
+                blockRenderer.renderFluid(blockPos, schematicView, offsetConsumer, blockState, fluidState);
             }
             if (blockState.getRenderType() == BlockRenderType.INVISIBLE) continue;
             BufferBuilder bufferBuilder = SchematicBufferBuilder.startBuilding(buffers, RenderLayers.getBlockLayer(blockState));
             matrixStack.push();
             matrixStack.translate(blockPos.getX(), blockPos.getY(), blockPos.getZ());
-            this.blockRenderer.renderBlock(blockState, blockPos, schematicView, matrixStack, bufferBuilder, true, random);
+            blockRenderer.renderBlock(blockState, blockPos, schematicView, matrixStack, bufferBuilder, true, random);
             matrixStack.pop();
         }
         return new Results(buffers);
