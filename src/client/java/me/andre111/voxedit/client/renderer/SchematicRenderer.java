@@ -186,7 +186,6 @@ public class SchematicRenderer implements AutoCloseable {
                 float size = Math.max(sizeX, sizeY) * 2;
                 
                 Matrix4f projMat = new Matrix4f().setOrthoSymmetric(size, size, -16 * 16 * 4.0f, 16 * 16 * 4.0f);
-                projMat.scaleLocal(0.25f, 0.25f, 1f).translateLocal(-0.75f, 0.75f, 0); //TODO: why is this scale and offset needed?
                 RenderSystem.setProjectionMatrix(projMat, VertexSorter.BY_DISTANCE);
                 renderer.draw(origin, cameraPos, null, modelViewMat, projMat, false);
                 

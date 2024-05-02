@@ -42,6 +42,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
 public class EditorPanelSchematics extends EditorPanel {
+	private static final int PREVIEW_RESOLUTION = 256;
 	private SchematicListWidget schematicList;
 	private ButtonWidget placeButton;
 	private ButtonWidget deleteButton;
@@ -138,7 +139,7 @@ public class EditorPanelSchematics extends EditorPanel {
 				children.add(nameWidget);
 				children.add(dimensionsWidget);
 				
-				SchematicRenderer.getPreview(schematic, 256, 256).thenAccept(id -> previewID = id);
+				SchematicRenderer.getPreview(schematic, PREVIEW_RESOLUTION, PREVIEW_RESOLUTION).thenAccept(id -> previewID = id);
 			}
 
 			@Override
@@ -157,7 +158,7 @@ public class EditorPanelSchematics extends EditorPanel {
 				context.drawGuiTexture(Textures.BUTTON.enabled(), getX(), getY(), getWidth(), getHeight()-4);
 				nameWidget.render(context, mouseX, mouseY, delta);
 				dimensionsWidget.render(context, mouseX, mouseY, delta);
-				if(previewID != null) context.drawTexture(previewID, getX()+getWidth()-64-6, getY()+6, 0, 0, 64, 64);
+				if(previewID != null) context.drawTexture(previewID, getX()+getWidth()-64-6, getY()+6, 64, 64, 0, 0, PREVIEW_RESOLUTION, PREVIEW_RESOLUTION, PREVIEW_RESOLUTION, PREVIEW_RESOLUTION);
 			}
 
 			@Override
