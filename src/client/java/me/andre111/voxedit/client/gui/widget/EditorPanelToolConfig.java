@@ -68,7 +68,7 @@ public class EditorPanelToolConfig extends EditorPanel {
 					if(!tool.properties().noPresets()) presets.setValue(null);
 					EditorState.toolConfig(config);
 					parent.refreshPositions();
-				});
+				}, (setting) -> tool.changedSetting(setting, EditorState.toolConfig()));
 				toolSettingWidgets.add(toolSettingWidget);
 				
 				for(ClickableWidget widget : toolSettingWidget.create(parent.getScreen(), 0, 0, width, 20)) {

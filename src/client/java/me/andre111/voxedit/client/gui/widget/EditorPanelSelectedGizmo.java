@@ -15,13 +15,21 @@
  */
 package me.andre111.voxedit.client.gui.widget;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.EditorState;
-import me.andre111.voxedit.client.data.Gizmo;
-import me.andre111.voxedit.client.data.Positionable;
-import me.andre111.voxedit.client.data.Rotatable90Deg;
+import me.andre111.voxedit.client.gizmo.Gizmo;
+import me.andre111.voxedit.client.gizmo.GizmoActions;
+import me.andre111.voxedit.client.gizmo.Positionable;
+import me.andre111.voxedit.client.gizmo.Rotatable90Deg;
+import me.andre111.voxedit.client.gizmo.Sizeable;
+import me.andre111.voxedit.tool.data.ToolConfig;
+import me.andre111.voxedit.tool.data.ToolSetting;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.BlockRotation;
 import net.minecraft.util.math.BlockPos;
@@ -31,6 +39,7 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 	private boolean reloading = false;
 	
 	private IntFieldWidget x, y, z;
+	private IntFieldWidget sizeX, sizeY, sizeZ;
 
 	public EditorPanelSelectedGizmo(EditorWidget parent) {
 		super(parent, VoxEdit.id("selected_gizmo"), Text.translatable("voxedit.screen.panel.selectedGizmo"));
@@ -66,6 +75,24 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 			addContent(y);
 			addContent(z);
 		}
+		if(selected instanceof Sizeable s) {
+			addContent(new LineHorizontal(getWidth(), Text.translatable("voxedit.gizmo.size")));
+			sizeX = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("X"), 0, v -> {
+				BlockPos size = s.getSize();
+				s.setSize(new BlockPos(v, size.getY(), size.getZ()));
+			});
+			sizeY = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("Y"), 0, v -> {
+				BlockPos size = s.getSize();
+				s.setSize(new BlockPos(size.getX(), v, size.getZ()));
+			});
+			sizeZ = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("Z"), 0, v -> {
+				BlockPos size = s.getSize();
+				s.setSize(new BlockPos(size.getX(), size.getY(), v));
+			});
+			addContent(sizeX);
+			addContent(sizeY);
+			addContent(sizeZ);
+		}
 		if(selected instanceof Rotatable90Deg r) {
 			addContent(new LineHorizontal(getWidth(), Text.translatable("voxedit.gizmo.rotation")));
 			addContent(ButtonWidget.builder(Text.translatable("voxedit.gizmo.rotation.left"), (b) -> {
@@ -80,8 +107,19 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 			Text name = selected.getName();
 			if(name != null) {
 				addContent(new LineHorizontal(getWidth(), name));
-				selected.addActions((text, action) -> {
-					addContent(ButtonWidget.builder(text, (b) -> action.run()).size(getWidth(), 20).build());
+				selected.addActions(new GizmoActions() {
+					@Override
+					public void add(Text text, Runnable action) {
+						addContent(ButtonWidget.builder(text, (b) -> action.run()).size(getWidth(), 20).build());
+					}
+
+					@Override
+					public void add(ToolSetting<?> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter, Consumer<ToolSetting<?>> notifier) {
+						var settingWidget = ToolSettingWidget.of(setting, configGetter, configSetter, notifier);
+						for(ClickableWidget widget : settingWidget.create(parent.getScreen(), 0, 0, width, 20)) {
+							addContent(widget);
+						}
+					}
 				});
 			}
 		}
@@ -102,6 +140,11 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 			x.setInt(p.getPos().getX());
 			y.setInt(p.getPos().getY());
 			z.setInt(p.getPos().getZ());
+		}
+		if(selected instanceof Sizeable s) {
+			sizeX.setInt(s.getSize().getX());
+			sizeY.setInt(s.getSize().getY());
+			sizeZ.setInt(s.getSize().getZ());
 		}
 		
 		reloading = false;

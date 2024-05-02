@@ -1,14 +1,9 @@
-package me.andre111.voxedit.client.schematic;
+package me.andre111.voxedit.client.gizmo;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.BiConsumer;
 
 import me.andre111.voxedit.client.EditorState;
-import me.andre111.voxedit.client.data.Gizmo;
-import me.andre111.voxedit.client.data.Positionable;
-import me.andre111.voxedit.client.data.Renderable;
-import me.andre111.voxedit.client.data.Rotatable90Deg;
 import me.andre111.voxedit.client.renderer.SchematicRenderer;
 import me.andre111.voxedit.client.renderer.SchematicView;
 import me.andre111.voxedit.network.CPPlaceSchematic;
@@ -77,9 +72,9 @@ public class SchematicPlacement extends Gizmo implements Positionable, Rotatable
 	}
 
 	@Override
-	public void addActions(BiConsumer<Text, Runnable> actionConsumer) {
-		actionConsumer.accept(Text.translatable("voxedit.gizmo.delete"), () -> EditorState.removeGizmo(this));
-		actionConsumer.accept(Text.translatable("voxedit.gizmo.place"), () -> {
+	public void addActions(GizmoActions actions) {
+		actions.add(Text.translatable("voxedit.gizmo.delete"), () -> EditorState.removeGizmo(this));
+		actions.add(Text.translatable("voxedit.gizmo.place"), () -> {
 			ClientPlayNetworking.send(new CPPlaceSchematic(name, pos, rotation));
 			EditorState.removeGizmo(this);
 		});

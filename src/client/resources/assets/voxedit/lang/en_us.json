@@ -36,6 +36,9 @@
     "voxedit.shape.settings.length": "Length",
     "voxedit.shape.settings.offset": "Enable Offset",
     
+	"voxedit.selection": "Selection",
+	"voxedit.selection.apply": "Apply",
+	"voxedit.selection.cancel": "Cancel",
 	"voxedit.selection.mode.replace": "Replace",
 	"voxedit.selection.mode.add": "Add",
 	"voxedit.selection.mode.subtract": "Subtract",
@@ -45,6 +48,7 @@
 	"voxedit.schematic.delete": "Delete Schematic",
 	
 	"voxedit.gizmo.position": "Position",
+	"voxedit.gizmo.size": "Size",
 	"voxedit.gizmo.rotation": "Rotation",
 	"voxedit.gizmo.rotation.left": "Rotate Left",
 	"voxedit.gizmo.rotation.right": "Rotate Right",

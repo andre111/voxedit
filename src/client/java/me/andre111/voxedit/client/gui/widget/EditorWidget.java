@@ -39,7 +39,8 @@ import net.minecraft.util.Identifier;
 public class EditorWidget extends ContainerWidget implements LayoutWidget {
     private final EditorScreen screen;
     private final OverlayWidget overlay;
-    private final MenuWidget menu;
+    private final MenuBarWidget menu;
+    private final StatusBarWidget statusBar;
 	private final Map<Location, List<EditorPanel>> panels = new HashMap<>();
 	private final Map<Identifier, EditorPanel> panelMap = new HashMap<>();
 	
@@ -51,14 +52,15 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 		
 		this.screen = screen;
 		this.overlay = new OverlayWidget(0, 0, screen.width, screen.height);
-		this.menu = new MenuWidget(0, 0, screen.width, 20, overlay);
+		this.menu = new MenuBarWidget(0, 0, screen.width, 20, overlay);
+		this.statusBar = new StatusBarWidget(0, screen.height-20, screen.width, 20);
 	}
 	
 	public EditorScreen getScreen() {
 		return screen;
 	}
 	
-	public MenuWidget getMenu() {
+	public MenuBarWidget getMenu() {
 		return menu;
 	}
 	
@@ -180,6 +182,7 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 		List<Element> children = new ArrayList<>();
 		children.add(overlay);
 		children.add(menu);
+		children.add(statusBar);
 		for(var list : panels.values()) children.addAll(list);
 		return children;
 	}
@@ -188,20 +191,23 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 	public void forEachElement(Consumer<Widget> consumer) {
 		consumer.accept(overlay);
 		consumer.accept(menu);
+		consumer.accept(statusBar);
 		for(var list : panels.values()) list.forEach(consumer);
 	}
 
 	@Override
 	protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
+		int sidebarHeight = context.getScaledWindowHeight()-menu.getHeight()-statusBar.getHeight();
+		
 		RenderSystem.enableBlend();
 		for(int i=0; i<2; i++) {
-			context.drawTexture(Textures.BACKGROUND, 0, menu.getHeight(), 0, 0, leftWidth+1, context.getScaledWindowHeight());
-			context.drawTexture(Textures.BACKGROUND, context.getScaledWindowWidth()-rightWidth-1, menu.getHeight(), 0, 0, rightWidth+1, context.getScaledWindowHeight());
+			context.drawTexture(Textures.BACKGROUND, 0, menu.getHeight(), 0, 0, leftWidth+1, sidebarHeight);
+			context.drawTexture(Textures.BACKGROUND, context.getScaledWindowWidth()-rightWidth-1, menu.getHeight(), 0, 0, rightWidth+1, sidebarHeight);
 		}
 		RenderSystem.disableBlend();
 		
-		context.drawVerticalLine(leftWidth+1, menu.getHeight(), context.getScaledWindowHeight(), 0xFFFFFFFF);
-		context.drawVerticalLine(context.getScaledWindowWidth()-rightWidth-1, menu.getHeight(), context.getScaledWindowHeight(), 0xFFFFFFFF);
+		context.drawVerticalLine(leftWidth+1, menu.getHeight(), statusBar.getY(), 0xFFFFFFFF);
+		context.drawVerticalLine(context.getScaledWindowWidth()-rightWidth-1, menu.getHeight(), statusBar.getY(), 0xFFFFFFFF);
 		
 		for(var list : panels.values()) {
 			for(EditorPanel panel : list) {
@@ -209,6 +215,7 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 			}
 		}
 		menu.render(context, mouseX, mouseY, delta);
+		statusBar.render(context, mouseX, mouseY, delta);
 		
 		overlay.render(context, mouseX, mouseY, delta);
 	}
@@ -225,6 +232,7 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 	@Override
 	public void refreshPositions() {
 		menu.setWidth(screen.width);
+		statusBar.setWidth(screen.width);
 		overlay.setDimensions(screen.width, screen.height);
 
 		for(EditorPanel panel : getPanels(Location.LEFT)) panel.setWidth(leftWidth);
@@ -249,6 +257,7 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 	
 	public boolean isOverGui(double mouseX, double mouseY) {
 		if(mouseY <= menu.getHeight()) return true;
+		if(mouseY >= statusBar.getY()) return true;
 		if(mouseX <= leftWidth) return true;
 		if(mouseX >= width-rightWidth) return true;
 		if(overlay.visible) return true;

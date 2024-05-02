@@ -21,11 +21,11 @@ import java.util.List;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.VoxEditClient;
+import me.andre111.voxedit.client.gizmo.SchematicPlacement;
 import me.andre111.voxedit.client.gui.Textures;
 import me.andre111.voxedit.client.gui.screen.InputScreen;
 import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.client.renderer.SchematicRenderer;
-import me.andre111.voxedit.client.schematic.SchematicPlacement;
 import me.andre111.voxedit.client.tool.ObjectTool;
 import me.andre111.voxedit.network.Command;
 import me.andre111.voxedit.schematic.Schematic;
@@ -94,7 +94,7 @@ public class EditorPanelSchematics extends EditorPanel {
 	@Environment(value=EnvType.CLIENT)
 	class SchematicListWidget extends ModListWidget<SchematicListWidget.SchematicEntry> {
 		public SchematicListWidget() {
-			super(MinecraftClient.getInstance(), EditorPanelSchematics.this.width, 500, 20, 6);
+			super(MinecraftClient.getInstance(), EditorPanelSchematics.this.width, 400, 20, 6);
 			updateEntries();
 		}
 

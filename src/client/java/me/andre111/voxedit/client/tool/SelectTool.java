@@ -3,8 +3,7 @@ package me.andre111.voxedit.client.tool;
 import java.util.List;
 
 import me.andre111.voxedit.client.EditorState;
-import me.andre111.voxedit.selection.Selection;
-import me.andre111.voxedit.selection.SelectionMode;
+import me.andre111.voxedit.client.gizmo.ActiveSelection;
 import me.andre111.voxedit.selection.SelectionShape;
 import me.andre111.voxedit.tool.Properties;
 import me.andre111.voxedit.tool.data.Context;
@@ -18,10 +17,8 @@ import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 
 public class SelectTool extends ClientTool {
-	private static final ToolSetting<SelectionMode> SELECTION_MODE = ToolSetting.ofEnum("selection_mode", SelectionMode.class, SelectionMode::asText, true);
-	
 	public SelectTool() {
-		super(Properties.of(ToolSettings.BASE_SHAPE, ToolSettings.TARGET_FLUIDS, SELECTION_MODE).noPresets());
+		super(Properties.of(ToolSettings.TARGET_FLUIDS).noPresets());
 	}
 
 	@Override
@@ -40,7 +37,7 @@ public class SelectTool extends ClientTool {
 		List<BlockPos> positions = EditorState.toolState().positions();
 		if(positions.isEmpty()) positions.add(target.getBlockPos());
 		else positions.set(positions.size()-1, target.getBlockPos());
-		updateState(positions, false, config);
+		updateState(positions, config);
 	}
 
 	@Override
@@ -50,8 +47,20 @@ public class SelectTool extends ClientTool {
 		List<BlockPos> positions = EditorState.toolState().positions();
 		if(positions.isEmpty()) positions.add(target.getBlockPos());
 		else positions.set(positions.size()-1, target.getBlockPos());
-		updateState(positions, true, config);
+		updateState(positions, config);
+		
+		if(positions.size() == 2) {
+			positions.clear();
+		} else {
+			EditorState.selected(null);
+		}
 		positions.add(target.getBlockPos());
+	}
+	
+	@Override
+	public void changedSetting(ToolSetting<?> setting, ToolConfig config) {
+		List<BlockPos> positions = EditorState.toolState().positions();
+		updateState(positions, config);
 	}
 
 	@Override
@@ -59,11 +68,11 @@ public class SelectTool extends ClientTool {
 		List<BlockPos> positions = EditorState.toolState().positions();
 		if(positions.size() <= 1) return false;
 		positions.clear();
-		EditorState.persistant().activeSelection(null);
+		if(EditorState.selected() instanceof ActiveSelection sel) sel.cancel();
 		return true;
 	}
 	
-	private void updateState(List<BlockPos> positions, boolean add, ToolConfig config) {
+	private void updateState(List<BlockPos> positions, ToolConfig config) {
 		if(positions.size() == 2) {
 			BlockPos p1 = positions.get(0);
 			BlockPos p2 = positions.get(1);
@@ -90,11 +99,10 @@ public class SelectTool extends ClientTool {
 				p1 = new BlockPos(p1.getX() - xd, p1.getY() - yd, p1.getZ() - zd);
 			}
 			
-			EditorState.persistant().activeSelection(new SelectionShape(BlockBox.encompassPositions(List.of(p1, p2)).get(), ToolSettings.BASE_SHAPE.get(config).shape()));
-			if(add) {
-				positions.clear();
-				EditorState.persistant().selection(Selection.combine(EditorState.persistant().selection(), EditorState.persistant().activeSelection(), SELECTION_MODE.get(config)));
-				EditorState.persistant().activeSelection(null);
+			if(EditorState.selected() instanceof ActiveSelection sel) {
+				sel.setSelection(new SelectionShape(BlockBox.encompassPositions(List.of(p1, p2)).get(), sel.getSelection().getShape()));
+			} else {
+				EditorState.selected(new ActiveSelection(new SelectionShape(BlockBox.encompassPositions(List.of(p1, p2)).get(), ToolSettings.BASE_SHAPE.get(config).shape()), config));
 			}
 		}
 	}

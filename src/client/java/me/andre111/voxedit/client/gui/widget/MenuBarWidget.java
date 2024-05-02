@@ -32,11 +32,11 @@ import net.minecraft.client.gui.widget.LayoutWidget;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.text.Text;
 
-public class MenuWidget extends ContainerWidget implements LayoutWidget {
+public class MenuBarWidget extends ContainerWidget implements LayoutWidget {
 	private final OverlayWidget overlayWidget;
 	private final List<Category> categories = new ArrayList<>();
 	
-	public MenuWidget(int x, int y, int width, int height, OverlayWidget overlayWidget) {
+	public MenuBarWidget(int x, int y, int width, int height, OverlayWidget overlayWidget) {
 		super(x, y, width, height, Text.empty());
 		this.overlayWidget = overlayWidget;
 	}
@@ -91,12 +91,12 @@ public class MenuWidget extends ContainerWidget implements LayoutWidget {
 	}
 
 	public static final class Category {
-		private final MenuWidget menu;
+		private final MenuBarWidget menu;
 		private final ButtonWidget button;
 		private final List<Entry> entries;
 		private AxisGridWidget entriesWidget;
 		
-		private Category(MenuWidget menu, Text text) {
+		private Category(MenuBarWidget menu, Text text) {
 			this.menu = menu;
 			this.button = ButtonWidget.builder(text, (b) -> {
 					menu.overlayWidget.openOverlay(getButton(), getEntriesWidget());

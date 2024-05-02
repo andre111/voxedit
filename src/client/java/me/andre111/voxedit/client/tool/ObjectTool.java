@@ -1,8 +1,8 @@
 package me.andre111.voxedit.client.tool;
 
 import me.andre111.voxedit.client.EditorState;
-import me.andre111.voxedit.client.data.Gizmo;
-import me.andre111.voxedit.client.data.Positionable;
+import me.andre111.voxedit.client.gizmo.Gizmo;
+import me.andre111.voxedit.client.gizmo.Positionable;
 import me.andre111.voxedit.client.gui.screen.EditorScreen;
 import me.andre111.voxedit.tool.Properties;
 import me.andre111.voxedit.tool.data.Context;

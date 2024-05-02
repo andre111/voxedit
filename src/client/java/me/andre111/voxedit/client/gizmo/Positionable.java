@@ -1,4 +1,4 @@
-package me.andre111.voxedit.client.data;
+package me.andre111.voxedit.client.gizmo;
 
 import net.minecraft.util.math.BlockPos;
 

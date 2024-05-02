@@ -84,6 +84,7 @@ public abstract class Tool {
 	
 	public abstract RaycastTargets getRaycastTargets(ToolConfig config);
 	public abstract void performAction(ServerPlayerEntity player, Action action, List<Target> targets, Context context, ToolConfig config, ServerState state);
+	public void changedSetting(ToolSetting<?> setting, ToolConfig config) {}
 	
 	public static enum Action {
 		ADD_OR_MODIFY,

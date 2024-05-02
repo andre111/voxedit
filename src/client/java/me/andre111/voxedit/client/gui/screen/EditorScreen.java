@@ -34,8 +34,9 @@ import me.andre111.voxedit.VoxEditUtil;
 import me.andre111.voxedit.client.EditorLayout;
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.VoxEditClient;
-import me.andre111.voxedit.client.data.Gizmo;
-import me.andre111.voxedit.client.data.Renderable;
+import me.andre111.voxedit.client.gizmo.ActiveSelection;
+import me.andre111.voxedit.client.gizmo.Gizmo;
+import me.andre111.voxedit.client.gizmo.Renderable;
 import me.andre111.voxedit.client.gui.widget.EditorPanelHistory;
 import me.andre111.voxedit.client.gui.widget.EditorPanelPalette;
 import me.andre111.voxedit.client.gui.widget.EditorPanelSchematics;
@@ -43,7 +44,7 @@ import me.andre111.voxedit.client.gui.widget.EditorPanelSelectedGizmo;
 import me.andre111.voxedit.client.gui.widget.EditorPanelToolConfig;
 import me.andre111.voxedit.client.gui.widget.EditorPanelTools;
 import me.andre111.voxedit.client.gui.widget.EditorWidget;
-import me.andre111.voxedit.client.gui.widget.MenuWidget;
+import me.andre111.voxedit.client.gui.widget.MenuBarWidget;
 import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.client.renderer.SchematicRenderer;
 import me.andre111.voxedit.client.renderer.SchematicView;
@@ -101,7 +102,6 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	private Matrix4f projectionMat = new Matrix4f();
 	private SelectionRenderer positionsRenderer = new SelectionRenderer();
 	private SelectionRenderer selectionRenderer = new SelectionRenderer();
-	private SelectionRenderer activeSelRenderer = new SelectionRenderer();
 	private SchematicRenderer previewRenderer;
 
 	private EditorScreen() {
@@ -127,9 +127,6 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		EditorState.CHANGE_SELECTION.register(() -> {
 			selectionRenderer.rebuild(EditorState.persistant().selection());
 		});
-		EditorState.CHANGE_ACTIVE_SELECTION.register(() -> {
-			activeSelRenderer.rebuild(EditorState.persistant().activeSelection());
-		});
     	WorldRenderEvents.LAST.register(this::renderInWorld);
 	}
 
@@ -148,13 +145,17 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			addDrawableChild(widget);
 			
 			//TODO: translatable
-			MenuWidget menu = widget.getMenu();
+			MenuBarWidget menu = widget.getMenu();
 			menu.addCategory(Text.of("Edit"))
 				.addEntry(Text.of("Undo"), () -> { ClientNetworking.sendCommand(Command.UNDO); })
 				.addEntry(Text.of("Redo"), () -> { ClientNetworking.sendCommand(Command.REDO); });
 			menu.addCategory(Text.of("Selection"))
-				.addEntry(Text.of("Clear"), () -> { EditorState.persistant().selection(null); EditorState.persistant().activeSelection(null); })
+				.addEntry(Text.of("Clear"), () -> { 
+					if(EditorState.selected() instanceof ActiveSelection sel) sel.cancel(); 
+					EditorState.persistant().selection(null);
+				})
 				.addEntry(Text.of("Save as Schematic"), () -> {
+					if(EditorState.selected() instanceof ActiveSelection sel) sel.apply();
 					if(EditorState.persistant().selection() != null) {
 						InputScreen.getString(this, Text.translatable("voxedit.prompt.schematic.name"), "", name -> {
 							if(name == null || name.isBlank()) return;
@@ -163,6 +164,8 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 						});
 					}
 				});
+			menu.addCategory(Text.of("Settings"))
+				.addEntry(Text.of("Keybindings"), () -> {});
 	
 			widget.addPanel(parent -> new EditorPanelTools(parent), EditorWidget.Location.LEFT);
 			widget.addPanel(parent -> new EditorPanelToolConfig(parent), EditorWidget.Location.LEFT);
@@ -489,13 +492,10 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			}
 		}
 		if(!EditorState.targets().isEmpty()) {
-			positionsRenderer.draw(context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), MinecraftClient.getInstance().getWindow());
+			positionsRenderer.draw(1f, 1f, 1f, context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), MinecraftClient.getInstance().getWindow());
 		}
 		if(EditorState.persistant().selection() != null) {
-			selectionRenderer.draw(context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), MinecraftClient.getInstance().getWindow());
-		}
-		if(EditorState.persistant().activeSelection() != null) {
-			activeSelRenderer.draw(context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), MinecraftClient.getInstance().getWindow());
+			selectionRenderer.draw(1f, 1f, 1f, context.camera().getPos(), context.frustum(), context.positionMatrix(), context.projectionMatrix(), MinecraftClient.getInstance().getWindow());
 		}
 	}
 

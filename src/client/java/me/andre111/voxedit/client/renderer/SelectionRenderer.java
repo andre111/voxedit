@@ -183,7 +183,7 @@ public class SelectionRenderer {
 		VertexBuffer.unbind();
 	}
 	
-	public void draw(Vec3d cameraPos, Frustum frustum, Matrix4f modelViewMat, Matrix4f projMat, Window window) {
+	public void draw(float r, float g, float b, Vec3d cameraPos, Frustum frustum, Matrix4f modelViewMat, Matrix4f projMat, Window window) {
 		if(lineBuffer == null || faceBuffer == null) return;
 		
 		modelViewMat = modelViewMat.translate((float) -cameraPos.x, (float) -cameraPos.y, (float) -cameraPos.z, new Matrix4f());
@@ -195,7 +195,7 @@ public class SelectionRenderer {
         RenderSystem.depthMask(false);
         ShaderProgram shader = RenderSystem.getShader();
         SchematicRenderer.setDefaultUniforms(shader, VertexFormat.DrawMode.QUADS, modelViewMat, projMat, window);
-        if(shader.colorModulator != null) shader.colorModulator.set(1f, 1f, 1f, alpha);
+        if(shader.colorModulator != null) shader.colorModulator.set(r, g, b, alpha);
         shader.bind();
         faceBuffer.bind();
         faceBuffer.draw();

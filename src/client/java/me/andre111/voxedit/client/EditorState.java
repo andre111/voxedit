@@ -31,11 +31,10 @@ import java.util.function.Consumer;
 import me.andre111.voxedit.Presets;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.VoxEditUtil;
-import me.andre111.voxedit.client.data.Gizmo;
+import me.andre111.voxedit.client.gizmo.Gizmo;
 import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.schematic.Schematic;
 import me.andre111.voxedit.selection.Selection;
-import me.andre111.voxedit.selection.SelectionShape;
 import me.andre111.voxedit.tool.ConfiguredTool;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.data.BlockPalette;
@@ -94,11 +93,6 @@ public class EditorState {
 		}
 	});
 	public static final Event<Runnable> CHANGE_SELECTION = EventFactory.createArrayBacked(Runnable.class, callbacks -> () -> {
-		for (Runnable callback : callbacks) {
-			callback.run();
-		}
-	});
-	public static final Event<Runnable> CHANGE_ACTIVE_SELECTION = EventFactory.createArrayBacked(Runnable.class, callbacks -> () -> {
 		for (Runnable callback : callbacks) {
 			callback.run();
 		}
@@ -208,8 +202,13 @@ public class EditorState {
 	}
 	
 	public static void selected(Gizmo selected) {
+		Gizmo previousSelected = EditorState.selected;
 		addGizmo(selected);
 		EditorState.selected = selected;
+		
+		if(previousSelected != null) previousSelected.deselected();
+		if(selected != null) selected.selected();
+		
 		CHANGE_SELECTED.invoker().accept(selected);
 	}
 	
@@ -295,7 +294,6 @@ public class EditorState {
 		private Map<String, BlockPalette> PALETTE_PRESETS = new HashMap<>();
 		
 		private Selection selection;
-		private SelectionShape activeSelection;
 		
 		private boolean modified = false;
 
@@ -470,15 +468,6 @@ public class EditorState {
 		public void selection(Selection selection) {
 			this.selection = selection;
 			CHANGE_SELECTION.invoker().run();
-		}
-		
-		public SelectionShape activeSelection() {
-			return activeSelection;
-		}
-		
-		public void activeSelection(SelectionShape activeSelection) {
-			this.activeSelection = activeSelection;
-			CHANGE_ACTIVE_SELECTION.invoker().run();
 		}
 	}
 	

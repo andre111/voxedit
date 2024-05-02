@@ -74,6 +74,10 @@ public class OverlayWidget extends ContainerWidget implements LayoutWidget {
 	protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
 		context.getMatrices().translate(0, 0, 10);
 		context.fill(getX(), getY(), getX()+getWidth(), getY()+getHeight(), 0x88000000);
+		
+		if(parent instanceof Drawable drawable) drawable.render(context, mouseX, mouseY, delta);
+		else if(parent instanceof LayoutWidget layout) layout.forEachChild(w -> w.render(context, mouseX, mouseY, delta));
+		
 		if(overlay instanceof Drawable drawable) drawable.render(context, mouseX, mouseY, delta);
 		else if(overlay instanceof LayoutWidget layout) layout.forEachChild(w -> w.render(context, mouseX, mouseY, delta));
 	}

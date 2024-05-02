@@ -38,12 +38,14 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 	protected final TS setting;
 	protected final Supplier<ToolConfig> configGetter;
 	protected final Consumer<ToolConfig> configSetter;
+	protected final Consumer<ToolSetting<?>> notifier;
 	protected boolean reloading = false;
 	
-	public ToolSettingWidget(TS setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
+	public ToolSettingWidget(TS setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter, Consumer<ToolSetting<?>> notifier) {
 		this.setting = setting;
 		this.configGetter = configGetter;
 		this.configSetter = configSetter;
+		this.notifier = notifier;
 	}
 	
 	protected V read() {
@@ -53,6 +55,7 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 	protected void write(V value) {
 		if(reloading) return;
 		configSetter.accept(setting.with(configGetter.get(), value));
+		notifier.accept(setting);
 	}
 	
 	public void reload() {
@@ -65,21 +68,21 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 	protected abstract void reloadValue();
 	
 	@SuppressWarnings("unchecked")
-	public static ToolSettingWidget<?, ?> of(ToolSetting<?> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
-		if(setting instanceof ToolSetting.Bool boolSetting) return new Bool(boolSetting, configGetter, configSetter);
-		if(setting instanceof ToolSetting.FixedValues enumSetting) return new FixedValues<>(enumSetting, configGetter, configSetter);
-		if(setting instanceof ToolSetting.Int intSetting) return new Int(intSetting, configGetter, configSetter);
-		if(setting instanceof ToolSetting.TSIdentifier identifierSetting) return new TSIdentifier<>(identifierSetting, configGetter, configSetter);
-		if(setting instanceof ToolSetting.TSRegistry registrySetting) return new TSRegistry<>(registrySetting, configGetter, configSetter);
-		if(setting instanceof ToolSetting.TSShape shapeSetting) return new TSShape(shapeSetting, configGetter, configSetter);
+	public static ToolSettingWidget<?, ?> of(ToolSetting<?> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter, Consumer<ToolSetting<?>> notifier) {
+		if(setting instanceof ToolSetting.Bool boolSetting) return new Bool(boolSetting, configGetter, configSetter, notifier);
+		if(setting instanceof ToolSetting.FixedValues enumSetting) return new FixedValues<>(enumSetting, configGetter, configSetter, notifier);
+		if(setting instanceof ToolSetting.Int intSetting) return new Int(intSetting, configGetter, configSetter, notifier);
+		if(setting instanceof ToolSetting.TSIdentifier identifierSetting) return new TSIdentifier<>(identifierSetting, configGetter, configSetter, notifier);
+		if(setting instanceof ToolSetting.TSRegistry registrySetting) return new TSRegistry<>(registrySetting, configGetter, configSetter, notifier);
+		if(setting instanceof ToolSetting.TSShape shapeSetting) return new TSShape(shapeSetting, configGetter, configSetter, notifier);
 		return null;
 	}
 	
 	public static class Bool extends ToolSettingWidget<Boolean, ToolSetting.Bool> {
 		private CyclingButtonWidget<Boolean> button;
 		
-		public Bool(ToolSetting.Bool setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
-			super(setting, configGetter, configSetter);
+		public Bool(ToolSetting.Bool setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter, Consumer<ToolSetting<?>> notifier) {
+			super(setting, configGetter, configSetter, notifier);
 		}
 		
 		@Override
@@ -98,8 +101,8 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 	public static class FixedValues<E> extends ToolSettingWidget<E, ToolSetting.FixedValues<E>> {
 		private Consumer<E> input;
 		
-		public FixedValues(ToolSetting.FixedValues<E> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
-			super(setting, configGetter, configSetter);
+		public FixedValues(ToolSetting.FixedValues<E> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter, Consumer<ToolSetting<?>> notifier) {
+			super(setting, configGetter, configSetter, notifier);
 		}
 		
 		@Override
@@ -129,8 +132,8 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 	public static class Int extends ToolSettingWidget<Integer, ToolSetting.Int> {
 		private IntSliderWidget slider;
 		
-		public Int(ToolSetting.Int setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
-			super(setting, configGetter, configSetter);
+		public Int(ToolSetting.Int setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter, Consumer<ToolSetting<?>> notifier) {
+			super(setting, configGetter, configSetter, notifier);
 		}
 		
 		@Override
@@ -149,8 +152,8 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 	public static class TSIdentifier<T> extends ToolSettingWidget<Identifier, ToolSetting.TSIdentifier<T>> {
 		private RegistryEntryWidget<T> input;
 		
-		public TSIdentifier(ToolSetting.TSIdentifier<T> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
-			super(setting, configGetter, configSetter);
+		public TSIdentifier(ToolSetting.TSIdentifier<T> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter, Consumer<ToolSetting<?>> notifier) {
+			super(setting, configGetter, configSetter, notifier);
 		}
 		
 		@Override
@@ -169,8 +172,8 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 	public static class TSRegistry<T> extends ToolSettingWidget<T, ToolSetting.TSRegistry<T>> {
 		private Consumer<Identifier> input;
 		
-		public TSRegistry(ToolSetting.TSRegistry<T> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
-			super(setting, configGetter, configSetter);
+		public TSRegistry(ToolSetting.TSRegistry<T> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter, Consumer<ToolSetting<?>> notifier) {
+			super(setting, configGetter, configSetter, notifier);
 		}
 		
 		@Override
@@ -211,8 +214,8 @@ public abstract class ToolSettingWidget<V, TS extends ToolSetting<V>> {
 		
 		private boolean reloading = false;
 
-		public TSShape(ToolSetting.TSShape setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter) {
-			super(setting, configGetter, configSetter);
+		public TSShape(ToolSetting.TSShape setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter, Consumer<ToolSetting<?>> notifier) {
+			super(setting, configGetter, configSetter, notifier);
 		}
 
 		@Override

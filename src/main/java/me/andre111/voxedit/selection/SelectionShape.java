@@ -77,4 +77,8 @@ public class SelectionShape extends SelectionBox {
 	public SelectionType<?> type() {
 		return VoxEdit.SEL_SHAPE;
 	}
+	
+	public Shape getShape() {
+		return shape;
+	}
 }
