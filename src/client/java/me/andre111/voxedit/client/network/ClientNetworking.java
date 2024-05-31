@@ -59,7 +59,7 @@ public class ClientNetworking {
 		
 		ClientPlayNetworking.registerGlobalReceiver(CPSchematic.ID, (payload, context) -> {
 			NbtCompound nbt = payload.nbt();
-			Schematic schematic = nbt.isEmpty() ? null : Schematic.readNbt(context.client().world.getRegistryManager(), nbt);
+			Schematic schematic = nbt.isEmpty() ? null : Schematic.readNbt(context.client().world.getRegistryManager(), nbt, payload.visible());
 			
 			EditorState.schematic(payload.name(), schematic);
 		});

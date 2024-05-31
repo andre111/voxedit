@@ -104,6 +104,7 @@ public class EditorPanelSchematics extends EditorPanel {
 			clearEntries();
 			
 			for(var e : EditorState.schematics().entrySet()) {
+				if(!e.getValue().getInfo().visible()) continue;
 				addEntry(new SchematicEntry(e.getKey(), e.getValue()));
 			}
 			

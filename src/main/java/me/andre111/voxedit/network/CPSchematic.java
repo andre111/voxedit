@@ -23,10 +23,11 @@ import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.network.packet.CustomPayload;
 
-public record CPSchematic(String name, NbtCompound nbt) implements CustomPayload {
+public record CPSchematic(String name, boolean visible, NbtCompound nbt) implements CustomPayload {
 	public static final Id<CPSchematic> ID = new Id<>(VoxEdit.id("schematic"));
 	public static final PacketCodec<ByteBuf, CPSchematic> CODEC = PacketCodec.tuple(
 			PacketCodecs.STRING, CPSchematic::name, 
+			PacketCodecs.BOOL, CPSchematic::visible,
 			PacketCodecs.NBT_COMPOUND, CPSchematic::nbt, 
 			CPSchematic::new);
 	static {

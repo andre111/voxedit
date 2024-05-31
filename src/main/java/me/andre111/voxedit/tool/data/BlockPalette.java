@@ -16,7 +16,10 @@
 package me.andre111.voxedit.tool.data;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -27,6 +30,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.codec.PacketCodecs;
+import net.minecraft.state.property.Property;
 import net.minecraft.util.math.random.Random;
 
 public class BlockPalette {
@@ -36,16 +40,12 @@ public class BlockPalette {
 			)
 			.apply(instance, BlockPalette::new));
 	public static final PacketCodec<ByteBuf, BlockPalette> PACKET_CODEC = Entry.PACKET_CODEC.collect(PacketCodecs.toList()).xmap(BlockPalette::new, BlockPalette::getEntries);
-	public static final BlockPalette DEFAULT = new BlockPalette(Blocks.STONE.getDefaultState());
+	public static final BlockPalette DEFAULT = BlockPalette.builder().add(Blocks.STONE).build();
 	
 	private List<Entry> entries = new ArrayList<>();
 	private int totalWeight = 0;
 
 	public BlockPalette() {
-	}
-	public BlockPalette(BlockState state) {
-		entries.add(new Entry(state, 1));
-		totalWeight = entries.stream().mapToInt(Entry::weight).sum();
 	}
 	public BlockPalette(List<Entry> entries) {
 		this.entries = new ArrayList<>(entries);
@@ -59,6 +59,13 @@ public class BlockPalette {
 	public boolean has(Block block) {
 		for(Entry entry : entries) {
 			if(entry.state.getBlock() == block) return true;
+		}
+		return false;
+	}
+	
+	public boolean has(BlockState state) {
+		for(Entry entry : entries) {
+			if(entry.matches(state)) return true;
 		}
 		return false;
 	}
@@ -100,17 +107,28 @@ public class BlockPalette {
 		return new Builder();
 	}
 	
-	public static record Entry(BlockState state, int weight) {
+	public static record Entry(BlockState state, Set<String> specifiedProperties, int weight) {
 		private static final Codec<Entry> CODEC = RecordCodecBuilder.create(instance -> instance
 				.group(
-						BlockState.CODEC.fieldOf("state").forGetter(e -> e.state),
-						Codec.INT.fieldOf("weight").forGetter(e -> e.weight)
+						BlockState.CODEC.fieldOf("state").forGetter(Entry::state),
+						Codec.STRING.listOf().xmap(l -> (Set<String>) new HashSet<>(l), s -> new ArrayList<>(s)).optionalFieldOf("specifiedProperties", new HashSet<>()).forGetter(Entry::specifiedProperties),
+						Codec.INT.fieldOf("weight").forGetter(Entry::weight)
 				)
 				.apply(instance, Entry::new));
 		private static final PacketCodec<ByteBuf, Entry> PACKET_CODEC = PacketCodec.tuple(
-				PacketCodecs.codec(BlockState.CODEC), Entry::state, 
+				PacketCodecs.codec(BlockState.CODEC), Entry::state,
+				PacketCodecs.STRING.collect(PacketCodecs.toCollection(HashSet::new)), Entry::specifiedProperties,
 				PacketCodecs.INTEGER, Entry::weight, 
 				Entry::new);
+		
+		public boolean matches(BlockState testState) {
+			if(testState.getBlock() != state.getBlock()) return false;
+			for(Property<?> property : testState.getProperties()) {
+				if(!specifiedProperties.contains(property.getName())) continue;
+				if(!testState.get(property).equals(state.get(property))) return false;
+			}
+			return true;
+		}
 	}
 	
 	public static class Builder {
@@ -121,7 +139,7 @@ public class BlockPalette {
 		}
 		
 		public Builder add(Block block, int weight) {
-			return add(block.getDefaultState(), weight);
+			return add(block.getDefaultState(), new HashSet<>(), weight);
 		}
 		
 		public Builder add(BlockState state) {
@@ -129,7 +147,11 @@ public class BlockPalette {
 		}
 		
 		public Builder add(BlockState state, int weight) {
-			entries.add(new Entry(state, weight));
+			return add(state, state.getProperties().stream().map(Property::getName).collect(Collectors.toCollection(HashSet::new)), weight);
+		}
+		
+		public Builder add(BlockState state, HashSet<String> specifiedProperties, int weight) {
+			entries.add(new Entry(state, specifiedProperties, weight));
 			return this;
 		}
 		

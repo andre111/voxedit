@@ -15,5 +15,5 @@
  */
 package me.andre111.voxedit.schematic;
 
-public record SchematicInfo(int sizeX, int sizeY, int sizeZ) {
+public record SchematicInfo(boolean visible, int sizeX, int sizeY, int sizeZ) {
 }

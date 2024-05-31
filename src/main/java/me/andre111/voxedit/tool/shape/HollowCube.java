@@ -20,6 +20,9 @@ import net.minecraft.util.math.Direction;
 public class HollowCube extends Shape {
 	@Override
 	public boolean contains(int x, int y, int z, Direction direction, double sizeX, double sizeY, double sizeZ) {
-		return Math.abs(Math.abs(x)-sizeX)<=0.5 || Math.abs(Math.abs(y)-sizeY)<=0.5 || Math.abs(Math.abs(z)-sizeZ)<=0.5;
+		double xDist = Math.abs(Math.abs(x)-sizeX);
+		double yDist = Math.abs(Math.abs(y)-sizeY);
+		double zDist = Math.abs(Math.abs(z)-sizeZ);
+		return xDist<1 || yDist<1 || zDist<1;
 	}
 }

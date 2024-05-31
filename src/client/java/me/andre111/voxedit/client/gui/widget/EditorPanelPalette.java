@@ -16,6 +16,7 @@
 package me.andre111.voxedit.client.gui.widget;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import me.andre111.voxedit.VoxEdit;
@@ -37,7 +38,6 @@ public class EditorPanelPalette extends EditorPanel {
 	private BlockPaletteListWidget paletteWidget;
     private ButtonWidget removeEntryButton;
     private int minSize = 1;
-    private boolean includeProperties = true;
     private boolean showWeights = true;
     private boolean refreshing = false;
 
@@ -92,7 +92,7 @@ public class EditorPanelPalette extends EditorPanel {
     	
     	addContent(ButtonWidget.builder(Text.translatable("voxedit.screen.blockPalette.add"), button -> {
             List<BlockPalette.Entry> list = EditorState.blockPalette().getEntries();
-            list.add(new BlockPalette.Entry(Blocks.STONE.getDefaultState(), 1));
+            list.add(new BlockPalette.Entry(Blocks.STONE.getDefaultState(), new HashSet<>(), 1));
             
             EditorState.blockPalette(new BlockPalette(list));
             paletteWidget.updateEntries();
@@ -189,16 +189,16 @@ public class EditorPanelPalette extends EditorPanel {
 				this.index = index;
 				
 				BlockPalette.Entry paletteEntry = EditorState.blockPalette().getEntry(index);
-				stateWidget = new BlockStateWidget(MinecraftClient.getInstance().textRenderer, 0, 0, BlockPaletteListWidget.this.width-6*2-32-100, 20, includeProperties, paletteEntry.state(), (blockState) -> {
+				stateWidget = new BlockStateWidget(0, 0, BlockPaletteListWidget.this.width-6*2-32-64, 40, paletteEntry.state(), true, (blockState) -> {
 					BlockPalette.Entry oldEntry = EditorState.blockPalette().getEntry(index);
-					EditorState.blockPalette().setEntry(index, new BlockPalette.Entry(blockState, oldEntry.weight()));
+					EditorState.blockPalette().setEntry(index, new BlockPalette.Entry(blockState, stateWidget.getSpecifiedProperties(), oldEntry.weight()));
 				});
 				children.add(stateWidget);
 				
 				if(showWeights) {
-					weightWidget = new IntSliderWidget(0, 0, 100, 20, Text.translatable("voxedit.screen.blockPalette.weight"), 1, 32, paletteEntry.weight(), (weight) -> {
+					weightWidget = new IntSliderWidget(0, 0, 64, 20, Text.translatable("voxedit.screen.blockPalette.weight"), 1, 32, paletteEntry.weight(), (weight) -> {
 						BlockPalette.Entry oldEntry = EditorState.blockPalette().getEntry(index);
-						EditorState.blockPalette().setEntry(index, new BlockPalette.Entry(oldEntry.state(), weight));
+						EditorState.blockPalette().setEntry(index, new BlockPalette.Entry(oldEntry.state(), oldEntry.specifiedProperties(), weight));
 					});
 					children.add(weightWidget);
 				}
@@ -206,7 +206,7 @@ public class EditorPanelPalette extends EditorPanel {
 
 			@Override
 			public int getHeight() {
-				return 23;
+				return stateWidget.getHeight()+3;
 			}
 
 			@Override
@@ -216,7 +216,7 @@ public class EditorPanelPalette extends EditorPanel {
 				
 				if(weightWidget != null) {
 					weightWidget.setX(getX()+getWidth()-weightWidget.getWidth());
-					weightWidget.setY(getY());
+					weightWidget.setY(getY()+(getHeight()-weightWidget.getHeight())/2);
 				}
 			}
 

@@ -103,6 +103,8 @@ public class EditorPanelHistory extends EditorPanel {
 			for (int j = 0; j < EditorState.history().size(); j++) {
 				addEntry(new HistoryEntry(j));
 			}
+			
+	        setScrollAmount(getMaxScroll());
 		}
 
 		@Environment(value=EnvType.CLIENT)

@@ -141,7 +141,7 @@ public class EditorWorld implements StructureWorldAccess {
 					}
 				}
 			}
-			Schematic schematic = new Schematic(offsetX, offsetY, offsetZ, boundingBox.getBlockCountX(), boundingBox.getBlockCountY(), boundingBox.getBlockCountZ(), blockStates, blockEntities);
+			Schematic schematic = new Schematic(true, offsetX, offsetY, offsetZ, boundingBox.getBlockCountX(), boundingBox.getBlockCountY(), boundingBox.getBlockCountZ(), blockStates, blockEntities);
 			result.setSchematic(schematic);
 		}
 		

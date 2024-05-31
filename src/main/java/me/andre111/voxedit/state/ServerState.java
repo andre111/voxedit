@@ -60,7 +60,7 @@ public class ServerState {
 				}
 				
 				try {
-					Schematic schematic = Schematic.readNbt(registryLookup, nbt);
+					Schematic schematic = Schematic.readNbt(registryLookup, nbt, true);
 					schematics.put(name, schematic);
 				} catch(Exception e) {
 					VoxEdit.LOGGER.warn("Not a valid schematic file: "+p.getFileName());
@@ -88,14 +88,14 @@ public class ServerState {
 		if(transfer || persist) {
 			if(schematic != null) schematic.writeNbt(registryLookup, nbt);
 		}
-		if(transfer) updateConsumer.accept(new CPSchematic(name, nbt));
+		if(transfer) updateConsumer.accept(new CPSchematic(name, persist, nbt));
 		if(persist) VoxEditUtil.writeNbt(persistancePath.resolve("schematics/"+name+".cnbt"), nbt);
 	}
 	
 	public void schematicDelete(String name) {
 		try {
 			Files.deleteIfExists(persistancePath.resolve("schematics/"+name+".cnbt"));
-			updateConsumer.accept(new CPSchematic(name, new NbtCompound()));
+			updateConsumer.accept(new CPSchematic(name, true, new NbtCompound()));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

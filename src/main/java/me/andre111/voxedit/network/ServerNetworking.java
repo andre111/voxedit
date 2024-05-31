@@ -55,7 +55,7 @@ public class ServerNetworking {
 			for(var e : ServerStates.get(handler.getPlayer()).schematics().entrySet()) {
 				NbtCompound nbt = new NbtCompound();
 				e.getValue().writeNbt(server.getRegistryManager(), nbt);
-				sender.sendPacket(new CPSchematic(e.getKey(), nbt));
+				sender.sendPacket(new CPSchematic(e.getKey(), true, nbt));
 			}
 		});
 		

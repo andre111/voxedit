@@ -174,7 +174,7 @@ public class SchematicRenderer implements AutoCloseable {
                 Vec3d cameraPos = new Vec3d(0, 0, 0);
                 
                 Matrix4f modelViewMat = new Matrix4f();
-                modelViewMat = modelViewMat.rotateX(54.736f * ((float)Math.PI / 180));
+                modelViewMat = modelViewMat.rotateX(45f * ((float)Math.PI / 180));
                 modelViewMat = modelViewMat.rotateY((180f - 45f) * ((float)Math.PI / 180));
                 modelViewMat = modelViewMat.translate(-centerX, -centerY, -centerZ);
                 

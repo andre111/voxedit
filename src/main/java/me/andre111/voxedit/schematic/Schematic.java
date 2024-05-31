@@ -43,6 +43,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 
 public class Schematic implements BlockView {
+	private final boolean visible;
 	private final int offsetX;
 	private final int offsetY;
 	private final int offsetZ;
@@ -52,11 +53,12 @@ public class Schematic implements BlockView {
 	private final List<BlockState> blockStates;
 	private final Map<BlockPos, BlockEntity> blockEntities;
 	
-	public Schematic(int offsetX, int offsetY, int offsetZ, int sizeX, int sizeY, int sizeZ, List<BlockState> blockStates, Map<BlockPos, BlockEntity> blockEntities) {
+	public Schematic(boolean visible, int offsetX, int offsetY, int offsetZ, int sizeX, int sizeY, int sizeZ, List<BlockState> blockStates, Map<BlockPos, BlockEntity> blockEntities) {
 		long size = (long) sizeX * (long) sizeY * (long) sizeZ;
 		if(size > Integer.MAX_VALUE) throw new IllegalArgumentException("Schematic size to large: "+size+" max supported is: "+Integer.MAX_VALUE);
 		if(sizeX * sizeY * sizeZ != blockStates.size()) throw new IllegalArgumentException("Blockstate list does not match provided size.");
 		
+		this.visible = visible;
 		this.offsetX = offsetX;
 		this.offsetY = offsetY;
 		this.offsetZ = offsetZ;
@@ -68,7 +70,7 @@ public class Schematic implements BlockView {
 	}
 	
 	public SchematicInfo getInfo() {
-		return new SchematicInfo(sizeX, sizeY, sizeZ);
+		return new SchematicInfo(visible, sizeX, sizeY, sizeZ);
 	}
 	
 	public int getOffsetX() {
@@ -158,7 +160,7 @@ public class Schematic implements BlockView {
 			rotatedBlockEntities.put(rotatedPos, rotatedBE);
 		}
 		
-		return new Schematic(rotatedOffset.getX(), rotatedOffset.getY(), rotatedOffset.getZ(), newSizeX, newSizeY, newSizeZ, rotatedBlockStates, rotatedBlockEntities);
+		return new Schematic(visible, rotatedOffset.getX(), rotatedOffset.getY(), rotatedOffset.getZ(), newSizeX, newSizeY, newSizeZ, rotatedBlockStates, rotatedBlockEntities);
 	}
 	
 	public void apply(EditorWorld world, BlockPos pos) {
@@ -223,7 +225,7 @@ public class Schematic implements BlockView {
 		return x + z * sizeX + y * sizeX * sizeZ;
 	}
 	
-	public static Schematic readNbt(WrapperLookup registryLookup, NbtCompound nbt) {
+	public static Schematic readNbt(WrapperLookup registryLookup, NbtCompound nbt, boolean visible) {
 		int offsetX = nbt.getInt("offsetX");
 		int offsetY = nbt.getInt("offsetY");
 		int offsetZ = nbt.getInt("offsetZ");
@@ -240,7 +242,7 @@ public class Schematic implements BlockView {
 			BlockEntity blockEntity = BlockEntity.createFromNbt(pos, blockStates.get(indexOf(pos, sizeX, sizeY, sizeZ)), (NbtCompound) e, registryLookup);
 			blockEntities.put(pos, blockEntity);
 		}
-		return new Schematic(offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ, blockStates, blockEntities);
+		return new Schematic(visible, offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ, blockStates, blockEntities);
 	}
 	
 
@@ -270,6 +272,6 @@ public class Schematic implements BlockView {
 				}
 			}
 		}
-		return new Schematic(0, 0, 0, area.getBlockCountX(), area.getBlockCountY(), area.getBlockCountZ(), blockStates, blockEntities);
+		return new Schematic(true, 0, 0, 0, area.getBlockCountX(), area.getBlockCountY(), area.getBlockCountZ(), blockStates, blockEntities);
 	}
 }
