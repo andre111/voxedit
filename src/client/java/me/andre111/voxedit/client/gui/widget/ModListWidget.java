@@ -46,7 +46,7 @@ import org.jetbrains.annotations.Nullable;
 
 @Environment(value=EnvType.CLIENT)
 public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends ContainerWidget implements LayoutWidget {
-    private static final Identifier SCROLLER_TEXTURE = new Identifier("widget/scroller");
+    private static final Identifier SCROLLER_TEXTURE = Identifier.of("widget/scroller");
     protected final MinecraftClient client;
     private final List<E> children = new ArrayList<>();
     private int padding;

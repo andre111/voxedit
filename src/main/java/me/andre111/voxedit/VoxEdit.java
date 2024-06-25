@@ -129,7 +129,7 @@ public class VoxEdit implements ModInitializer {
 	}
 	
 	public static Identifier id(String path) {
-		return new Identifier("voxedit", path);
+		return Identifier.of("voxedit", path);
 	}
 	
 	public static <A extends EditAction<A>> EditAction.Type<A> registerAction(Identifier id, BiConsumer<A, EditHistoryWriter> writer, Function<EditHistoryReader, A> reader) {

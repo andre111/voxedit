@@ -33,7 +33,7 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.gen.feature.ConfiguredFeature;
 
 public class ToolPlace extends VoxelTool {
-	private static final ToolSetting<Identifier> FEATURE = ToolSetting.ofIdentifier("feature", new Identifier("minecraft", "oak"), RegistryKeys.CONFIGURED_FEATURE);
+	private static final ToolSetting<Identifier> FEATURE = ToolSetting.ofIdentifier("feature", Identifier.of("minecraft", "oak"), RegistryKeys.CONFIGURED_FEATURE);
 	private static final ToolSetting<Integer> TRIES = ToolSetting.ofInt("tries", 3, 1, 10);
 	
 	public ToolPlace() {
@@ -66,14 +66,14 @@ public class ToolPlace extends VoxelTool {
 	@Override
 	public Map<String, ToolConfig> getPresets() {
 		return Map.of(
-				"Oak", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "oak")),
-				"Birch", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "birch")),
-				"Spruce", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "spruce")),
-				"Acacia", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "acacia")),
-				"Dark Oak", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "dark_oak")),
-				"Jungle", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "jungle_tree")),
-				"Azalea", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "azalea_tree")),
-				"Mangrove", getDefaultConfig().with(FEATURE, new Identifier("minecraft", "mangrove"))
+				"Oak", getDefaultConfig().with(FEATURE, Identifier.of("minecraft", "oak")),
+				"Birch", getDefaultConfig().with(FEATURE, Identifier.of("minecraft", "birch")),
+				"Spruce", getDefaultConfig().with(FEATURE, Identifier.of("minecraft", "spruce")),
+				"Acacia", getDefaultConfig().with(FEATURE, Identifier.of("minecraft", "acacia")),
+				"Dark Oak", getDefaultConfig().with(FEATURE, Identifier.of("minecraft", "dark_oak")),
+				"Jungle", getDefaultConfig().with(FEATURE, Identifier.of("minecraft", "jungle_tree")),
+				"Azalea", getDefaultConfig().with(FEATURE, Identifier.of("minecraft", "azalea_tree")),
+				"Mangrove", getDefaultConfig().with(FEATURE, Identifier.of("minecraft", "mangrove"))
 			);
 	}
 }

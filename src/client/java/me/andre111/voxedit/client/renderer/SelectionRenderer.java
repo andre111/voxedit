@@ -24,10 +24,12 @@ import me.andre111.voxedit.selection.Selection;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.gl.VertexBuffer;
 import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BuiltBuffer;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.util.BufferAllocator;
 import net.minecraft.client.util.Window;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
@@ -45,10 +47,8 @@ public class SelectionRenderer {
 			return;
 		}
 		
-		BufferBuilder lineBuilder = new BufferBuilder(4096);
-		lineBuilder.begin(VertexFormat.DrawMode.LINES, VertexFormats.LINES);
-		BufferBuilder faceBuilder = new BufferBuilder(4096);
-        faceBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+		BufferBuilder lineBuilder = new BufferBuilder(new BufferAllocator(4096), VertexFormat.DrawMode.LINES, VertexFormats.LINES);
+		BufferBuilder faceBuilder = new BufferBuilder(new BufferAllocator(4096), VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
 		
         final float alpha = 1f;
         final float lineExpand = 0;
@@ -72,58 +72,58 @@ public class SelectionRenderer {
             
             if(!up) {
             	if(!north) {
-            		lineBuilder.vertex(x, y+lineSize, z).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f).next();
-            		lineBuilder.vertex(x+lineSize, y+lineSize, z).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f).next();
+            		lineBuilder.vertex(x, y+lineSize, z).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f);
+            		lineBuilder.vertex(x+lineSize, y+lineSize, z).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f);
             	}
             	if(!east) {
-            		lineBuilder.vertex(x+lineSize, y+lineSize, z).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f).next();
-            		lineBuilder.vertex(x+lineSize, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f).next();
+            		lineBuilder.vertex(x+lineSize, y+lineSize, z).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f);
+            		lineBuilder.vertex(x+lineSize, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f);
             	}
             	if(!south) {
-            		lineBuilder.vertex(x, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f).next();
-            		lineBuilder.vertex(x+lineSize, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f).next();
+            		lineBuilder.vertex(x, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f);
+            		lineBuilder.vertex(x+lineSize, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f);
             	}
             	if(!west) {
-            		lineBuilder.vertex(x, y+lineSize, z).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f).next();
-            		lineBuilder.vertex(x, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f).next();
+            		lineBuilder.vertex(x, y+lineSize, z).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f);
+            		lineBuilder.vertex(x, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f);
             	}
             }
             if(!down) {
             	if(!north) {
-            		lineBuilder.vertex(x, y, z).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f).next();
-            		lineBuilder.vertex(x+lineSize, y, z).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f).next();
+            		lineBuilder.vertex(x, y, z).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f);
+            		lineBuilder.vertex(x+lineSize, y, z).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f);
             	}
             	if(!east) {
-            		lineBuilder.vertex(x+lineSize, y, z).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f).next();
-            		lineBuilder.vertex(x+lineSize, y, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f).next();
+            		lineBuilder.vertex(x+lineSize, y, z).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f);
+            		lineBuilder.vertex(x+lineSize, y, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f);
             	}
             	if(!south) {
-            		lineBuilder.vertex(x, y, z+lineSize).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f).next();
-            		lineBuilder.vertex(x+lineSize, y, z+lineSize).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f).next();
+            		lineBuilder.vertex(x, y, z+lineSize).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f);
+            		lineBuilder.vertex(x+lineSize, y, z+lineSize).color(0, 0, 0, 0.75f).normal(1.0f, 0.0f, 0.0f);
             	}
             	if(!west) {
-            		lineBuilder.vertex(x, y, z).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f).next();
-            		lineBuilder.vertex(x, y, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f).next();
+            		lineBuilder.vertex(x, y, z).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f);
+            		lineBuilder.vertex(x, y, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 0.0f, 1.0f);
             	}
             }
             if(!north) {
             	if(!east) {
-            		lineBuilder.vertex(x+lineSize, y, z).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f).next();
-            		lineBuilder.vertex(x+lineSize, y+lineSize, z).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f).next();
+            		lineBuilder.vertex(x+lineSize, y, z).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f);
+            		lineBuilder.vertex(x+lineSize, y+lineSize, z).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f);
             	}
             	if(!west) {
-            		lineBuilder.vertex(x, y, z).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f).next();
-            		lineBuilder.vertex(x, y+lineSize, z).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f).next();
+            		lineBuilder.vertex(x, y, z).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f);
+            		lineBuilder.vertex(x, y+lineSize, z).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f);
             	}
             }
             if(!south) {
             	if(!east) {
-            		lineBuilder.vertex(x+lineSize, y, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f).next();
-            		lineBuilder.vertex(x+lineSize, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f).next();
+            		lineBuilder.vertex(x+lineSize, y, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f);
+            		lineBuilder.vertex(x+lineSize, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f);
             	}
             	if(!west) {
-            		lineBuilder.vertex(x, y, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f).next();
-            		lineBuilder.vertex(x, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f).next();
+            		lineBuilder.vertex(x, y, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f);
+            		lineBuilder.vertex(x, y+lineSize, z+lineSize).color(0, 0, 0, 0.75f).normal(0.0f, 1.0f, 0.0f);
             	}
             }
             
@@ -133,85 +133,99 @@ public class SelectionRenderer {
             z = (float) pos.getZ()-faceExpand;
 
             if(!up) {
-            	faceBuilder.vertex(x, y+faceSize, z).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x+faceSize, y+faceSize, z).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x+faceSize, y+faceSize, z+faceSize).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x, y+faceSize, z+faceSize).color(1, 1, 1, alpha).next();
+            	faceBuilder.vertex(x, y+faceSize, z).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x+faceSize, y+faceSize, z).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x+faceSize, y+faceSize, z+faceSize).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x, y+faceSize, z+faceSize).color(1, 1, 1, alpha);
             }
             if(!down) {
-            	faceBuilder.vertex(x, y, z).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x+faceSize, y, z).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x+faceSize, y, z+faceSize).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x, y, z+faceSize).color(1, 1, 1, alpha).next();
+            	faceBuilder.vertex(x, y, z).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x+faceSize, y, z).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x+faceSize, y, z+faceSize).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x, y, z+faceSize).color(1, 1, 1, alpha);
             }
             if(!north) {
-            	faceBuilder.vertex(x, y, z).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x+faceSize, y, z).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x+faceSize, y+faceSize, z).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x, y+faceSize, z).color(1, 1, 1, alpha).next();
+            	faceBuilder.vertex(x, y, z).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x+faceSize, y, z).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x+faceSize, y+faceSize, z).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x, y+faceSize, z).color(1, 1, 1, alpha);
             }
             if(!east) {
-            	faceBuilder.vertex(x+faceSize, y, z).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x+faceSize, y+faceSize, z).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x+faceSize, y+faceSize, z+faceSize).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x+faceSize, y, z+faceSize).color(1, 1, 1, alpha).next();
+            	faceBuilder.vertex(x+faceSize, y, z).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x+faceSize, y+faceSize, z).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x+faceSize, y+faceSize, z+faceSize).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x+faceSize, y, z+faceSize).color(1, 1, 1, alpha);
             }
             if(!south) {
-            	faceBuilder.vertex(x, y, z+faceSize).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x+faceSize, y, z+faceSize).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x+faceSize, y+faceSize, z+faceSize).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x, y+faceSize, z+faceSize).color(1, 1, 1, alpha).next();
+            	faceBuilder.vertex(x, y, z+faceSize).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x+faceSize, y, z+faceSize).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x+faceSize, y+faceSize, z+faceSize).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x, y+faceSize, z+faceSize).color(1, 1, 1, alpha);
             }
             if(!west) {
-            	faceBuilder.vertex(x, y, z).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x, y+faceSize, z).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x, y+faceSize, z+faceSize).color(1, 1, 1, alpha).next();
-            	faceBuilder.vertex(x, y, z+faceSize).color(1, 1, 1, alpha).next();
+            	faceBuilder.vertex(x, y, z).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x, y+faceSize, z).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x, y+faceSize, z+faceSize).color(1, 1, 1, alpha);
+            	faceBuilder.vertex(x, y, z+faceSize).color(1, 1, 1, alpha);
             }
 		});
 		
 		if(lineBuffer != null) lineBuffer.close();
-		lineBuffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
-		lineBuffer.bind();
-		lineBuffer.upload(lineBuilder.end());
-		VertexBuffer.unbind();
+		BuiltBuffer lineBB = lineBuilder.endNullable();
+		if(lineBB != null) {
+			lineBuffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
+			lineBuffer.bind();
+			lineBuffer.upload(lineBB);
+			VertexBuffer.unbind();
+		} else {
+			lineBuffer = null;
+		}
 		
 		if(faceBuffer != null) faceBuffer.close();
-		faceBuffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
-		faceBuffer.bind();
-		faceBuffer.upload(faceBuilder.end());
-		VertexBuffer.unbind();
+		BuiltBuffer faceBB = faceBuilder.endNullable();
+		if(faceBB != null) {
+			faceBuffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
+			faceBuffer.bind();
+			faceBuffer.upload(faceBB);
+			VertexBuffer.unbind();
+		} else {
+			faceBuffer = null;
+		}
 	}
 	
 	public void draw(float r, float g, float b, Vec3d cameraPos, Frustum frustum, Matrix4f modelViewMat, Matrix4f projMat, Window window) {
-		if(lineBuffer == null || faceBuffer == null) return;
+		if(lineBuffer == null && faceBuffer == null) return;
 		
 		modelViewMat = modelViewMat.translate((float) -cameraPos.x, (float) -cameraPos.y, (float) -cameraPos.z, new Matrix4f());
 
         final float alpha = 0.15f;
         
-		RenderLayer.getDebugQuads().startDrawing();
-        RenderSystem.enableBlend();
-        RenderSystem.depthMask(false);
-        ShaderProgram shader = RenderSystem.getShader();
-        SchematicRenderer.setDefaultUniforms(shader, VertexFormat.DrawMode.QUADS, modelViewMat, projMat, window);
-        if(shader.colorModulator != null) shader.colorModulator.set(r, g, b, alpha);
-        shader.bind();
-        faceBuffer.bind();
-        faceBuffer.draw();
-        VertexBuffer.unbind();
-        shader.unbind();
-        RenderSystem.depthMask(true);
-        RenderLayer.getDebugQuads().endDrawing();
+        if(faceBuffer != null) {
+			RenderLayer.getDebugQuads().startDrawing();
+	        RenderSystem.enableBlend();
+	        RenderSystem.depthMask(false);
+	        ShaderProgram shader = RenderSystem.getShader();
+	        SchematicRenderer.setDefaultUniforms(shader, VertexFormat.DrawMode.QUADS, modelViewMat, projMat, window);
+	        if(shader.colorModulator != null) shader.colorModulator.set(r, g, b, alpha);
+	        shader.bind();
+	        faceBuffer.bind();
+	        faceBuffer.draw();
+	        VertexBuffer.unbind();
+	        shader.unbind();
+	        RenderSystem.depthMask(true);
+	        RenderLayer.getDebugQuads().endDrawing();
+        }
 		
-		RenderLayer.getLines().startDrawing();
-        shader = RenderSystem.getShader();
-        SchematicRenderer.setDefaultUniforms(shader, VertexFormat.DrawMode.LINES, modelViewMat, projMat, window);
-        shader.bind();
-        lineBuffer.bind();
-        lineBuffer.draw();
-        VertexBuffer.unbind();
-        shader.unbind();
-        RenderLayer.getLines().endDrawing();
+        if(lineBuffer != null) {
+			RenderLayer.getLines().startDrawing();
+			ShaderProgram shader = RenderSystem.getShader();
+	        SchematicRenderer.setDefaultUniforms(shader, VertexFormat.DrawMode.LINES, modelViewMat, projMat, window);
+	        shader.bind();
+	        lineBuffer.bind();
+	        lineBuffer.draw();
+	        VertexBuffer.unbind();
+	        shader.unbind();
+	        RenderLayer.getLines().endDrawing();
+        }
 	}
 }

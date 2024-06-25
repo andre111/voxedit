@@ -32,7 +32,7 @@ public class OffsetVertexConsumer implements VertexConsumer {
 	}
 
 	@Override
-	public VertexConsumer vertex(double x, double y, double z) {
+	public VertexConsumer vertex(float x, float y, float z) {
 		consumer.vertex(x + xOffset, y + yOffset, z + zOffset);
 		return this;
 	}
@@ -67,7 +67,7 @@ public class OffsetVertexConsumer implements VertexConsumer {
 		return this;
 	}
 
-	@Override
+	/*@Override
 	public void next() {
 		consumer.next();
 	}
@@ -80,5 +80,5 @@ public class OffsetVertexConsumer implements VertexConsumer {
 	@Override
 	public void unfixColor() {
 		consumer.unfixColor();
-	}
+	}*/
 }

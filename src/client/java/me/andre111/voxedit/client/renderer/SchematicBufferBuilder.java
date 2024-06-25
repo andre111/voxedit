@@ -25,11 +25,13 @@ import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.gl.VertexBuffer;
 import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BuiltBuffer;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.render.block.BlockRenderManager;
+import net.minecraft.client.util.BufferAllocator;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;
@@ -73,9 +75,7 @@ public class SchematicBufferBuilder {
 
     private static BufferBuilder startBuilding(Reference2ObjectMap<RenderLayer, BufferBuilder> buffers, RenderLayer layer) {
         return buffers.computeIfAbsent(layer, renderType -> {
-            BufferBuilder bufferBuilder = new BufferBuilder(4096);
-            bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT_NORMAL);
-            return bufferBuilder;
+            return new BufferBuilder(new BufferAllocator(4096), VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT_NORMAL);
         });
     }
 
@@ -90,7 +90,7 @@ public class SchematicBufferBuilder {
         public void uploadTo(Reference2ObjectMap<RenderLayer, VertexBuffer> buffers) {
             for (RenderLayer layer : RenderLayer.getBlockLayers()) {
                 VertexBuffer vertexBuffer;
-                BufferBuilder.BuiltBuffer renderedBuffer = this.takeLayer(layer);
+                BuiltBuffer renderedBuffer = this.takeLayer(layer);
                 if (renderedBuffer == null) {
                     vertexBuffer = buffers.remove(layer);
                     if (vertexBuffer != null) vertexBuffer.close();
@@ -107,14 +107,14 @@ public class SchematicBufferBuilder {
         }
 
         @Nullable
-        public BufferBuilder.BuiltBuffer takeLayer(RenderLayer layer) {
+        public BuiltBuffer takeLayer(RenderLayer layer) {
             BufferBuilder bufferBuilder = (BufferBuilder)this.builders.get(layer);
             return bufferBuilder != null ? bufferBuilder.endNullable() : null;
         }
 
         @Override
         public void close() {
-            this.builders.values().forEach(BufferBuilder::close);
+            //this.builders.values().forEach(BufferBuilder::endNullable);
         }
     }
 }

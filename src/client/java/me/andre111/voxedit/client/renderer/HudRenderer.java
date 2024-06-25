@@ -27,6 +27,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.RenderTickCounter;
 
 @Environment(value=EnvType.CLIENT)
 public class HudRenderer implements HudRenderCallback {
@@ -35,7 +36,7 @@ public class HudRenderer implements HudRenderCallback {
 	}
 
 	@Override
-	public void onHudRender(DrawContext drawContext, float tickDelta) {
+	public void onHudRender(DrawContext drawContext, RenderTickCounter tickCounter) {
 		var currentScreen = MinecraftClient.getInstance().currentScreen;
 		if(currentScreen != null) return;
 		
@@ -43,7 +44,7 @@ public class HudRenderer implements HudRenderCallback {
 			VoxEditClient.unscaleGui();
 			Matrix4f projMat = RenderSystem.getProjectionMatrix();
 			RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0.0f, (float) MinecraftClient.getInstance().getWindow().getFramebufferWidth(), (float) MinecraftClient.getInstance().getWindow().getFramebufferHeight(), 0.0f, 1000.0f, 21000.0f), VertexSorter.BY_Z);
-			EditorScreen.get().render(drawContext, -1, -1, tickDelta);
+			EditorScreen.get().render(drawContext, -1, -1, tickCounter.getTickDelta(true));
 			RenderSystem.setProjectionMatrix(projMat, VertexSorter.BY_Z);
 			VoxEditClient.restoreGuiScale();
 		}
