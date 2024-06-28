@@ -35,10 +35,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
-public class SchematicPlacement extends Gizmo implements Positionable, Rotatable90Deg, Renderable {
+public class SchematicPlacement extends Gizmo implements Positionable, Rotatable90Deg, RotatableFreeYaw, Renderable {
 	private final String name;
 	private BlockPos pos;
 	private BlockRotation rotation;
+	private float yaw;
 	
 	private SchematicRenderer renderer;
 	private SchematicInfo info;
@@ -78,6 +79,19 @@ public class SchematicPlacement extends Gizmo implements Positionable, Rotatable
 	}
 
 	@Override
+	public float getYaw() {
+		return yaw;
+	}
+
+	@Override
+	public void setYaw(float yaw) {
+		this.yaw = yaw;
+		if(renderer != null) renderer.close();
+		renderer = null;
+		modified();
+	}
+
+	@Override
 	public void render(WorldRenderContext context) {
 		render(context, true);
 	}
@@ -91,7 +105,7 @@ public class SchematicPlacement extends Gizmo implements Positionable, Rotatable
 	public void addActions(GizmoActions actions) {
 		actions.add(Text.translatable("voxedit.gizmo.delete"), () -> EditorState.removeGizmo(this));
 		actions.add(Text.translatable("voxedit.gizmo.place"), () -> {
-			ClientPlayNetworking.send(new CPPlaceSchematic(name, pos, rotation));
+			ClientPlayNetworking.send(new CPPlaceSchematic(name, pos, rotation, yaw));
 			EditorState.removeGizmo(this);
 		});
 	}
@@ -99,6 +113,7 @@ public class SchematicPlacement extends Gizmo implements Positionable, Rotatable
 	@Override
 	public void addHandles(List<GizmoHandle> handles) {
 		addPosHandles(handles);
+		addYawHandles(handles);
 	}
 
 	@Override
@@ -132,6 +147,7 @@ public class SchematicPlacement extends Gizmo implements Positionable, Rotatable
 			Schematic schematic = EditorState.schematic(name);
 			if(schematic != null) {
 				schematic = schematic.rotated(MinecraftClient.getInstance().world.getRegistryManager(), rotation);
+				schematic = schematic.rotated(MinecraftClient.getInstance().world.getRegistryManager(), yaw);
 				
 				renderer = new SchematicRenderer(new SchematicView(BlockPos.ORIGIN, schematic));
 				info = schematic.getInfo();

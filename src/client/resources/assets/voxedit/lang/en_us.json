@@ -53,6 +53,7 @@
 	"voxedit.gizmo.rotation": "Rotation",
 	"voxedit.gizmo.rotation.left": "Rotate Left",
 	"voxedit.gizmo.rotation.right": "Rotate Right",
+	"voxedit.gizmo.yaw": "Yaw",
 	"voxedit.gizmo.place": "Place",
 	"voxedit.gizmo.delete": "Delete",
 	

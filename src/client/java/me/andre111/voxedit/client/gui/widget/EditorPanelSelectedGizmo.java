@@ -24,6 +24,7 @@ import me.andre111.voxedit.client.gizmo.Gizmo;
 import me.andre111.voxedit.client.gizmo.GizmoActions;
 import me.andre111.voxedit.client.gizmo.Positionable;
 import me.andre111.voxedit.client.gizmo.Rotatable90Deg;
+import me.andre111.voxedit.client.gizmo.RotatableFreeYaw;
 import me.andre111.voxedit.client.gizmo.Sizeable;
 import me.andre111.voxedit.tool.data.ToolConfig;
 import me.andre111.voxedit.tool.data.ToolSetting;
@@ -40,6 +41,7 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 	
 	private IntFieldWidget x, y, z;
 	private IntFieldWidget sizeX, sizeY, sizeZ;
+	private IntFieldWidget yaw;
 
 	public EditorPanelSelectedGizmo(EditorWidget parent) {
 		super(parent, VoxEdit.id("selected_gizmo"), Text.translatable("voxedit.screen.panel.selectedGizmo"));
@@ -102,6 +104,13 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 				r.setRotation(r.getRotation().rotate(BlockRotation.CLOCKWISE_90));
 			}).size((getWidth()-gap)/2, 20).build());
 		}
+		if(selected instanceof RotatableFreeYaw ry) {
+			addContent(new LineHorizontal(getWidth(), Text.translatable("voxedit.gizmo.yaw")));
+			yaw = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, getWidth(), 20, Text.of("Yaw"), 0, v -> {
+				ry.setYaw((float) (v / 180.0 * Math.PI));
+			});
+			addContent(yaw);
+		}
 		
 		if(selected != null) {
 			Text name = selected.getName();
@@ -145,6 +154,9 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 			sizeX.setInt(s.getSize().getX());
 			sizeY.setInt(s.getSize().getY());
 			sizeZ.setInt(s.getSize().getZ());
+		}
+		if(selected instanceof RotatableFreeYaw ry) {
+			yaw.setInt((int) Math.round(ry.getYaw() / Math.PI * 180.0));
 		}
 		
 		reloading = false;

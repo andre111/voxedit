@@ -149,7 +149,7 @@ public class ServerNetworking {
 				if(schematic == null) return;
 				
 				Editor.undoable(context.player(), world, Text.translatable("voxedit.schematic.name", payload.name()), (editable) -> {
-					schematic.rotated(editable.getRegistryManager(), payload.rotation()).apply(editable, payload.pos());
+					schematic.rotated(editable.getRegistryManager(), payload.rotation()).rotated(editable.getRegistryManager(), payload.yaw()).apply(editable, payload.pos());
 				}, payload.pos(), false).inform(context.player(), EditType.PERFORM);
 			});
 		});

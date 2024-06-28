@@ -24,12 +24,13 @@ import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.BlockRotation;
 import net.minecraft.util.math.BlockPos;
 
-public record CPPlaceSchematic(String name, BlockPos pos, BlockRotation rotation) implements CustomPayload {
+public record CPPlaceSchematic(String name, BlockPos pos, BlockRotation rotation, float yaw) implements CustomPayload {
 	public static final Id<CPPlaceSchematic> ID = new Id<>(VoxEdit.id("place_schematic"));
 	public static final PacketCodec<ByteBuf, CPPlaceSchematic> CODEC = PacketCodec.tuple(
 			PacketCodecs.STRING, CPPlaceSchematic::name, 
 			BlockPos.PACKET_CODEC, CPPlaceSchematic::pos, 
 			PacketCodecs.BYTE.xmap(b -> BlockRotation.values()[b], r -> (byte) r.ordinal()), CPPlaceSchematic::rotation,
+			PacketCodecs.FLOAT, CPPlaceSchematic::yaw,
 			CPPlaceSchematic::new);
 	static {
 		PayloadTypeRegistry.playC2S().register(ID, CODEC);

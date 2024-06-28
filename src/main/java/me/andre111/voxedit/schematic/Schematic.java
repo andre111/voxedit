@@ -162,6 +162,57 @@ public class Schematic implements BlockView {
 		
 		return new Schematic(visible, rotatedOffset.getX(), rotatedOffset.getY(), rotatedOffset.getZ(), newSizeX, newSizeY, newSizeZ, rotatedBlockStates, rotatedBlockEntities);
 	}
+
+	public Schematic rotated(WrapperLookup registryLookup, float yaw) {
+		if(yaw == 0) return this;
+		
+		int newSize = (int) Math.ceil(Math.sqrt(sizeX*sizeX + sizeY*sizeY + sizeZ*sizeZ));
+		int centerX = sizeX / 2;
+		int centerZ = sizeZ / 2;
+		int newCenter = newSize / 2;
+		double sin = Math.sin(-yaw);
+		double cos = Math.cos(-yaw);
+		
+		float limitedYaw = (float) (yaw % (Math.PI * 2));
+		if(limitedYaw > Math.PI) limitedYaw -= Math.PI*2;
+		if(limitedYaw < -Math.PI) limitedYaw += Math.PI*2;
+		BlockRotation blockRot = BlockRotation.NONE;
+		if(Math.PI / 4 <= limitedYaw && limitedYaw < Math.PI / 4 * 3) blockRot = BlockRotation.CLOCKWISE_90;
+		else if(-Math.PI / 4 >= limitedYaw && limitedYaw > -Math.PI / 4 * 3) blockRot = BlockRotation.COUNTERCLOCKWISE_90;
+		else if(Math.abs(limitedYaw) >= Math.PI / 4 * 3) blockRot = BlockRotation.CLOCKWISE_180;
+		
+		
+		List<BlockState> rotatedBlockStates = new ArrayList<>();
+		Map<BlockPos, BlockEntity> rotatedBlockEntities = new HashMap<>();
+		BlockPos.Mutable schematicPos = new BlockPos.Mutable();
+		for(int y=0; y<sizeY; y++) {
+			for(int z=0; z<newSize; z++) {
+				for(int x=0; x<newSize; x++) {
+
+					double rotatedX = x - newCenter;
+					double rotatedZ = z - newCenter;
+					
+					double unrotatedX = (cos * rotatedX - sin * rotatedZ) + centerX;
+					double unrotatedZ = (sin * rotatedX + cos * rotatedZ) + centerZ;
+					
+					BlockPos unrotated = schematicPos.set((int) Math.round(unrotatedX), y, Math.round(unrotatedZ));
+					int unrotatedIndex = indexOf(unrotated, sizeX, sizeY, sizeZ);
+					
+					BlockState state = unrotatedIndex == -1 ? Blocks.STRUCTURE_VOID.getDefaultState() : blockStates.get(unrotatedIndex);
+					rotatedBlockStates.add(state.rotate(blockRot));
+					
+					BlockEntity be = blockEntities.get(unrotated);
+					if(be != null) {
+						BlockPos rotatedBEPos = schematicPos.set(x, y, z).toImmutable();
+						BlockEntity rotatedBE = VoxEditUtil.copyBlockEntity(registryLookup, state, be, rotatedBEPos);
+						rotatedBlockEntities.put(rotatedBEPos, rotatedBE);
+					}
+				}
+			}
+		}
+		
+		return new Schematic(visible, 0, 0, 0, newSize, sizeY, newSize, rotatedBlockStates, rotatedBlockEntities);
+	}
 	
 	public void apply(EditorWorld world, BlockPos pos) {
 		BlockPos start = pos.add(offsetX, offsetY, offsetZ);
