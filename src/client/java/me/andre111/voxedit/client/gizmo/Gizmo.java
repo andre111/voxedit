@@ -15,13 +15,18 @@
  */
 package me.andre111.voxedit.client.gizmo;
 
+import java.util.List;
+
 import me.andre111.voxedit.client.EditorState;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
 
 public abstract class Gizmo implements Iterable<Box> {
 	public abstract Text getName();
 	public abstract void addActions(GizmoActions actions);
+	public abstract void addHandles(List<GizmoHandle> handles);
+	public abstract Vec3d getHandleOrigin();
 	
 	public void selected() {}
 	public void deselected() {}

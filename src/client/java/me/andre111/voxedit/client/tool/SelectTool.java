@@ -46,7 +46,7 @@ public class SelectTool extends ClientTool {
 	}
 
 	@Override
-	public void mouseMoved(Target target, Context context, ToolConfig config) {
+	public void mouseTargetMoved(Target target, Context context, ToolConfig config) {
 		if(target == null) return;
 		
 		List<BlockPos> positions = EditorState.toolState().positions();
@@ -56,7 +56,7 @@ public class SelectTool extends ClientTool {
 	}
 
 	@Override
-	public void mouseClicked(int button, Target target, Context context, ToolConfig config) {
+	public void mouseTargetClicked(int button, Target target, Context context, ToolConfig config) {
 		if(target == null) return;
 		
 		List<BlockPos> positions = EditorState.toolState().positions();

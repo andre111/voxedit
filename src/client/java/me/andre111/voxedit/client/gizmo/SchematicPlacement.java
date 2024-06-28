@@ -33,6 +33,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.BlockRotation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
 
 public class SchematicPlacement extends Gizmo implements Positionable, Rotatable90Deg, Renderable {
 	private final String name;
@@ -93,6 +94,16 @@ public class SchematicPlacement extends Gizmo implements Positionable, Rotatable
 			ClientPlayNetworking.send(new CPPlaceSchematic(name, pos, rotation));
 			EditorState.removeGizmo(this);
 		});
+	}
+	
+	@Override
+	public void addHandles(List<GizmoHandle> handles) {
+		addPosHandles(handles);
+	}
+
+	@Override
+	public Vec3d getHandleOrigin() {
+		return Vec3d.of(getPos()).add(info.sizeX() / 2.0, info.sizeY() / 2.0, info.sizeZ() / 2.0);
 	}
 
 	@Override

@@ -58,6 +58,7 @@
 	
 	"voxedit.object.mode.select": "Select",
 	"voxedit.object.mode.move": "Move",
+	"voxedit.object.mode.adjust": "Adjust",
 	
     "voxedit.action.perform": "%s - %s",
     "voxedit.action.undo": "Undo: %s - %s",

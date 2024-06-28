@@ -40,7 +40,11 @@ public abstract class ClientTool extends Tool {
 		VoxEdit.LOGGER.error("Trying to perform server action on ClientTool.");
 	}
 
-	public abstract void mouseMoved(Target target, Context context, ToolConfig config);
-	public abstract void mouseClicked(int button, Target target, Context context, ToolConfig config);
+	public void mouseMoved(int button, Context context, ToolConfig config) {}
+	public void mousePressed(int button, Context context, ToolConfig config) {}
+	public void mouseReleased(int button, Context context, ToolConfig config) {}
+	
+	public abstract void mouseTargetMoved(Target target, Context context, ToolConfig config);
+	public abstract void mouseTargetClicked(int button, Target target, Context context, ToolConfig config);
 	public abstract boolean cancel();
 }

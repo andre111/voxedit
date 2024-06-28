@@ -32,6 +32,7 @@ import me.andre111.voxedit.Presets;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.VoxEditUtil;
 import me.andre111.voxedit.client.gizmo.Gizmo;
+import me.andre111.voxedit.client.gizmo.GizmoHandle;
 import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.schematic.Schematic;
 import me.andre111.voxedit.selection.Selection;
@@ -45,6 +46,7 @@ import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 
 public class EditorState {
 	public static final Event<Consumer<Tool>> CHANGE_TOOL = EventFactory.createArrayBacked(Consumer.class, callbacks -> tool -> {
@@ -103,7 +105,10 @@ public class EditorState {
 	private static Set<BlockPos> positions = new HashSet<>();
 	private static BlockPalette filter = new BlockPalette();
 	private static Gizmo selected = null;
+	private static GizmoHandle activeHandle = null;
+	private static Vec3d activeHandleOrigin = null;
 	private static Set<Gizmo> gizmos = new HashSet<>();
+	private static List<GizmoHandle> gizmoHandles = new ArrayList<>();
 	private static Map<String, Schematic> schematics = new HashMap<>();
 	private static List<EditStats> history = new ArrayList<>();
 	private static int historyIndex = -1;
@@ -205,11 +210,35 @@ public class EditorState {
 		Gizmo previousSelected = EditorState.selected;
 		addGizmo(selected);
 		EditorState.selected = selected;
+		EditorState.activeHandle = null;
+		EditorState.gizmoHandles.clear();
 		
-		if(previousSelected != null) previousSelected.deselected();
-		if(selected != null) selected.selected();
+		if(previousSelected != null) {
+			previousSelected.deselected();
+		}
+		if(selected != null) {
+			selected.selected();
+			selected.addHandles(gizmoHandles);
+		}
 		
 		CHANGE_SELECTED.invoker().accept(selected);
+	}
+	
+	public static GizmoHandle activeHandle() {
+		return activeHandle;
+	}
+	
+	public static Vec3d activeHandleOrigin() {
+		return activeHandleOrigin;
+	}
+	
+	public static void activeHandle(GizmoHandle activeHandle, Vec3d activeHandleOrigin) {
+		EditorState.activeHandle = activeHandle;
+		EditorState.activeHandleOrigin = activeHandleOrigin;
+	}
+	
+	public static List<GizmoHandle> gizmoHandles() {
+		return Collections.unmodifiableList(gizmoHandles);
 	}
 	
 	public static Set<Gizmo> gizmos() {

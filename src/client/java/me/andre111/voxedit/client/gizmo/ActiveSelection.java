@@ -32,6 +32,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
 
 public class ActiveSelection extends Gizmo implements Positionable, Renderable, Sizeable {
 	public static final ToolSetting<SelectionMode> SELECTION_MODE = ToolSetting.ofEnum("selection_mode", SelectionMode.class, SelectionMode::asText, true);
@@ -62,6 +63,17 @@ public class ActiveSelection extends Gizmo implements Positionable, Renderable, 
 			RENDERER.rebuild(selection);
 			modified();
 		});
+	}
+	
+	@Override
+	public void addHandles(List<GizmoHandle> handles) {
+		addPosHandles(handles);
+	}
+
+	@Override
+	public Vec3d getHandleOrigin() {
+		BlockPos size = getSize();
+		return Vec3d.of(getPos()).add(size.getX() / 2.0, size.getY() / 2.0, size.getZ() / 2.0);
 	}
 
 	@Override
