@@ -58,7 +58,7 @@
 	"voxedit.gizmo.delete": "Delete",
 	
 	"voxedit.object.mode.select": "Select",
-	"voxedit.object.mode.move": "Move",
+	"voxedit.object.mode.position": "Position",
 	"voxedit.object.mode.adjust": "Adjust",
 	
     "voxedit.action.perform": "%s - %s",

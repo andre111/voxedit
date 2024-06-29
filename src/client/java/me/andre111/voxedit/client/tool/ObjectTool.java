@@ -171,7 +171,7 @@ public class ObjectTool extends ClientTool {
 		switch(MODE.get(config)) {
 		case SELECT:
 			break;
-		case MOVE:
+		case POSITION:
 			if(EditorState.selected() instanceof Positionable p && target.pos().isPresent()) {
 				if(EditorState.toolState().positions().isEmpty()) EditorState.toolState().positions().add(p.getPos().toImmutable());
 
@@ -209,7 +209,7 @@ public class ObjectTool extends ClientTool {
 			EditorState.toolConfig(config.with(MODE, Mode.SELECT));
 			EditorState.toolState().positions().clear();
 			break;
-		case MOVE:
+		case POSITION:
 			EditorState.toolConfig(config.with(MODE, Mode.SELECT));
 			EditorState.toolState().positions().clear();
 			break;
@@ -224,7 +224,7 @@ public class ObjectTool extends ClientTool {
 		switch(MODE.get(config)) {
 		case SELECT:
 			break;
-		case MOVE:
+		case POSITION:
 			if(EditorState.selected() instanceof Positionable p && EditorState.toolState().positions().size() > 0) {
 				p.setPos(EditorState.toolState().positions().getFirst());
 			}
@@ -249,7 +249,7 @@ public class ObjectTool extends ClientTool {
 
 	public static enum Mode {
 		SELECT,
-		MOVE,
+		POSITION,
 		ADJUST;
 
 		public Text asText() {

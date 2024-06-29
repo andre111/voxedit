@@ -166,7 +166,7 @@ public class Schematic implements BlockView {
 	public Schematic rotated(WrapperLookup registryLookup, float yaw) {
 		if(yaw == 0) return this;
 		
-		int newSize = (int) Math.ceil(Math.sqrt(sizeX*sizeX + sizeY*sizeY + sizeZ*sizeZ));
+		int newSize = (int) Math.ceil(Math.sqrt(sizeX*sizeX + sizeZ*sizeZ));
 		int centerX = sizeX / 2;
 		int centerZ = sizeZ / 2;
 		int newCenter = newSize / 2;

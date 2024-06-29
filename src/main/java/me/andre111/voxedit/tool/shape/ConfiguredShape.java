@@ -20,6 +20,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import me.andre111.voxedit.VoxEdit;
 
+//TODO: lock orientation toggle?
 public record ConfiguredShape(Shape shape, boolean splitSize, int width, int height, int length, boolean offset, int offsetW, int offsetH, int offsetL) {
 	public static final Codec<ConfiguredShape> CODEC = RecordCodecBuilder.create(instance -> instance
 			.group(

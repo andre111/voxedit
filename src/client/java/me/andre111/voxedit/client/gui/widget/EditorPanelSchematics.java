@@ -57,7 +57,7 @@ public class EditorPanelSchematics extends EditorPanel {
 			
 			EditorState.selected(new SchematicPlacement(selected.name, BlockPos.ORIGIN));
 			EditorState.tool(VoxEditClient.TOOL_OBJECT);
-			EditorState.toolConfig(EditorState.toolConfig().with(ObjectTool.MODE, ObjectTool.Mode.MOVE));
+			EditorState.toolConfig(EditorState.toolConfig().with(ObjectTool.MODE, ObjectTool.Mode.POSITION));
 		}).build();
 		deleteButton = ButtonWidget.builder(Text.translatable("voxedit.schematic.delete"), (b) -> {
 			var selected = schematicList.getSelectedOrNull();

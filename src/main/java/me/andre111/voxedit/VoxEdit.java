@@ -54,7 +54,6 @@ import me.andre111.voxedit.tool.ToolBrush;
 import me.andre111.voxedit.tool.EditNBTTool;
 import me.andre111.voxedit.tool.ToolExtrude;
 import me.andre111.voxedit.tool.ToolFill;
-import me.andre111.voxedit.tool.ToolFilterBrush;
 import me.andre111.voxedit.tool.ToolFlatten;
 import me.andre111.voxedit.tool.ToolPaint;
 import me.andre111.voxedit.tool.ToolPlace;
@@ -98,7 +97,6 @@ public class VoxEdit implements ModInitializer {
     public static final Shape SHAPE_HOLLOW_SPHERE = Registry.register(SHAPE_REGISTRY, id("hollow_sphere"), new HollowSphere());
     
     public static final ToolBrush TOOL_BRUSH = Registry.register(TOOL_REGISTRY, id("brush"), new ToolBrush());
-    public static final ToolFilterBrush TOOL_FILTER_BRUSH = Registry.register(TOOL_REGISTRY, id("filter_brush"), new ToolFilterBrush());
     public static final ToolPaint TOOL_PAINT = Registry.register(TOOL_REGISTRY, id("paint"), new ToolPaint());
     public static final ToolScatter TOOL_SCATTER = Registry.register(TOOL_REGISTRY, id("scatter"), new ToolScatter());
     public static final ToolSmooth TOOL_SMOOTH = Registry.register(TOOL_REGISTRY, id("smooth"), new ToolSmooth());
