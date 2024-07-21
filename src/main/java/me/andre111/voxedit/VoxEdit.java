@@ -35,12 +35,18 @@ import org.slf4j.LoggerFactory;
 
 import com.mojang.serialization.Lifecycle;
 
+import me.andre111.voxedit.data.Configurable;
 import me.andre111.voxedit.editor.action.EditAction;
 import me.andre111.voxedit.editor.action.ModifyBlockEntityAction;
 import me.andre111.voxedit.editor.action.ModifyEntityAction;
 import me.andre111.voxedit.editor.action.SetBlockAction;
 import me.andre111.voxedit.editor.history.EditHistoryReader;
 import me.andre111.voxedit.editor.history.EditHistoryWriter;
+import me.andre111.voxedit.filter.Filter;
+import me.andre111.voxedit.filter.FilterBlock;
+import me.andre111.voxedit.filter.FilterBoolean;
+import me.andre111.voxedit.filter.FilterHeight;
+import me.andre111.voxedit.filter.FilterOffset;
 import me.andre111.voxedit.network.ServerNetworking;
 import me.andre111.voxedit.selection.SelectionAdd;
 import me.andre111.voxedit.selection.SelectionBox;
@@ -73,18 +79,26 @@ public class VoxEdit implements ModInitializer {
     
     // Note: Order is important
     // 1. registry keys
+    public static final RegistryKey<Registry<Configurable.Type<?>>> CONFIGURABLE_TYPE_REGISTRY_KEY = RegistryKey.ofRegistry(id("configurable_type"));
     public static final RegistryKey<Registry<EditAction.Type<?>>> ACTION_TYPE_REGISTRY_KEY = RegistryKey.ofRegistry(id("action_type"));
     public static final RegistryKey<Registry<Shape>> SHAPE_REGISTRY_KEY = RegistryKey.ofRegistry(id("shape"));
     public static final RegistryKey<Registry<Tool>> TOOL_REGISTRY_KEY = RegistryKey.ofRegistry(id("tool"));
     public static final RegistryKey<Registry<SelectionType<?>>> SELECTION_TYPE_REGISTRY_KEY = RegistryKey.ofRegistry(id("selection_type"));
+    public static final RegistryKey<Registry<Filter>> FILTER_REGISTRY_KEY = RegistryKey.ofRegistry(id("filter"));
     
     // 2. registries
+    public static final Registry<Configurable.Type<?>> CONFIGURABLE_TYPE_REGISTRY = new SimpleRegistry<>(CONFIGURABLE_TYPE_REGISTRY_KEY, Lifecycle.stable());
     public static final Registry<EditAction.Type<?>> ACTION_TYPE_REGISTRY = new SimpleRegistry<>(ACTION_TYPE_REGISTRY_KEY, Lifecycle.stable());
     public static final Registry<Shape> SHAPE_REGISTRY = new SimpleRegistry<>(SHAPE_REGISTRY_KEY, Lifecycle.stable());
     public static final Registry<Tool> TOOL_REGISTRY = new SimpleRegistry<>(TOOL_REGISTRY_KEY, Lifecycle.stable());
     public static final Registry<SelectionType<?>> SELECTION_TYPE_REGISTRY = new SimpleRegistry<>(SELECTION_TYPE_REGISTRY_KEY, Lifecycle.stable());
+    public static final Registry<Filter> FILTER_REGISTRY = new SimpleRegistry<>(FILTER_REGISTRY_KEY, Lifecycle.stable());
     
-    // 3. registry entries
+    // 3. configurable types
+    public static final Configurable.Type<Tool> TYPE_TOOL = Registry.register(CONFIGURABLE_TYPE_REGISTRY, id("tool"), new Configurable.Type<>(TOOL_REGISTRY.getCodec()));
+    public static final Configurable.Type<Filter> TYPE_FILTER = Registry.register(CONFIGURABLE_TYPE_REGISTRY, id("filter"), new Configurable.Type<>(FILTER_REGISTRY.getCodec()));
+    
+    // 4. registry entries
     public static final EditAction.Type<SetBlockAction> ACTION_SET_BLOCK = registerAction(id("set_block"), SetBlockAction::write, SetBlockAction::read);
     public static final EditAction.Type<ModifyBlockEntityAction> ACTION_MODIFY_BLOCK_ENTITY = registerAction(id("modify_block_entity"), ModifyBlockEntityAction::write, ModifyBlockEntityAction::read);
     public static final EditAction.Type<ModifyEntityAction> ACTION_MODIFY_ENTITY = registerAction(id("modify_entity"), ModifyEntityAction::write, ModifyEntityAction::read);
@@ -113,6 +127,11 @@ public class VoxEdit implements ModInitializer {
     public static final SelectionType<SelectionSet> SEL_SET = Registry.register(SELECTION_TYPE_REGISTRY, id("set"), SelectionType.of(SelectionSet.CODEC));
     public static final SelectionType<SelectionAdd> SEL_ADD = Registry.register(SELECTION_TYPE_REGISTRY, id("add"), SelectionType.of(SelectionAdd.CODEC));
     public static final SelectionType<SelectionSubtract> SEL_SUBTRACT = Registry.register(SELECTION_TYPE_REGISTRY, id("subtract"), SelectionType.of(SelectionSubtract.CODEC));
+    
+    public static final FilterBlock FILTER_BLOCK = Registry.register(FILTER_REGISTRY, id("block"), new FilterBlock());
+    public static final FilterHeight FILTER_HEIGHT = Registry.register(FILTER_REGISTRY, id("height"), new FilterHeight());
+    public static final FilterOffset FILTER_OFFSET = Registry.register(FILTER_REGISTRY, id("offset"), new FilterOffset());
+    public static final FilterBoolean FILTER_BOOLEAN = Registry.register(FILTER_REGISTRY, id("boolean"), new FilterBoolean());
     
     public static final int MAX_TARGETS = 1024;
     public static final int PREVIEW_DELAY = 5;

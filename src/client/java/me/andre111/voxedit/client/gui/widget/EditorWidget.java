@@ -237,6 +237,7 @@ public class EditorWidget extends ContainerWidget implements LayoutWidget {
 	public void refreshPositions() {
 		menu.setWidth(screen.width);
 		statusBar.setWidth(screen.width);
+		statusBar.setY(screen.height-20);
 		overlay.setDimensions(screen.width, screen.height);
 
 		for(EditorPanel panel : getPanels(Location.LEFT)) panel.setWidth(leftWidth);

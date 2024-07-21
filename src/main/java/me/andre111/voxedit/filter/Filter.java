@@ -15,6 +15,45 @@
  */
 package me.andre111.voxedit.filter;
 
-public interface Filter {
-	public boolean check(FilterContext context);
+import java.util.List;
+
+import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.Configurable;
+import me.andre111.voxedit.data.Setting;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+
+public abstract class Filter implements Configurable<Filter> {
+	private final List<Setting<?>> settings;
+	
+	public Filter(List<Setting<?>> settings) {
+		this.settings = settings;
+	}
+	
+	@Override
+	public final List<Setting<?>> getSettings() {
+    	return settings;
+    }
+
+	@Override
+	public Configurable.Type<Filter> getType() {
+		return VoxEdit.TYPE_FILTER;
+	}
+	
+	@Override
+	public Text getName() {
+		return Text.translatable(id().toTranslationKey("voxedit.filter"));
+	}
+    
+	public final Identifier id() {
+		return VoxEdit.FILTER_REGISTRY.getId(this);
+	}
+	
+	public final Text asText() {
+		Identifier id = id();
+		return Text.translatable("voxedit.filter."+id.toTranslationKey());
+	}
+	
+	public abstract boolean check(FilterContext context, Config config);
 }

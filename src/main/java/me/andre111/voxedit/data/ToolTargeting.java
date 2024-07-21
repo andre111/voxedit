@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.tool.data;
+package me.andre111.voxedit.data;
 
 import java.util.HashSet;
 import java.util.Set;
 
+import me.andre111.voxedit.filter.Filter;
+import me.andre111.voxedit.filter.FilterContext;
 import me.andre111.voxedit.tool.shape.ConfiguredShape;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction.Axis;
@@ -33,7 +35,7 @@ public class ToolTargeting {
 	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, ConfiguredShape shape, TestPredicate testPredicate) {
 		return getBlockPositions(world, target, shape, testPredicate, null);
 	}
-	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, ConfiguredShape shape, TestPredicate testPredicate, BlockPalette filter) {
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, ConfiguredShape shape, TestPredicate testPredicate, Configured<Filter> filter) {
 		Set<BlockPos> positions = new HashSet<>();
 		
 		// size
@@ -92,7 +94,7 @@ public class ToolTargeting {
                 	pos.set(center.getX()+x, center.getY()+y, center.getZ()+z);
                 	
                 	if(testPredicate != null && !testPredicate.test(target, world, pos)) continue;
-                	if(filter != null && filter.size() > 0 && !filter.has(world.getBlockState(pos).getBlock())) continue;
+                	if(filter != null && filter.value() != null && !filter.value().check(new FilterContext(world, pos), filter.config())) continue;
                 	
         			positions.add(pos.toImmutable());
                 }

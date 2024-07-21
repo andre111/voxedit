@@ -31,10 +31,11 @@ import me.andre111.voxedit.editor.history.EditHistoryState;
 import me.andre111.voxedit.schematic.Schematic;
 import me.andre111.voxedit.state.ServerState;
 import me.andre111.voxedit.state.ServerStates;
-import me.andre111.voxedit.tool.ConfiguredTool;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.packet.s2c.play.EntityPositionS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -153,13 +154,28 @@ public class ServerNetworking {
 				}, payload.pos(), false).inform(context.player(), EditType.PERFORM);
 			});
 		});
+
+		ServerPlayNetworking.registerGlobalReceiver(CPEntityMove.ID, (payload, context) -> {
+			if(!context.player().isCreative()) return;
+			
+			context.player().server.execute(() -> {
+				ServerWorld world = (ServerWorld) context.player().getWorld();
+				Entity entity = world.getEntity(payload.uuid());
+				if(entity == null) return;
+				
+				//TODO: undoable, but combining consecutive actions
+				entity.refreshPositionAndAngles(payload.pos().x, payload.pos().y, payload.pos().z, payload.yaw(), entity.getPitch());
+				//TODO: update to all relevant players
+				context.responseSender().sendPacket(new EntityPositionS2CPacket(entity));
+			});
+		});
 	}
 	
 	private static void performAction(CPAction action, ServerPlayerEntity player) {
 		if(!player.isCreative()) return;
 		
-		ConfiguredTool tool = action.tool();
-		tool.tool().performAction(player, action.action(), action.targets(), action.context(), tool.config(), ServerStates.get(player));
+		var tool = action.tool();
+		tool.value().performAction(player, action.action(), action.targets(), action.context(), tool.config(), ServerStates.get(player));
 	}
 	
 	public static void serverSendOpenNBTEditor(ServerPlayerEntity player, NbtCompound root, Consumer<NbtCompound> editTarget) {

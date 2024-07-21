@@ -38,6 +38,7 @@ import me.andre111.voxedit.client.gizmo.ActiveSelection;
 import me.andre111.voxedit.client.gizmo.Gizmo;
 import me.andre111.voxedit.client.gizmo.GizmoHandle;
 import me.andre111.voxedit.client.gizmo.Renderable;
+import me.andre111.voxedit.client.gui.widget.EditorPanelFilter;
 import me.andre111.voxedit.client.gui.widget.EditorPanelHistory;
 import me.andre111.voxedit.client.gui.widget.EditorPanelPalette;
 import me.andre111.voxedit.client.gui.widget.EditorPanelSchematics;
@@ -52,20 +53,20 @@ import me.andre111.voxedit.client.renderer.SchematicView;
 import me.andre111.voxedit.client.renderer.SelectionRenderer;
 import me.andre111.voxedit.client.tool.ClientTool;
 import me.andre111.voxedit.client.tool.ObjectTool;
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.RaycastTargets;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.ConfigValue;
+import me.andre111.voxedit.data.CommonToolSettings;
 import me.andre111.voxedit.network.CPAction;
 import me.andre111.voxedit.network.CPCommand;
 import me.andre111.voxedit.network.CPSelection;
 import me.andre111.voxedit.network.Command;
 import me.andre111.voxedit.selection.SelectionSet;
-import me.andre111.voxedit.tool.ConfiguredTool;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.Tool.Action;
 import me.andre111.voxedit.tool.VoxelTool;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.RaycastTargets;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSettings;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
@@ -171,6 +172,7 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			widget.addPanel(parent -> new EditorPanelTools(parent), EditorWidget.Location.LEFT);
 			widget.addPanel(parent -> new EditorPanelToolConfig(parent), EditorWidget.Location.LEFT);
 			widget.addPanel(parent -> new EditorPanelPalette(parent), EditorWidget.Location.LEFT);
+			widget.addPanel(parent -> new EditorPanelFilter(parent), EditorWidget.Location.LEFT);
 
 			widget.addPanel(parent -> new EditorPanelHistory(parent), EditorWidget.Location.RIGHT);
 			widget.addPanel(parent -> new EditorPanelSchematics(parent), EditorWidget.Location.RIGHT);
@@ -183,6 +185,9 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		}
 
 		widget.refreshPositions();
+		
+		//TODO: remove this hack
+		EditorState.CHANGE_FILTER.invoker().accept(EditorState.filter());
 	}
 
 	@Override
@@ -195,9 +200,9 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		VoxEditClient.unscaleGui();
 
 		if(lastTarget != null && lastTargetTicks++ == VoxEdit.PREVIEW_DELAY) {
-			ConfiguredTool tool = EditorState.configuredTool();
+			var tool = EditorState.configuredTool();
 			Context context = EditorState.context();
-			if(tool != null && tool.tool().properties().showPreview() && context != null) {
+			if(tool != null && tool.value().properties().showPreview() && context != null) {
 				CPAction action = new CPAction(tool, List.of(lastTarget), context, Action.PREVIEW);
 				ClientPlayNetworking.send(action);
 			}
@@ -257,8 +262,8 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			updateTarget(mouseX, mouseY, dragging != -1);
 
 			// client tool
-			ConfiguredTool tool = EditorState.configuredTool();
-			if(tool != null && tool.tool() instanceof ClientTool clientTool) {
+			var tool = EditorState.configuredTool();
+			if(tool != null && tool.value() instanceof ClientTool clientTool) {
 				clientTool.mouseMoved(dragging, EditorState.context(), tool.config());
 			}
 			return;
@@ -277,14 +282,14 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			//updateTarget(mouseX, mouseY, false);
 
 			dragging = button;
-			if(!tool.tool().properties().draggable()) {
+			if(!tool.value().properties().draggable()) {
 				performActions();
 				dragging = -1;
 			}
 
 
 			// client tool
-			if(tool != null && tool.tool() instanceof ClientTool clientTool) {
+			if(tool != null && tool.value() instanceof ClientTool clientTool) {
 				clientTool.mousePressed(button, EditorState.context(), tool.config());
 			}
 			return true;
@@ -312,8 +317,8 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			dragging = -1;
 
 			// client tool
-			ConfiguredTool tool = EditorState.configuredTool();
-			if(tool != null && tool.tool() instanceof ClientTool clientTool) {
+			var tool = EditorState.configuredTool();
+			if(tool != null && tool.value() instanceof ClientTool clientTool) {
 				clientTool.mouseReleased(button, EditorState.context(), tool.config());
 			}
 			return true;
@@ -336,9 +341,9 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	}
 
 	private void updateTarget(double mouseX, double mouseY, boolean add) {
-		ConfiguredTool tool = EditorState.configuredTool();
+		var tool = EditorState.configuredTool();
 		if(tool == null) return;
-		RaycastTargets raycastTargets = tool.tool().getRaycastTargets(tool.config());
+		RaycastTargets raycastTargets = tool.value().getRaycastTargets(tool.config());
 		if(!raycastTargets.targetBlocks() && !raycastTargets.targetEntities()) return;
 
 		// build ray from mouse coords
@@ -404,13 +409,13 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	}
 
 	private void updatePositions() {
-		ConfiguredTool tool = EditorState.configuredTool();
+		var tool = EditorState.configuredTool();
 		if(tool == null) return;
 		Context context = EditorState.context();
 		if(context == null) return;
 
 		Set<BlockPos> positions = new HashSet<BlockPos>();
-		if(tool.tool() instanceof VoxelTool voxelTool) {
+		if(tool.value() instanceof VoxelTool voxelTool) {
 			for(Target target : EditorState.targets()) {
 				positions.addAll(voxelTool.getBlockPositions(MinecraftClient.getInstance().world, target, context, tool.config()));
 			}
@@ -420,16 +425,16 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	}
 
 	private void performActions() {
-		ConfiguredTool tool = EditorState.configuredTool();
+		var tool = EditorState.configuredTool();
 		if(tool == null) return;
 		Context context = EditorState.context();
 		if(context == null) return;
 		List<Target> targets = List.copyOf(EditorState.targets());
 		if(targets.isEmpty()) return;
 
-		if(tool.tool() instanceof ClientTool clientTool) {
+		if(tool.value() instanceof ClientTool clientTool) {
 			clientTool.mouseTargetClicked(dragging, targets.getLast(), context, tool.config());
-		} else if(EditorState.schematic("voxedit.preview."+tool.tool().id().toTranslationKey()) != null && dragging == 1) {
+		} else if(EditorState.schematic("voxedit.preview."+tool.value().id().toTranslationKey()) != null && dragging == 1) {
 			CPAction action = new CPAction(tool, targets, context, Action.APPLY_PREVIEW);
 			ClientPlayNetworking.send(action);
 		} else if(dragging == 1) {
@@ -448,16 +453,16 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		if(EditorState.tool() == null) return false;
 		if(EditorState.toolConfig() == null) return false;
 
-		ToolConfig newConfig = null;
-		if(EditorState.tool().has(ToolSettings.SHAPE)) {
+		Config newConfig = null;
+		if(EditorState.tool().has(CommonToolSettings.SHAPE)) {
 			var config = EditorState.toolConfig();
-			var shape = ToolSettings.SHAPE.get(config);
+			var shape = CommonToolSettings.SHAPE.get(config);
 			if(!shape.splitSize()) {
-				newConfig = config.with(ToolSettings.SHAPE, shape.size(shape.width()+change));
+				newConfig = config.with(CommonToolSettings.SHAPE, shape.size(shape.width()+change));
 			}
-		} else if(EditorState.toolConfig().values().containsKey("radius")) {
-			int radius = Integer.parseInt(EditorState.toolConfig().values().get("radius"));
-			newConfig = EditorState.toolConfig().withRaw("radius", Integer.toString(radius+change));
+		} else if(EditorState.toolConfig().values().get("radius") instanceof ConfigValue.CVString stringValue) {
+			int radius = Integer.parseInt(stringValue.get());
+			newConfig = EditorState.toolConfig().withRaw("radius", new ConfigValue.CVString(Integer.toString(radius+change)));
 		}
 		if(newConfig != null && EditorState.tool().isValid(newConfig)) {
 			EditorState.toolConfig(newConfig);

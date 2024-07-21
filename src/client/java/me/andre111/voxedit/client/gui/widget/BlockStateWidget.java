@@ -76,8 +76,8 @@ public class BlockStateWidget extends ContainerWidget implements LayoutWidget {
 
 	private BlockState state;
 
-	public BlockStateWidget(int x, int y, int width, int height, BlockState initialValue, boolean includeProperties, Consumer<BlockState> consumer) {
-		super(x, y, width, height, Text.empty());
+	public BlockStateWidget(int x, int y, int width, BlockState initialValue, boolean includeProperties, Consumer<BlockState> consumer) {
+		super(x, y, width, 40, Text.empty());
 
 		this.includeProperties = includeProperties;
 		this.consumer = consumer;
@@ -107,8 +107,9 @@ public class BlockStateWidget extends ContainerWidget implements LayoutWidget {
 	@Override
 	public void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
 		for(var child : children) child.render(context, mouseX, mouseY, delta);
-		
-		int previewSize = includeProperties ? height / 2 : height;
+
+		boolean hasProps = includeProperties && children.size() > 1;
+		int previewSize = hasProps ? height / 2 : height;
 		context.setShaderColor(1.0f, 1.0f, 1.0f, this.alpha);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
@@ -148,20 +149,19 @@ public class BlockStateWidget extends ContainerWidget implements LayoutWidget {
 
 	@Override
 	public void refreshPositions() {
-		blockWidget.setDimensionsAndPosition(width, includeProperties ? height / 2 : height, getX(), getY());
-		if(includeProperties) {
-			if(children.size() > 1) {
-				int x = getX();
-				int y = getY() + height / 2;
-				int w = width / (children.size() - 1);
-				int h = height / 2;
-				for(ClickableWidget widget : children) {
-					if(widget == blockWidget) continue;
-					widget.setDimensionsAndPosition(w, h, x, y);
-					x += w;
-				}
-			} else {
-				blockWidget.setY(getY() + height / 4);
+		boolean hasProps = includeProperties && children.size() > 1;
+		height = hasProps ? 40 : 20;
+		
+		blockWidget.setDimensionsAndPosition(width, 20, getX(), getY());
+		if(hasProps) {
+			int x = getX();
+			int y = getY() + height / 2;
+			int w = width / (children.size() - 1);
+			int h = height / 2;
+			for(ClickableWidget widget : children) {
+				if(widget == blockWidget) continue;
+				widget.setDimensionsAndPosition(w, h, x, y);
+				x += w;
 			}
 		}
 		LayoutWidget.super.refreshPositions();

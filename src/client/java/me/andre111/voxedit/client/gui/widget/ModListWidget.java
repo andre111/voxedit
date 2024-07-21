@@ -26,6 +26,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.ParentElement;
 import net.minecraft.client.gui.Selectable;
@@ -70,6 +71,10 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
 
     public int getRowWidth() {
         return width-20;
+    }
+    
+    public int selectedIndex() {
+    	return children.indexOf(selected);
     }
 
     public E getSelectedOrNull() {
@@ -133,7 +138,7 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
 
     protected final E getEntryAtPosition(double x, double y) {
         for(E child : children) {
-        	if(child.getX() < x && x < child.getX() + child.getWidth() && child.getY() < y && y < child.getY() + child.getHeight()) return child;
+        	if(child.getX() <= x && x < child.getX() + child.getWidth() && child.getY() <= y && y < child.getY() + child.getHeight()) return child;
         }
         return null;
     }
@@ -456,6 +461,13 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
 		public void refreshPositions() {
 			positionChildren();
 			LayoutWidget.super.refreshPositions();
+		}
+
+		@Override
+		protected void renderWidget(DrawContext context, int mouseX, int mouseY, float tickDelta) {
+			for(Element child : children()) {
+				if(child instanceof Drawable drawable) drawable.render(context, mouseX, mouseY, tickDelta);
+			}
 		}
         
         public abstract int getHeight();

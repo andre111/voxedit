@@ -19,12 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.CommonToolSettings;
+import me.andre111.voxedit.data.ToolTargeting;
 import me.andre111.voxedit.editor.EditorWorld;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSettings;
-import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
@@ -33,11 +33,11 @@ import net.minecraft.world.BlockView;
 
 public class ToolBlend extends VoxelTool {
 	public ToolBlend() {
-		super(Properties.of(ToolSettings.SHAPE, ToolSettings.TARGET_FLUIDS).draggable());
+		super(Properties.of(CommonToolSettings.SHAPE, CommonToolSettings.TARGET_FLUIDS).draggable());
 	}
 
 	@Override
-	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 		List<BlockState> neighbors = new ArrayList<>();
 		for(BlockPos pos : positions) {
 			// find all solid neighbors
@@ -55,13 +55,13 @@ public class ToolBlend extends VoxelTool {
 	}
 
 	@Override
-	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, Config config) {
 		if(ToolTargeting.isFree(world, target.getBlockPos())) return Set.of();
 		
-		return ToolTargeting.getBlockPositions(world, target, ToolSettings.SHAPE.get(config), (hit, testWorld, testPos) -> !ToolTargeting.isFree(testWorld, testPos), context.filter());
+		return ToolTargeting.getBlockPositions(world, target, CommonToolSettings.SHAPE.get(config), (hit, testWorld, testPos) -> !ToolTargeting.isFree(testWorld, testPos), context.filter());
 	}
 }

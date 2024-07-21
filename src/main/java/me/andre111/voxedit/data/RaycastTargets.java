@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.tool.data;
+package me.andre111.voxedit.data;
 
 public record RaycastTargets(boolean targetBlocks, boolean targetFluids, boolean targetEntities, boolean targetOther) {
 	public static final RaycastTargets BLOCKS_ONLY = new RaycastTargets(true, false, false, false);
@@ -21,4 +21,5 @@ public record RaycastTargets(boolean targetBlocks, boolean targetFluids, boolean
 	public static final RaycastTargets ENTITIES_ONLY = new RaycastTargets(false, false, true, false);
 	public static final RaycastTargets BLOCKS_AND_ENTITIES = new RaycastTargets(true, false, true, false);
 	public static final RaycastTargets BLOCKS_AND_OTHER = new RaycastTargets(true, true, false, true);
+	public static final RaycastTargets ALL = new RaycastTargets(true, true, true, true);
 }

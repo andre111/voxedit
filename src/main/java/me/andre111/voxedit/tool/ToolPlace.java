@@ -18,13 +18,13 @@ package me.andre111.voxedit.tool;
 import java.util.Map;
 import java.util.Set;
 
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.CommonToolSettings;
+import me.andre111.voxedit.data.ToolTargeting;
 import me.andre111.voxedit.editor.EditorWorld;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSetting;
-import me.andre111.voxedit.tool.data.ToolSettings;
-import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.Identifier;
@@ -33,15 +33,15 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.gen.feature.ConfiguredFeature;
 
 public class ToolPlace extends VoxelTool {
-	private static final ToolSetting<Identifier> FEATURE = ToolSetting.ofIdentifier("feature", Identifier.of("minecraft", "oak"), RegistryKeys.CONFIGURED_FEATURE);
-	private static final ToolSetting<Integer> TRIES = ToolSetting.ofInt("tries", 3, 1, 10);
+	private static final Setting<Identifier> FEATURE = Setting.ofIdentifier("feature", Identifier.of("minecraft", "oak"), RegistryKeys.CONFIGURED_FEATURE);
+	private static final Setting<Integer> TRIES = Setting.ofInt("tries", 3, 1, 10);
 	
 	public ToolPlace() {
-		super(Properties.of(FEATURE, TRIES, ToolSettings.TARGET_FLUIDS).showPreview());
+		super(Properties.of(FEATURE, TRIES, CommonToolSettings.TARGET_FLUIDS).showPreview());
 	}
 
 	@Override
-	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 		ConfiguredFeature<?, ?> configuredFeature = world.getRegistryManager().get(RegistryKeys.CONFIGURED_FEATURE).get(FEATURE.get(config));
 		if(configuredFeature == null) return;
 		
@@ -52,11 +52,11 @@ public class ToolPlace extends VoxelTool {
 	}
 
 	@Override
-	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, Config config) {
 		if(ToolTargeting.isFree(world, target.getBlockPos())) return Set.of();
 		BlockPos offset = target.getBlockPos().offset(target.getSide());
 		if(!ToolTargeting.isFree(world, offset)) return Set.of();
@@ -64,7 +64,7 @@ public class ToolPlace extends VoxelTool {
 	}
 	
 	@Override
-	public Map<String, ToolConfig> getPresets() {
+	public Map<String, Config> getPresets() {
 		return Map.of(
 				"Oak", getDefaultConfig().with(FEATURE, Identifier.of("minecraft", "oak")),
 				"Birch", getDefaultConfig().with(FEATURE, Identifier.of("minecraft", "birch")),

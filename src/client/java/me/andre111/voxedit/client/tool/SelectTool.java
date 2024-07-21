@@ -19,26 +19,26 @@ import java.util.List;
 
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.gizmo.ActiveSelection;
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.RaycastTargets;
+import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.CommonToolSettings;
 import me.andre111.voxedit.selection.SelectionShape;
 import me.andre111.voxedit.tool.Properties;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.RaycastTargets;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSetting;
-import me.andre111.voxedit.tool.data.ToolSettings;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 
 public class SelectTool extends ClientTool {
 	public SelectTool() {
-		super(Properties.of(ToolSettings.TARGET_FLUIDS).noPresets());
+		super(Properties.of(CommonToolSettings.TARGET_FLUIDS).noPresets());
 	}
 
 	@Override
-	public RaycastTargets getRaycastTargets(ToolConfig config) {
-		if(ToolSettings.TARGET_FLUIDS.get(config)) {
+	public RaycastTargets getRaycastTargets(Config config) {
+		if(CommonToolSettings.TARGET_FLUIDS.get(config)) {
 			return RaycastTargets.BLOCKS_AND_FLUIDS;
 		} else {
 			return RaycastTargets.BLOCKS_ONLY;
@@ -46,7 +46,7 @@ public class SelectTool extends ClientTool {
 	}
 
 	@Override
-	public void mouseTargetMoved(Target target, Context context, ToolConfig config) {
+	public void mouseTargetMoved(Target target, Context context, Config config) {
 		if(target == null) return;
 		
 		List<BlockPos> positions = EditorState.toolState().positions();
@@ -56,7 +56,7 @@ public class SelectTool extends ClientTool {
 	}
 
 	@Override
-	public void mouseTargetClicked(int button, Target target, Context context, ToolConfig config) {
+	public void mouseTargetClicked(int button, Target target, Context context, Config config) {
 		if(target == null) return;
 		
 		List<BlockPos> positions = EditorState.toolState().positions();
@@ -73,7 +73,7 @@ public class SelectTool extends ClientTool {
 	}
 	
 	@Override
-	public void changedSetting(ToolSetting<?> setting, ToolConfig config) {
+	public void changedSetting(Setting<?> setting, Config config) {
 		List<BlockPos> positions = EditorState.toolState().positions();
 		updateState(positions, config);
 	}
@@ -87,7 +87,7 @@ public class SelectTool extends ClientTool {
 		return true;
 	}
 	
-	private void updateState(List<BlockPos> positions, ToolConfig config) {
+	private void updateState(List<BlockPos> positions, Config config) {
 		if(positions.size() == 2) {
 			BlockPos p1 = positions.get(0);
 			BlockPos p2 = positions.get(1);
@@ -117,7 +117,7 @@ public class SelectTool extends ClientTool {
 			if(EditorState.selected() instanceof ActiveSelection sel) {
 				sel.setSelection(new SelectionShape(BlockBox.encompassPositions(List.of(p1, p2)).get(), sel.getSelection().getShape()));
 			} else {
-				EditorState.selected(new ActiveSelection(new SelectionShape(BlockBox.encompassPositions(List.of(p1, p2)).get(), ToolSettings.BASE_SHAPE.get(config).shape()), config));
+				EditorState.selected(new ActiveSelection(new SelectionShape(BlockBox.encompassPositions(List.of(p1, p2)).get(), CommonToolSettings.BASE_SHAPE.get(config).shape()), config));
 			}
 		}
 	}

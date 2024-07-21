@@ -20,12 +20,12 @@ import java.util.Set;
 
 import com.mojang.datafixers.util.Pair;
 
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.CommonToolSettings;
+import me.andre111.voxedit.data.ToolTargeting;
 import me.andre111.voxedit.editor.EditorWorld;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSettings;
-import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
@@ -34,11 +34,11 @@ import net.minecraft.world.BlockView;
 
 public class ToolSmooth extends VoxelTool {
 	public ToolSmooth() {
-		super(Properties.of(ToolSettings.SHAPE, ToolSettings.TARGET_FLUIDS).draggable());
+		super(Properties.of(CommonToolSettings.SHAPE, CommonToolSettings.TARGET_FLUIDS).draggable());
 	}
 
 	@Override
-	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 		// erode
 		List<BlockPos> erodePositions = positions.stream().filter(pos -> !world.isAir(pos)).filter(pos -> {
 			int neighborCount = (int) Direction.stream().map(pos::offset).filter(neighbor -> !world.isAir(neighbor)).count();
@@ -61,11 +61,11 @@ public class ToolSmooth extends VoxelTool {
 	}
 
 	@Override
-	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
-		return ToolTargeting.getBlockPositions(world, target, ToolSettings.SHAPE.get(config), null, context.filter());
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, Config config) {
+		return ToolTargeting.getBlockPositions(world, target, CommonToolSettings.SHAPE.get(config), null, context.filter());
 	}
 }

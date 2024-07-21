@@ -17,7 +17,7 @@ package me.andre111.voxedit;
 
 import java.util.Map;
 
-import me.andre111.voxedit.tool.data.BlockPalette;
+import me.andre111.voxedit.data.BlockPalette;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ButtonBlock;
 import net.minecraft.block.enums.BlockFace;

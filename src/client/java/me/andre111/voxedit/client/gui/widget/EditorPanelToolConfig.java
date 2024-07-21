@@ -21,13 +21,12 @@ import java.util.List;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.gui.screen.InputScreen;
+import me.andre111.voxedit.data.Config;
 import me.andre111.voxedit.tool.Tool;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
 
 public class EditorPanelToolConfig extends EditorPanel {
-	private List<ToolSettingWidget<?, ?>> toolSettingWidgets = new ArrayList<>();
+	private List<SettingWidget<?, ?>> toolSettingWidgets = new ArrayList<>();
 	private SelectionWidget<String> presets;
 	private boolean rebuilding = false;
 	private boolean reloading = false;
@@ -44,7 +43,6 @@ public class EditorPanelToolConfig extends EditorPanel {
 		
 		rebuilding = true;
 		clearContent();
-		toolSettingWidgets.clear();
 		
 		Tool tool = EditorState.tool();
 		if(tool != null && !tool.getSettings().isEmpty()) {
@@ -63,18 +61,12 @@ public class EditorPanelToolConfig extends EditorPanel {
 			}
 			
 			// settings
-			for(var toolSetting : tool.getSettings()) {
-				ToolSettingWidget<?, ?> toolSettingWidget = ToolSettingWidget.of(toolSetting, () -> EditorState.toolConfig(), (config) -> {
+			addContent(toolSettingWidgets = SettingWidget.forInstance(0, 0, width, SettingWidget.BASE_HEIGTH, tool, () -> EditorState.toolConfig(), (config) -> {
 					if(!tool.properties().noPresets()) presets.setValue(null);
 					EditorState.toolConfig(config);
 					parent.refreshPositions();
-				}, (setting) -> tool.changedSetting(setting, EditorState.toolConfig()));
-				toolSettingWidgets.add(toolSettingWidget);
-				
-				for(ClickableWidget widget : toolSettingWidget.create(parent.getScreen(), 0, 0, width, 20)) {
-					addContent(widget);
-				}
-			}
+				}, (setting) -> tool.changedSetting(setting, EditorState.toolConfig())));
+			
 			reload();
 		}
 		
@@ -97,7 +89,7 @@ public class EditorPanelToolConfig extends EditorPanel {
 		if(name == null || name.isBlank()) return;
 		Tool tool = EditorState.tool();
 		if(tool == null) return;
-		ToolConfig config = EditorState.persistant().presets(tool).get(name);
+		Config config = EditorState.persistant().presets(tool).get(name);
 		if(config == null || !tool.isValid(config)) return;
 		
 		EditorState.toolConfig(config);
@@ -109,7 +101,7 @@ public class EditorPanelToolConfig extends EditorPanel {
 			if(name == null || name.isBlank()) return;
 			Tool tool = EditorState.tool();
 			if(tool == null) return;
-			ToolConfig config = EditorState.toolConfig();
+			Config config = EditorState.toolConfig();
 			if(config == null || !tool.isValid(config)) return;
 			
 			if(EditorState.persistant().presets(tool).containsKey(name)) {

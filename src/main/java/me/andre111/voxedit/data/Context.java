@@ -13,26 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.tool;
+package me.andre111.voxedit.data;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import io.netty.buffer.ByteBuf;
-import me.andre111.voxedit.VoxEdit;
-import me.andre111.voxedit.tool.data.ToolConfig;
+import me.andre111.voxedit.VECodecs;
+import me.andre111.voxedit.filter.Filter;
 import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
 
-public record ConfiguredTool(Tool tool, ToolConfig config) {
-	public static final Codec<ConfiguredTool> CODEC = RecordCodecBuilder.create(instance -> instance
+public record Context(BlockPalette palette, Configured<Filter> filter) {
+	public static final Codec<Context> CODEC = RecordCodecBuilder.create(instance -> instance
 			.group(
-					VoxEdit.TOOL_REGISTRY.getCodec().fieldOf("tool").forGetter(ConfiguredTool::tool),
-					ToolConfig.CODEC.fieldOf("config").forGetter(ConfiguredTool::config)
+					BlockPalette.CODEC.fieldOf("palette").forGetter(Context::palette),
+					VECodecs.CONFIGURED_FILTER.fieldOf("filter").forGetter(Context::filter)
 			)
-			.apply(instance, ConfiguredTool::new));
-	public static final PacketCodec<ByteBuf, ConfiguredTool> PACKET_CODEC = PacketCodec.tuple(
-			PacketCodecs.codec(VoxEdit.TOOL_REGISTRY.getCodec()), ConfiguredTool::tool,
-			ToolConfig.PACKET_CODEC, ConfiguredTool::config,
-			ConfiguredTool::new);
+			.apply(instance, Context::new));
+	public static final PacketCodec<ByteBuf, Context> PACKET_CODEC = PacketCodec.tuple(
+			BlockPalette.PACKET_CODEC, Context::palette, 
+			VECodecs.CONFIGURED_FILTER_PACKET, Context::filter, 
+			Context::new);
 }

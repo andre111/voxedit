@@ -18,13 +18,13 @@ package me.andre111.voxedit.client.tool;
 import java.util.List;
 
 import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
 import me.andre111.voxedit.state.ServerState;
 import me.andre111.voxedit.tool.Properties;
 import me.andre111.voxedit.tool.Properties.Builder;
 import me.andre111.voxedit.tool.Tool;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public abstract class ClientTool extends Tool {
@@ -36,15 +36,15 @@ public abstract class ClientTool extends Tool {
 	}
 	
 	@Override
-	public final void performAction(ServerPlayerEntity player, Action action, List<Target> targets, Context context, ToolConfig config, ServerState state) {
+	public final void performAction(ServerPlayerEntity player, Action action, List<Target> targets, Context context, Config config, ServerState state) {
 		VoxEdit.LOGGER.error("Trying to perform server action on ClientTool.");
 	}
 
-	public void mouseMoved(int button, Context context, ToolConfig config) {}
-	public void mousePressed(int button, Context context, ToolConfig config) {}
-	public void mouseReleased(int button, Context context, ToolConfig config) {}
+	public void mouseMoved(int button, Context context, Config config) {}
+	public void mousePressed(int button, Context context, Config config) {}
+	public void mouseReleased(int button, Context context, Config config) {}
 	
-	public abstract void mouseTargetMoved(Target target, Context context, ToolConfig config);
-	public abstract void mouseTargetClicked(int button, Target target, Context context, ToolConfig config);
+	public abstract void mouseTargetMoved(Target target, Context context, Config config);
+	public abstract void mouseTargetClicked(int button, Target target, Context context, Config config);
 	public abstract boolean cancel();
 }

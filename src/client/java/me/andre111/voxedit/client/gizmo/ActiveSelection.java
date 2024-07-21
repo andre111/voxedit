@@ -20,12 +20,12 @@ import java.util.List;
 
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.renderer.SelectionRenderer;
+import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.CommonToolSettings;
 import me.andre111.voxedit.selection.Selection;
 import me.andre111.voxedit.selection.SelectionMode;
 import me.andre111.voxedit.selection.SelectionShape;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSetting;
-import me.andre111.voxedit.tool.data.ToolSettings;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
@@ -35,14 +35,14 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
 public class ActiveSelection extends Gizmo implements Positionable, Renderable, Sizeable {
-	public static final ToolSetting<SelectionMode> SELECTION_MODE = ToolSetting.ofEnum("selection_mode", SelectionMode.class, SelectionMode::asText, true);
+	public static final Setting<SelectionMode> SELECTION_MODE = Setting.ofEnum("selection_mode", SelectionMode.class, SelectionMode::asText, true);
 	private static final SelectionRenderer RENDERER = new SelectionRenderer();
 	
 	private SelectionShape selection;
-	private ToolConfig config;
+	private Config config;
 	private boolean canceled = false;
 	
-	public ActiveSelection(SelectionShape selection, ToolConfig config) {
+	public ActiveSelection(SelectionShape selection, Config config) {
 		this.selection = selection;
 		this.config = config;
 		RENDERER.rebuild(selection);
@@ -58,8 +58,8 @@ public class ActiveSelection extends Gizmo implements Positionable, Renderable, 
 		actions.add(SELECTION_MODE, () -> config, (c) -> config = c, (s) -> {});
 		actions.add(Text.translatable("voxedit.selection.apply"), () -> apply());
 		actions.add(Text.translatable("voxedit.selection.cancel"), () -> cancel());
-		actions.add(ToolSettings.BASE_SHAPE, () -> config, (c) -> config = c, (s) -> {
-			selection = new SelectionShape(selection.getBoundingBox(), ToolSettings.BASE_SHAPE.get(config).shape());
+		actions.add(CommonToolSettings.BASE_SHAPE, () -> config, (c) -> config = c, (s) -> {
+			selection = new SelectionShape(selection.getBoundingBox(), CommonToolSettings.BASE_SHAPE.get(config).shape());
 			RENDERER.rebuild(selection);
 			modified();
 		});
@@ -73,7 +73,7 @@ public class ActiveSelection extends Gizmo implements Positionable, Renderable, 
 	@Override
 	public Vec3d getHandleOrigin() {
 		BlockPos size = getSize();
-		return Vec3d.of(getPos()).add(size.getX() / 2.0, size.getY() / 2.0, size.getZ() / 2.0);
+		return getPos().add(size.getX() / 2.0, size.getY() / 2.0, size.getZ() / 2.0);
 	}
 
 	@Override
@@ -91,15 +91,16 @@ public class ActiveSelection extends Gizmo implements Positionable, Renderable, 
 	}
 
 	@Override
-	public BlockPos getPos() {
+	public Vec3d getPos() {
 		BlockBox bb = selection.getBoundingBox();
-		return new BlockPos(bb.getMinX(), bb.getMinY(), bb.getMinZ());
+		return new Vec3d(bb.getMinX(), bb.getMinY(), bb.getMinZ());
 	}
 
 	@Override
-	public void setPos(BlockPos pos) {
-		BlockPos max = pos.add(getSize()).add(-1, -1, -1);
-		selection = new SelectionShape(BlockBox.create(pos, max), selection.getShape());
+	public void setPos(Vec3d pos) {
+		BlockPos bpos = new BlockPos((int) Math.round(pos.x), (int) Math.round(pos.y), (int) Math.round(pos.z));
+		BlockPos max = bpos.add(getSize()).add(-1, -1, -1);
+		selection = new SelectionShape(BlockBox.create(bpos, max), selection.getShape());
 		RENDERER.rebuild(selection);
 		modified();
 	}
@@ -115,9 +116,9 @@ public class ActiveSelection extends Gizmo implements Positionable, Renderable, 
 		if(size.getX() <= 0) return;
 		if(size.getY() <= 0) return;
 		if(size.getZ() <= 0) return;
-		BlockPos pos = getPos();
-		BlockPos max = pos.add(size).add(-1, -1, -1);
-		selection = new SelectionShape(BlockBox.create(pos, max), selection.getShape());
+		BlockPos bpos = new BlockPos((int) Math.round(getPos().x), (int) Math.round(getPos().y), (int) Math.round(getPos().z));
+		BlockPos max = bpos.add(size).add(-1, -1, -1);
+		selection = new SelectionShape(BlockBox.create(bpos, max), selection.getShape());
 		RENDERER.rebuild(selection);
 		modified();
 	}

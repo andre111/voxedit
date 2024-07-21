@@ -17,22 +17,22 @@ package me.andre111.voxedit.tool;
 
 import java.util.List;
 
-import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.data.Setting;
 
-public record Properties(List<ToolSetting<?>> settings, boolean draggable, boolean showPreview, boolean noPresets) {
+public record Properties(List<Setting<?>> settings, boolean draggable, boolean showPreview, boolean noPresets) {
 	public static final Properties NONE = of().create();
 	
-	public static Builder of(ToolSetting<?>... settings) {
+	public static Builder of(Setting<?>... settings) {
 		return new Builder(List.of(settings));
 	}
 	
 	public static class Builder {
-		private List<ToolSetting<?>> settings;
+		private List<Setting<?>> settings;
 		private boolean draggable = false;
 		private boolean showPreview = false;
 		private boolean noPresets = false;
 		
-		private Builder(List<ToolSetting<?>> settings) {
+		private Builder(List<Setting<?>> settings) {
 			this.settings = settings;
 		}
 		

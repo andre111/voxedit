@@ -17,12 +17,12 @@ package me.andre111.voxedit.tool;
 
 import java.util.Set;
 
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.CommonToolSettings;
+import me.andre111.voxedit.data.ToolTargeting;
 import me.andre111.voxedit.editor.EditorWorld;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSettings;
-import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
@@ -30,11 +30,11 @@ import net.minecraft.world.BlockView;
 
 public class ToolFlatten extends VoxelTool {
 	public ToolFlatten() {
-		super(Properties.of(ToolSettings.SHAPE, ToolSettings.TARGET_FLUIDS));
+		super(Properties.of(CommonToolSettings.SHAPE, CommonToolSettings.TARGET_FLUIDS));
 	}
 
 	@Override
-	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 		for(BlockPos pos : positions) {
 			if(ToolTargeting.isFree(world, pos)) {
 				world.setBlockState(pos, context.palette().getRandom(world.getRandom()), 0);
@@ -45,15 +45,15 @@ public class ToolFlatten extends VoxelTool {
 	}
 
 	@Override
-	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, Config config) {
 		BlockPos center = target.getBlockPos();
 		if(ToolTargeting.isFree(world, center)) return Set.of();
 		
-		Set<BlockPos> positions = ToolTargeting.getBlockPositions(world, target, ToolSettings.SHAPE.get(config));
+		Set<BlockPos> positions = ToolTargeting.getBlockPositions(world, target, CommonToolSettings.SHAPE.get(config));
 		positions.removeIf(pos -> {
 			int offset = switch(target.getSide()) {
 			case UP -> pos.getY() - center.getY();

@@ -70,6 +70,13 @@ public class EditorPanel extends ContainerWidget implements LayoutWidget {
 		refreshPositions();
 		parent.refreshPositions();
 	}
+	
+	public void addContent(List<? extends ClickableWidget> newChildren) {
+		content.addAll(newChildren);
+		children.addAll(newChildren);
+		refreshPositions();
+		parent.refreshPositions();
+	}
 
 	public void clearContent() {
 		children.removeAll(content);

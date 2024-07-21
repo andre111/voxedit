@@ -15,18 +15,22 @@
  */
 package me.andre111.voxedit.client.tool;
 
+import java.util.stream.StreamSupport;
+
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.gizmo.Gizmo;
 import me.andre111.voxedit.client.gizmo.GizmoHandle;
 import me.andre111.voxedit.client.gizmo.Positionable;
+import me.andre111.voxedit.client.gizmo.SelectedEntity;
 import me.andre111.voxedit.client.gui.screen.EditorScreen;
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.RaycastTargets;
+import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
 import me.andre111.voxedit.tool.Properties;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.RaycastTargets;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSetting;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -34,14 +38,15 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 public class ObjectTool extends ClientTool {
-	public static final ToolSetting<Mode> MODE = ToolSetting.ofEnum("mode", Mode.class, Mode::asText, true);
+	public static final Setting<Mode> MODE = Setting.ofEnum("mode", Mode.class, Mode::asText, true);
+	public static final Setting<Boolean> SELECT_ENTITIES = Setting.ofBoolean("selectEntities", false);
 
 	public ObjectTool() {
-		super(Properties.of(MODE).draggable().noPresets());
+		super(Properties.of(MODE, SELECT_ENTITIES).draggable().noPresets());
 	}
 
 	@Override
-	public void mouseMoved(int button, Context context, ToolConfig config) {
+	public void mouseMoved(int button, Context context, Config config) {
 		if(button == -1 && MODE.get(config) == Mode.ADJUST) {
 			EditorState.toolConfig(config.with(MODE, Mode.SELECT));
 			EditorState.toolState().positions().clear();
@@ -86,7 +91,7 @@ public class ObjectTool extends ClientTool {
 	}
 
 	@Override
-	public void mousePressed(int button, Context context, ToolConfig config) {
+	public void mousePressed(int button, Context context, Config config) {
 		if(button == 0 && MODE.get(config) == Mode.SELECT) {
 			Vec3d rayStart = EditorScreen.get().getLastRayStart();
 			Vec3d rayEnd = EditorScreen.get().getLastRayEnd();
@@ -158,7 +163,7 @@ public class ObjectTool extends ClientTool {
 	}
 
 	@Override
-	public void mouseReleased(int button, Context context, ToolConfig config) {
+	public void mouseReleased(int button, Context context, Config config) {
 		if(button == 0) {
 			EditorState.toolConfig(config.with(MODE, Mode.SELECT));
 			EditorState.toolState().positions().clear();
@@ -167,15 +172,15 @@ public class ObjectTool extends ClientTool {
 	}
 
 	@Override
-	public void mouseTargetMoved(Target target, Context context, ToolConfig config) {
+	public void mouseTargetMoved(Target target, Context context, Config config) {
 		switch(MODE.get(config)) {
 		case SELECT:
 			break;
 		case POSITION:
 			if(EditorState.selected() instanceof Positionable p && target.pos().isPresent()) {
-				if(EditorState.toolState().positions().isEmpty()) EditorState.toolState().positions().add(p.getPos().toImmutable());
+				if(EditorState.toolState().positions().isEmpty()) EditorState.toolState().positions().add(BlockPos.ofFloored(p.getPos()).toImmutable());
 
-				p.setPos(target.getBlockPos().offset(target.getSide()));
+				p.setPos(Vec3d.of(target.getBlockPos().offset(target.getSide())));
 			}
 			break;
 		case ADJUST:
@@ -184,7 +189,7 @@ public class ObjectTool extends ClientTool {
 	}
 
 	@Override
-	public void mouseTargetClicked(int button, Target target, Context context, ToolConfig config) {
+	public void mouseTargetClicked(int button, Target target, Context context, Config config) {
 		switch(MODE.get(config)) {
 		case SELECT:
 			Vec3d rayStart = EditorScreen.get().getLastRayStart();
@@ -196,13 +201,28 @@ public class ObjectTool extends ClientTool {
 			for(Gizmo gizmo : EditorState.gizmos()) {
 				var result = Box.raycast(gizmo, rayStart, rayEnd, BlockPos.ORIGIN);
 				if(result != null) {
-					double dist = result.getPos().squaredDistanceTo(EditorScreen.get().getLastRayStart());
+					double dist = result.getPos().squaredDistanceTo(rayStart);
 					if(nearest == null || dist < nearestDist) {
 						nearest = gizmo;
 						nearestDist = dist;
 					}
 				}
 			}
+			
+			// also include entities
+			if(SELECT_ENTITIES.get(config)) {
+				if(target.entity().isPresent()) {
+					Entity entity = StreamSupport.stream(MinecraftClient.getInstance().world.getEntities().spliterator(), false).filter(e -> e.getUuid().equals(target.getEntity())).findAny().orElse(null);
+					if(entity != null) {
+						double dist = entity.getPos().squaredDistanceTo(rayStart);
+						if(nearest == null || dist < nearestDist) {
+							nearest = new SelectedEntity(entity);
+							nearestDist = dist;
+						}
+					}
+				}
+			}
+			
 			if(nearest != null) {
 				EditorState.selected(nearest);
 			}
@@ -220,13 +240,13 @@ public class ObjectTool extends ClientTool {
 
 	@Override
 	public boolean cancel() {
-		ToolConfig config = EditorState.toolConfig();
+		Config config = EditorState.toolConfig();
 		switch(MODE.get(config)) {
 		case SELECT:
 			break;
 		case POSITION:
 			if(EditorState.selected() instanceof Positionable p && EditorState.toolState().positions().size() > 0) {
-				p.setPos(EditorState.toolState().positions().getFirst());
+				p.setPos(Vec3d.of(EditorState.toolState().positions().getFirst()));
 			}
 			EditorState.activeHandle(null, null);
 			EditorState.toolConfig(config.with(MODE, Mode.SELECT));
@@ -243,8 +263,8 @@ public class ObjectTool extends ClientTool {
 	}
 
 	@Override
-	public RaycastTargets getRaycastTargets(ToolConfig config) {
-		return RaycastTargets.BLOCKS_AND_OTHER;
+	public RaycastTargets getRaycastTargets(Config config) {
+		return SELECT_ENTITIES.get(config) ? RaycastTargets.ALL : RaycastTargets.BLOCKS_AND_ENTITIES;
 	}
 
 	public static enum Mode {

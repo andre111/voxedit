@@ -18,11 +18,11 @@ package me.andre111.voxedit.client.gizmo;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Config;
 import net.minecraft.text.Text;
 
 public abstract class GizmoActions {
 	public abstract void add(Text text, Runnable action);
-	public abstract void add(ToolSetting<?> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter, Consumer<ToolSetting<?>> notifier);
+	public abstract <T> void add(Setting<T> setting, Supplier<Config> configGetter, Consumer<Config> configSetter, Consumer<Setting<?>> notifier);
 }

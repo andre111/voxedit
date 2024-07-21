@@ -26,14 +26,14 @@ import me.andre111.voxedit.client.gizmo.Positionable;
 import me.andre111.voxedit.client.gizmo.Rotatable90Deg;
 import me.andre111.voxedit.client.gizmo.RotatableFreeYaw;
 import me.andre111.voxedit.client.gizmo.Sizeable;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSetting;
+import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Config;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.BlockRotation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 
 public class EditorPanelSelectedGizmo extends EditorPanel {
 	private boolean rebuilding = false;
@@ -62,16 +62,16 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 		if(selected instanceof Positionable p) {
 			addContent(new LineHorizontal(getWidth(), Text.translatable("voxedit.gizmo.position")));
 			x = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("X"), 0, v -> {
-				BlockPos pos = p.getPos();
-				p.setPos(new BlockPos(v, pos.getY(), pos.getZ()));
+				Vec3d pos = p.getPos();
+				p.setPos(new Vec3d(v, pos.getY(), pos.getZ()));
 			});
 			y = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("Y"), 0, v -> {
-				BlockPos pos = p.getPos();
-				p.setPos(new BlockPos(pos.getX(), v, pos.getZ()));
+				Vec3d pos = p.getPos();
+				p.setPos(new Vec3d(pos.getX(), v, pos.getZ()));
 			});
 			z = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("Z"), 0, v -> {
-				BlockPos pos = p.getPos();
-				p.setPos(new BlockPos(pos.getX(), pos.getY(), v));
+				Vec3d pos = p.getPos();
+				p.setPos(new Vec3d(pos.getX(), pos.getY(), v));
 			});
 			addContent(x);
 			addContent(y);
@@ -123,11 +123,8 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 					}
 
 					@Override
-					public void add(ToolSetting<?> setting, Supplier<ToolConfig> configGetter, Consumer<ToolConfig> configSetter, Consumer<ToolSetting<?>> notifier) {
-						var settingWidget = ToolSettingWidget.of(setting, configGetter, configSetter, notifier);
-						for(ClickableWidget widget : settingWidget.create(parent.getScreen(), 0, 0, width, 20)) {
-							addContent(widget);
-						}
+					public <T> void add(Setting<T> setting, Supplier<Config> configGetter, Consumer<Config> configSetter, Consumer<Setting<?>> notifier) {
+						addContent(SettingWidget.of(0, 0, width, SettingWidget.BASE_HEIGTH, setting, () -> setting.get(configGetter.get()), (value) -> configGetter.get().with(setting, value), notifier));
 					}
 				});
 			}
@@ -146,9 +143,9 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 
 		Gizmo selected = EditorState.selected();
 		if(selected instanceof Positionable p) {
-			x.setInt(p.getPos().getX());
-			y.setInt(p.getPos().getY());
-			z.setInt(p.getPos().getZ());
+			x.setInt((int) p.getPos().getX());
+			y.setInt((int) p.getPos().getY());
+			z.setInt((int) p.getPos().getZ());
 		}
 		if(selected instanceof Sizeable s) {
 			sizeX.setInt(s.getSize().getX());

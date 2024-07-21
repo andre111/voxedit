@@ -17,12 +17,12 @@ package me.andre111.voxedit.client.gizmo;
 
 import java.util.List;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 
 public interface Positionable {
 	
-	public BlockPos getPos();
-	public void setPos(BlockPos pos);
+	public Vec3d getPos();
+	public void setPos(Vec3d pos);
 	
 	public default void addPosHandles(List<GizmoHandle> handles) {
 		handles.add(new GizmoHandle(GizmoHandle.Mode.XZ_PLANE, 0, 0, 2, 1/8f, new Action(this, 1, 0, 0))); // x-axis
@@ -35,7 +35,7 @@ public interface Positionable {
 	}
 	static class Action implements GizmoHandle.GizmoHandleAction {
 		private final Positionable positionable;
-		private BlockPos startPos;
+		private Vec3d startPos;
 		private float sx, sy, sz;
 		private float mx, my, mz;
 		
@@ -59,7 +59,7 @@ public interface Positionable {
 			x -= sx;
 			y -= sy;
 			z -= sz;
-			positionable.setPos(startPos.add(Math.round(x * mx), Math.round(y * my), Math.round(z * mz)));
+			positionable.setPos(startPos.add(x * mx, y * my, z * mz));
 		}
 
 		@Override

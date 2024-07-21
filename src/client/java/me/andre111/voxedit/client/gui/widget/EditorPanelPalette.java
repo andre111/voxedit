@@ -22,12 +22,11 @@ import java.util.List;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.gui.screen.InputScreen;
-import me.andre111.voxedit.tool.data.BlockPalette;
+import me.andre111.voxedit.data.BlockPalette;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -149,7 +148,7 @@ public class EditorPanelPalette extends EditorPanel {
 	@Environment(value=EnvType.CLIENT)
 	class BlockPaletteListWidget extends ModListWidget<BlockPaletteListWidget.BlockPaletteEntry> {
 		public BlockPaletteListWidget() {
-			super(MinecraftClient.getInstance(), EditorPanelPalette.this.width, 300, 20, 6);
+			super(MinecraftClient.getInstance(), EditorPanelPalette.this.width, 150, 20, 6);
 			updateEntries();
 		}
 
@@ -189,9 +188,10 @@ public class EditorPanelPalette extends EditorPanel {
 				this.index = index;
 				
 				BlockPalette.Entry paletteEntry = EditorState.blockPalette().getEntry(index);
-				stateWidget = new BlockStateWidget(0, 0, BlockPaletteListWidget.this.width-6*2-32-64, 40, paletteEntry.state(), true, (blockState) -> {
+				stateWidget = new BlockStateWidget(0, 0, BlockPaletteListWidget.this.width-6*2-32-64, paletteEntry.state(), true, (blockState) -> {
 					BlockPalette.Entry oldEntry = EditorState.blockPalette().getEntry(index);
 					EditorState.blockPalette().setEntry(index, new BlockPalette.Entry(blockState, stateWidget.getSpecifiedProperties(), oldEntry.weight()));
+					BlockPaletteListWidget.this.refreshPositions();
 				});
 				children.add(stateWidget);
 				
@@ -217,15 +217,6 @@ public class EditorPanelPalette extends EditorPanel {
 				if(weightWidget != null) {
 					weightWidget.setX(getX()+getWidth()-weightWidget.getWidth());
 					weightWidget.setY(getY()+(getHeight()-weightWidget.getHeight())/2);
-				}
-			}
-
-			@Override
-			protected void renderWidget(DrawContext context, int mouseX, int mouseY, float tickDelta) {
-				stateWidget.render(context, mouseX, mouseY, tickDelta);
-				
-				if(weightWidget != null) {
-					weightWidget.render(context, mouseX, mouseY, tickDelta);
 				}
 			}
 

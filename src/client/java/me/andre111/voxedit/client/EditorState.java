@@ -29,19 +29,21 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import me.andre111.voxedit.Presets;
+import me.andre111.voxedit.VECodecs;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.VoxEditUtil;
 import me.andre111.voxedit.client.gizmo.Gizmo;
 import me.andre111.voxedit.client.gizmo.GizmoHandle;
+import me.andre111.voxedit.data.BlockPalette;
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.Configured;
 import me.andre111.voxedit.editor.EditStats;
+import me.andre111.voxedit.filter.Filter;
 import me.andre111.voxedit.schematic.Schematic;
 import me.andre111.voxedit.selection.Selection;
-import me.andre111.voxedit.tool.ConfiguredTool;
 import me.andre111.voxedit.tool.Tool;
-import me.andre111.voxedit.tool.data.BlockPalette;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.util.Identifier;
@@ -54,8 +56,8 @@ public class EditorState {
 			callback.accept(tool);
 		}
 	});
-	public static final Event<Consumer<ToolConfig>> CHANGE_TOOL_CONFIG = EventFactory.createArrayBacked(Consumer.class, callbacks -> toolConfig -> {
-		for (Consumer<ToolConfig> callback : callbacks) {
+	public static final Event<Consumer<Config>> CHANGE_TOOL_CONFIG = EventFactory.createArrayBacked(Consumer.class, callbacks -> toolConfig -> {
+		for (Consumer<Config> callback : callbacks) {
 			callback.accept(toolConfig);
 		}
 	});
@@ -69,8 +71,8 @@ public class EditorState {
 			callback.accept(blockPalette);
 		}
 	});
-	public static final Event<Consumer<BlockPalette>> CHANGE_FILTER = EventFactory.createArrayBacked(Consumer.class, callbacks -> blockPalette -> {
-		for (Consumer<BlockPalette> callback : callbacks) {
+	public static final Event<Consumer<Configured<Filter>>> CHANGE_FILTER = EventFactory.createArrayBacked(Consumer.class, callbacks -> blockPalette -> {
+		for (Consumer<Configured<Filter>> callback : callbacks) {
 			callback.accept(blockPalette);
 		}
 	});
@@ -103,7 +105,6 @@ public class EditorState {
 	private static Tool tool;
 	private static List<Target> targets = new ArrayList<>();
 	private static Set<BlockPos> positions = new HashSet<>();
-	private static BlockPalette filter = new BlockPalette();
 	private static Gizmo selected = null;
 	private static GizmoHandle activeHandle = null;
 	private static Vec3d activeHandleOrigin = null;
@@ -125,7 +126,7 @@ public class EditorState {
 
 	public static void tool(Tool tool) {
 		EditorState.tool = tool;
-		ToolConfig toolConfig = persistant().active(tool);
+		Config toolConfig = persistant().active(tool);
 		EditorState.targets.clear();
 		EditorState.toolState = new TransientToolState();
 
@@ -134,26 +135,26 @@ public class EditorState {
 		CHANGE_TARGETS.invoker().accept(null);
 	}
 
-	public static ToolConfig toolConfig() {
+	public static Config toolConfig() {
 		if(tool == null) return null;
 		return persistant().active(tool);
 	}
 
-	public static void toolConfig(ToolConfig toolConfig) {
+	public static void toolConfig(Config toolConfig) {
 		if(tool == null) return;
 		if(!tool.isValid(toolConfig)) return;
 
-		toolConfig = new ToolConfig(new HashMap<>(toolConfig.values()));
+		toolConfig = new Config(new HashMap<>(toolConfig.values()));
 		persistant().active(tool, toolConfig);
 		CHANGE_TOOL_CONFIG.invoker().accept(toolConfig);
 	}
 
-	public static ConfiguredTool configuredTool() {
+	public static Configured<Tool> configuredTool() {
 		if(tool == null) return null;
-		ToolConfig toolConfig = persistant().active(tool);
+		Config toolConfig = persistant().active(tool);
 		if(!tool.isValid(toolConfig)) return null;
 
-		return new ConfiguredTool(tool, toolConfig);
+		return new Configured<>(tool, toolConfig);
 	}
 	
 	public static TransientToolState toolState() {
@@ -193,12 +194,12 @@ public class EditorState {
 		CHANGE_BLOCK_PALETTE.invoker().accept(blockPalette);
 	}
 
-	public static BlockPalette filter() {
-		return filter;
+	public static Configured<Filter> filter() {
+		return persistant().filter();
 	}
 
-	public static void filter(BlockPalette filter) {
-		EditorState.filter = filter;
+	public static void filter(Configured<Filter> filter) {
+		persistant.filter(filter);
 		CHANGE_FILTER.invoker().accept(filter);
 	}
 	
@@ -272,7 +273,7 @@ public class EditorState {
 	}
 
 	public static Context context() {
-		return new Context(persistant().palette(), filter);
+		return new Context(persistant().palette(), filter());
 	}
 
 	public static List<EditStats> history() {
@@ -316,13 +317,15 @@ public class EditorState {
 	}
 
 	public static final class Persistant {
-		private Map<Identifier, ToolConfig> TOOL_ACTIVE = new HashMap<>();
-		private Map<Identifier, Map<String, ToolConfig>> TOOL_PRESETS = new HashMap<>();
+		private Map<Identifier, Config> TOOL_ACTIVE = new HashMap<>();
+		private Map<Identifier, Map<String, Config>> TOOL_PRESETS = new HashMap<>();
 
 		private BlockPalette PALETTE_ACTIVE = new BlockPalette(BlockPalette.DEFAULT.getEntries());
 		private Map<String, BlockPalette> PALETTE_PRESETS = new HashMap<>();
 		
 		private Selection selection;
+		
+		private Configured<Filter> filter = new Configured<>(VoxEdit.FILTER_BOOLEAN, VoxEdit.FILTER_BOOLEAN.getDefaultConfig());
 		
 		private boolean modified = false;
 
@@ -333,10 +336,10 @@ public class EditorState {
 
 				Path dir = VoxEditClient.dataPath().resolve("tools/"+tool.id().getNamespace()+"/"+tool.id().getPath()+"/");
 				Path current = dir.resolve("current.json");
-				TOOL_ACTIVE.put(tool.id(), VoxEditUtil.readJson(current, ToolConfig.CODEC, tool.getDefaultConfig()));
+				TOOL_ACTIVE.put(tool.id(), VoxEditUtil.readJson(current, Config.CODEC, tool.getDefaultConfig()));
 
 				// load saved presets
-				Map<String, ToolConfig> presets = new HashMap<>();
+				Map<String, Config> presets = new HashMap<>();
 				try {
 					if(Files.exists(dir.resolve("presets/"))) {
 						Files.list(dir.resolve("presets/")).forEach(path -> {
@@ -344,7 +347,7 @@ public class EditorState {
 							if(!fileName.endsWith(".json")) return;
 							String name = fileName.substring(0, fileName.length()-5);
 
-							ToolConfig config = VoxEditUtil.readJson(path, ToolConfig.CODEC, null);
+							Config config = VoxEditUtil.readJson(path, Config.CODEC, null);
 							if(config == null) {
 								System.err.println("Invalid preset: "+name+" for "+id);
 								return;
@@ -395,6 +398,9 @@ public class EditorState {
 			}
 			Presets.addPalettesIfAbsent(PALETTE_PRESETS);
 			
+			// load filter
+			filter = VoxEditUtil.readJson(VoxEditClient.dataPath().resolve("filter.json"), VECodecs.CONFIGURED_FILTER, new Configured<>(VoxEdit.FILTER_BOOLEAN, VoxEdit.FILTER_BOOLEAN.getDefaultConfig()));
+
 			// TODO: other state
 		}
 
@@ -407,10 +413,10 @@ public class EditorState {
 				Path dir = VoxEditClient.dataPath().resolve("tools/"+tool.id().getNamespace()+"/"+tool.id().getPath()+"/");
 
 				Path current = dir.resolve("current.json");
-				VoxEditUtil.writeJson(current, ToolConfig.CODEC, active(tool));
+				VoxEditUtil.writeJson(current, Config.CODEC, active(tool));
 
 				for(var e : presets(tool).entrySet()) {
-					VoxEditUtil.writeJson(getPresetPath(tool, e.getKey()), ToolConfig.CODEC, e.getValue());
+					VoxEditUtil.writeJson(getPresetPath(tool, e.getKey()), Config.CODEC, e.getValue());
 				}
 			});
 
@@ -419,6 +425,9 @@ public class EditorState {
 			for(var e : PALETTE_PRESETS.entrySet()) {
 				VoxEditUtil.writeJson(getPalettePath(e.getKey()), BlockPalette.CODEC, e.getValue());
 			}
+			
+			// save filter state
+			VoxEditUtil.writeJson(VoxEditClient.dataPath().resolve("filter.json"), VECodecs.CONFIGURED_FILTER, filter);
 		}
 		
 		private Path getPresetPath(Tool tool, String name) {
@@ -430,11 +439,11 @@ public class EditorState {
 			return VoxEditClient.dataPath().resolve("palettes/"+name+".json");
 		}
 
-		public Map<String, ToolConfig> presets(Tool tool) {
+		public Map<String, Config> presets(Tool tool) {
 			return Collections.unmodifiableMap(TOOL_PRESETS.get(tool.id()));
 		}
 		
-		public void preset(Tool tool, String name, ToolConfig preset) {
+		public void preset(Tool tool, String name, Config preset) {
 			TOOL_PRESETS.get(tool.id()).put(name, preset);
 			modified = true;
 		}
@@ -451,11 +460,11 @@ public class EditorState {
 			}
 		}
 
-		public ToolConfig active(Tool tool) {
+		public Config active(Tool tool) {
 			return TOOL_ACTIVE.computeIfAbsent(tool.id(), (id) -> tool.getDefaultConfig());
 		}
 
-		public void active(Tool tool, ToolConfig config) {
+		public void active(Tool tool, Config config) {
 			TOOL_ACTIVE.put(tool.id(), config);
 			modified = true;
 		}
@@ -498,6 +507,15 @@ public class EditorState {
 			this.selection = selection;
 			CHANGE_SELECTION.invoker().run();
 		}
+		
+		public Configured<Filter> filter() {
+			return filter;
+		}
+		
+		public void filter(Configured<Filter> filter) {
+			this.filter = filter;
+			modified = true;
+		}
 	}
 	
 	public static class TransientToolState {
@@ -517,6 +535,6 @@ public class EditorState {
 		}
 	}
 
-	public static record ToolPreset(String name, ToolConfig config) {
+	public static record ToolPreset(String name, Config config) {
 	}
 }

@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.tool.data;
+package me.andre111.voxedit.data;
 
 import me.andre111.voxedit.tool.shape.ConfiguredShape;
 
-public class ToolSettings {
-	public static final ToolSetting<Boolean> TARGET_FLUIDS = ToolSetting.ofBoolean("targetFluids", false);
-	public static final ToolSetting<ConfiguredShape> SHAPE = new ToolSetting.TSShape("shape", true);
-	public static final ToolSetting<ConfiguredShape> BASE_SHAPE = new ToolSetting.TSShape("shape", false);
+public class CommonToolSettings {
+	public static final Setting<Boolean> TARGET_FLUIDS = Setting.ofBoolean("targetFluids", false);
+	public static final Setting<ConfiguredShape> SHAPE = new Setting.TSShape("shape", true);
+	public static final Setting<ConfiguredShape> BASE_SHAPE = new Setting.TSShape("shape", false);
 }

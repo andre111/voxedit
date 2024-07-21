@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.tool.data;
+package me.andre111.voxedit.data;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,21 +25,22 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.codec.PacketCodecs;
 
-public record ToolConfig(Map<String, String> values) {
-	public static final Codec<ToolConfig> CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING).xmap(ToolConfig::new, ToolConfig::values);
-	public static final PacketCodec<ByteBuf, ToolConfig> PACKET_CODEC = PacketCodecs.map(s -> (Map<String, String>) new HashMap<String, String>(), PacketCodecs.STRING, PacketCodecs.STRING).xmap(ToolConfig::new, ToolConfig::values);
-
-	public ToolConfig withRaw(String key, String value) {
-		Map<String, String> newValues = new HashMap<>(values);
+public record Config(Map<String, ConfigValue<?>> values) {
+	public static final Codec<Config> CODEC = Codec.unboundedMap(Codec.STRING, ConfigValue.CODEC).xmap(Config::new, Config::values);
+	public static final PacketCodec<ByteBuf, Config> PACKET_CODEC = PacketCodecs.codec(CODEC);
+	public static final Config EMPTY = new Config(Map.of());
+	
+	public Config withRaw(String key, ConfigValue<?> value) {
+		Map<String, ConfigValue<?>> newValues = new HashMap<>(values);
 		newValues.put(key, value);
-		return new ToolConfig(newValues);
+		return new Config(newValues);
 	}
 	
-	public <V> ToolConfig with(ToolSetting<V> setting, V value) {
+	public <V> Config with(Setting<V> setting, V value) {
 		return setting.with(this, value);
 	}
 	
-	public <V> ToolConfig modify(ToolSetting<V> setting, Function<V, V> modifier) {
+	public <V> Config modify(Setting<V> setting, Function<V, V> modifier) {
 		return setting.with(this, modifier.apply(setting.get(this)));
 	}
 }

@@ -20,12 +20,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.CommonToolSettings;
 import me.andre111.voxedit.editor.EditorWorld;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSetting;
-import me.andre111.voxedit.tool.data.ToolSettings;
+import me.andre111.voxedit.filter.FilterContext;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -35,32 +36,32 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 
 public class ToolFill extends VoxelTool {
-	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 8, 1, 16);
+	private static final Setting<Integer> RADIUS = Setting.ofInt("radius", 8, 1, 16);
 	
 	public ToolFill() {
-		super(Properties.of(RADIUS, ToolSettings.TARGET_FLUIDS));
+		super(Properties.of(RADIUS, CommonToolSettings.TARGET_FLUIDS));
 	}
 
 	@Override
-	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 		for(BlockPos pos : positions) {
 			world.setBlockState(pos, context.palette().getRandom(world.getRandom()), 0);
 		}
 	}
 
 	@Override
-	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 		for(BlockPos pos : positions) {
 			world.setBlockState(pos, Blocks.AIR.getDefaultState(), 0);
 		}
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, Config config) {
 		Set<BlockPos> positions = new HashSet<>();
 		
 		BlockPos center = target.getBlockPos();
-		if(!shouldFill(world.getBlockState(center), null, context)) return positions;
+		if(!shouldFill(world, center, world.getBlockState(center), null, context)) return positions;
 		
 		Block targetBlock = world.getBlockState(center).getBlock();	
 		Queue<BlockPos> checkNeighbors = new LinkedList<>();
@@ -76,7 +77,7 @@ public class ToolFill extends VoxelTool {
 				if(Math.abs(neighbor.getX() - center.getX()) > radius) continue;
 				if(Math.abs(neighbor.getY() - center.getY()) > radius) continue;
 				if(Math.abs(neighbor.getZ() - center.getZ()) > radius) continue;
-				if(!shouldFill(world.getBlockState(neighbor), targetBlock, context)) continue;
+				if(!shouldFill(world, neighbor, world.getBlockState(neighbor), targetBlock, context)) continue;
 				if(positions.contains(neighbor)) continue;
 				if(checkNeighbors.contains(neighbor)) continue;
 				
@@ -88,12 +89,9 @@ public class ToolFill extends VoxelTool {
 		return positions;
 	}
 	
-	private boolean shouldFill(BlockState blockState, Block targetBlock, Context context) {
-		if(context.filter().size() == 0) {
-			if(targetBlock == null) return !blockState.isAir();
-			else return blockState.getBlock() == targetBlock;
-		} else {
-			return context.filter().has(blockState.getBlock());
-		}
+	private boolean shouldFill(BlockView view, BlockPos pos, BlockState blockState, Block targetBlock, Context context) {
+		if(context.filter() != null && !context.filter().value().check(new FilterContext(view, pos), context.filter().config())) return false;
+		if(targetBlock == null) return !blockState.isAir();
+		else return blockState.getBlock() == targetBlock;
 	}
 }

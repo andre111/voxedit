@@ -15,11 +15,26 @@
  */
 package me.andre111.voxedit.filter;
 
-import net.minecraft.util.math.BlockPos;
+import java.util.List;
 
-public record FilterOffset(Filter filter, BlockPos offset) implements Filter {
+import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.Configured;
+import me.andre111.voxedit.data.Setting;
+
+public class FilterOffset extends Filter {
+	public static final Setting<Configured<Filter>> FILTER = Setting.ofNested("filter", VoxEdit.TYPE_FILTER, new Configured<>(VoxEdit.FILTER_HEIGHT, VoxEdit.FILTER_HEIGHT.getDefaultConfig()), () -> VoxEdit.FILTER_REGISTRY.stream().toList());
+	private static final Setting<Integer> OFFSET_X = Setting.ofInt("offsetX", 0, -16, 16);
+	private static final Setting<Integer> OFFSET_Y = Setting.ofInt("offsetY", 0, -16, 16);
+	private static final Setting<Integer> OFFSET_Z = Setting.ofInt("offsetZ", 0, -16, 16);
+	
+	public FilterOffset() {
+		super(List.of(OFFSET_X, OFFSET_Y, OFFSET_Z, FILTER));
+	}
+	
 	@Override
-	public boolean check(FilterContext context) {
-		return filter.check(context.withPos(context.pos().add(offset)));
+	public boolean check(FilterContext context, Config config) {
+		var filter = FILTER.get(config);
+		return filter != null && filter.value().check(context.at(context.pos().add(OFFSET_X.get(config), OFFSET_Y.get(config), OFFSET_Z.get(config))), filter.config());
 	}
 }

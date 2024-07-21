@@ -55,13 +55,13 @@ public class SchematicPlacement extends Gizmo implements Positionable, Rotatable
 	}
 
 	@Override
-	public BlockPos getPos() {
-		return pos;
+	public Vec3d getPos() {
+		return new Vec3d(pos.getX(), pos.getY(), pos.getZ());
 	}
 
 	@Override
-	public void setPos(BlockPos pos) {
-		this.pos = pos;
+	public void setPos(Vec3d pos) {
+		this.pos = new BlockPos((int) Math.round(pos.x), (int) Math.round(pos.y), (int) Math.round(pos.z));
 		modified();
 	}
 
@@ -118,7 +118,7 @@ public class SchematicPlacement extends Gizmo implements Positionable, Rotatable
 
 	@Override
 	public Vec3d getHandleOrigin() {
-		return Vec3d.of(getPos()).add(info.sizeX() / 2.0, info.sizeY() / 2.0, info.sizeZ() / 2.0);
+		return getPos().add(info.sizeX() / 2.0, info.sizeY() / 2.0, info.sizeZ() / 2.0);
 	}
 
 	@Override

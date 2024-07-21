@@ -15,22 +15,22 @@
  */
 package me.andre111.voxedit.tool;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.RaycastTargets;
+import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.Configurable;
 import me.andre111.voxedit.state.ServerState;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.RaycastTargets;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSetting;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
-public abstract class Tool {
+public abstract class Tool implements Configurable<Tool> {
 	private final Properties properties;
 
 	public Tool(Properties.Builder builder) {
@@ -45,29 +45,15 @@ public abstract class Tool {
 		return properties;
 	}
 
-    public final List<ToolSetting<?>> getSettings() {
+	@Override
+    public final List<Setting<?>> getSettings() {
     	return properties.settings();
     }
-    
-    public final boolean has(ToolSetting<?> setting) {
-    	for(var s : properties.settings()) if(s == setting) return true;
-    	return false;
-    }
-    
-    public final ToolConfig getDefaultConfig() {
-    	ToolConfig config = new ToolConfig(new HashMap<>());
-    	for(var setting : properties.settings()) {
-    		config = setting.withDefaultValue(config);
-    	}
-    	return config;
-    }
-    
-    public final boolean isValid(ToolConfig config) {
-    	for(var setting : properties.settings()) {
-    		if(!setting.isValidOrMissing(config)) return false;
-    	}
-    	return true;
-    }
+
+	@Override
+	public Configurable.Type<Tool> getType() {
+		return VoxEdit.TYPE_TOOL;
+	}
     
 	public final Identifier id() {
 		return VoxEdit.TOOL_REGISTRY.getId(this);
@@ -78,13 +64,13 @@ public abstract class Tool {
 		return Text.translatable("voxedit.tool."+id.toTranslationKey());
 	}
     
-	public Map<String, ToolConfig> getPresets() {
+	public Map<String, Config> getPresets() {
 		return Map.of();
 	}
 	
-	public abstract RaycastTargets getRaycastTargets(ToolConfig config);
-	public abstract void performAction(ServerPlayerEntity player, Action action, List<Target> targets, Context context, ToolConfig config, ServerState state);
-	public void changedSetting(ToolSetting<?> setting, ToolConfig config) {}
+	public abstract RaycastTargets getRaycastTargets(Config config);
+	public abstract void performAction(ServerPlayerEntity player, Action action, List<Target> targets, Context context, Config config, ServerState state);
+	public void changedSetting(Setting<?> setting, Config config) {}
 	
 	public static enum Action {
 		ADD_OR_MODIFY,

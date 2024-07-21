@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.tool.data;
+package me.andre111.voxedit.data;
 
 import java.util.ArrayList;
 import java.util.HashSet;

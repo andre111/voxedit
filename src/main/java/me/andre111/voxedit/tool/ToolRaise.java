@@ -21,16 +21,16 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.ToolTargeting;
 import me.andre111.voxedit.editor.EditHelper;
 import me.andre111.voxedit.editor.EditorWorld;
 import me.andre111.voxedit.selection.Selection;
 import me.andre111.voxedit.selection.SelectionSet;
 import me.andre111.voxedit.selection.SelectionSubtract;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSetting;
-import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
@@ -41,18 +41,18 @@ import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
 
 public class ToolRaise extends VoxelTool {
-	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 8, 1, 32);
-	private static final ToolSetting<Integer> FALLOFF = ToolSetting.ofInt("falloff", 4, 0, 16);
-	private static final ToolSetting<Boolean> ROUNDED = ToolSetting.ofBoolean("rounded", true);
-	private static final ToolSetting<Boolean> MOVE_CONNECTED = ToolSetting.ofBoolean("moveConnected", true);
-	private static final ToolSetting<Boolean> INCLUDE_ENCLOSED = ToolSetting.ofBoolean("includeEnclosed", true);
+	private static final Setting<Integer> RADIUS = Setting.ofInt("radius", 8, 1, 32);
+	private static final Setting<Integer> FALLOFF = Setting.ofInt("falloff", 4, 0, 16);
+	private static final Setting<Boolean> ROUNDED = Setting.ofBoolean("rounded", true);
+	private static final Setting<Boolean> MOVE_CONNECTED = Setting.ofBoolean("moveConnected", true);
+	private static final Setting<Boolean> INCLUDE_ENCLOSED = Setting.ofBoolean("includeEnclosed", true);
 	
 	public ToolRaise() {
 		super(Properties.of(RADIUS, FALLOFF, ROUNDED, MOVE_CONNECTED, INCLUDE_ENCLOSED));
 	}
 
 	@Override
-	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 		BlockPos center = target.getBlockPos();
 		Direction dir = target.getSide();
 		
@@ -98,11 +98,11 @@ public class ToolRaise extends VoxelTool {
 	}
 
 	@Override
-	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, Config config) {
 		Set<BlockPos> positions = new HashSet<>();
 		
 		BlockPos center = target.getBlockPos();

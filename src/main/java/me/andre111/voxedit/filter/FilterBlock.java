@@ -15,13 +15,19 @@
  */
 package me.andre111.voxedit.filter;
 
-import me.andre111.voxedit.tool.data.BlockPalette;
-import net.minecraft.block.BlockState;
+import java.util.List;
 
-public record FilterBlock(BlockPalette palette) implements Filter {
+import me.andre111.voxedit.data.Config;
+
+public class FilterBlock extends Filter {
+
+	public FilterBlock() {
+		super(List.of());
+	}
+
 	@Override
-	public boolean check(FilterContext context) {
-		BlockState state = context.view().getBlockState(context.pos());
-		return palette.has(state);
+	public boolean check(FilterContext context, Config config) {
+		//TODO: implement
+		return false;
 	}
 }

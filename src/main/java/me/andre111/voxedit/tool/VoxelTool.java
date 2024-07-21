@@ -19,17 +19,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.RaycastTargets;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.CommonToolSettings;
 import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.editor.EditType;
 import me.andre111.voxedit.editor.Editor;
 import me.andre111.voxedit.editor.EditorWorld;
 import me.andre111.voxedit.schematic.Schematic;
 import me.andre111.voxedit.state.ServerState;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.RaycastTargets;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSettings;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -45,8 +45,8 @@ public abstract class VoxelTool extends Tool {
 	}
 
 	@Override
-	public RaycastTargets getRaycastTargets(ToolConfig config) {
-		if(has(ToolSettings.TARGET_FLUIDS) && ToolSettings.TARGET_FLUIDS.get(config)) {
+	public RaycastTargets getRaycastTargets(Config config) {
+		if(has(CommonToolSettings.TARGET_FLUIDS) && CommonToolSettings.TARGET_FLUIDS.get(config)) {
 			return RaycastTargets.BLOCKS_AND_FLUIDS;
 		} else {
 			return RaycastTargets.BLOCKS_ONLY;
@@ -54,7 +54,7 @@ public abstract class VoxelTool extends Tool {
 	}
 
 	@Override
-	public void performAction(ServerPlayerEntity player, Action action, List<Target> targets, Context context, ToolConfig config, ServerState state) {
+	public void performAction(ServerPlayerEntity player, Action action, List<Target> targets, Context context, Config config, ServerState state) {
 		// collect position sets
 		if(targets.size() > 1 && !properties().draggable()) {
 			player.sendMessage(Text.translatable("voxedit.feedback.notDraggable"), true);
@@ -105,7 +105,7 @@ public abstract class VoxelTool extends Tool {
 		result.inform(player, EditType.PERFORM);
 	}
 
-	public abstract void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions);
-	public abstract void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions);
-	public abstract Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config);
+	public abstract void place(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions);
+	public abstract void remove(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions);
+	public abstract Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, Config config);
 }

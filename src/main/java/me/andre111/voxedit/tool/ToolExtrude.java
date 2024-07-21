@@ -20,12 +20,12 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.CommonToolSettings;
 import me.andre111.voxedit.editor.EditorWorld;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSetting;
-import me.andre111.voxedit.tool.data.ToolSettings;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -35,14 +35,14 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 
 public class ToolExtrude extends VoxelTool {
-	private static final ToolSetting<Integer> RADIUS = ToolSetting.ofInt("radius", 32, 1, 64);
+	private static final Setting<Integer> RADIUS = Setting.ofInt("radius", 32, 1, 64);
 	
 	public ToolExtrude() {
-		super(Properties.of(RADIUS, ToolSettings.TARGET_FLUIDS));
+		super(Properties.of(RADIUS, CommonToolSettings.TARGET_FLUIDS));
 	}
 
 	@Override
-	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 		BlockState state = world.getBlockState(target.getBlockPos());
 		for(BlockPos pos : positions) {
 			world.setBlockState(pos, state, 0);
@@ -50,7 +50,7 @@ public class ToolExtrude extends VoxelTool {
 	}
 
 	@Override
-	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 		Direction offset = target.getSide().getOpposite();
 		for(BlockPos pos : positions) {
 			world.setBlockState(pos.offset(offset), Blocks.AIR.getDefaultState(), 0);
@@ -58,7 +58,7 @@ public class ToolExtrude extends VoxelTool {
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, Config config) {
 		Set<BlockPos> positions = new HashSet<>();
 		if(world.getBlockState(target.getBlockPos()).isAir()) return positions;
 		

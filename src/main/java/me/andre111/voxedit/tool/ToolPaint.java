@@ -19,13 +19,13 @@ import java.util.Map;
 import java.util.Set;
 
 import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
+import me.andre111.voxedit.data.CommonToolSettings;
+import me.andre111.voxedit.data.ToolTargeting;
 import me.andre111.voxedit.editor.EditorWorld;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
-import me.andre111.voxedit.tool.data.ToolSetting;
-import me.andre111.voxedit.tool.data.ToolSettings;
-import me.andre111.voxedit.tool.data.ToolTargeting;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
@@ -34,15 +34,15 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 
 public class ToolPaint extends VoxelTool {
-	private static final ToolSetting<Boolean> TOP_ONLY = ToolSetting.ofBoolean("topOnly", false);
-	private static final ToolSetting<Boolean> CHECK_CAN_PLACE = ToolSetting.ofBoolean("checkCanPlace", false);
+	private static final Setting<Boolean> TOP_ONLY = Setting.ofBoolean("topOnly", false);
+	private static final Setting<Boolean> CHECK_CAN_PLACE = Setting.ofBoolean("checkCanPlace", false);
 	
 	public ToolPaint() {
-		super(Properties.of(ToolSettings.SHAPE, TOP_ONLY, CHECK_CAN_PLACE, ToolSettings.TARGET_FLUIDS).draggable());
+		super(Properties.of(CommonToolSettings.SHAPE, TOP_ONLY, CHECK_CAN_PLACE, CommonToolSettings.TARGET_FLUIDS).draggable());
 	}
 
 	@Override
-	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void place(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 		boolean checkCanPlace = CHECK_CAN_PLACE.get(config);
 		for(BlockPos pos : positions) {
 			BlockState state = context.palette().getRandom(world.getRandom());
@@ -51,15 +51,15 @@ public class ToolPaint extends VoxelTool {
 	}
 
 	@Override
-	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, ToolConfig config, Set<BlockPos> positions) {
+	public void remove(EditorWorld world, PlayerEntity player, Target target, Context context, Config config, Set<BlockPos> positions) {
 		for(BlockPos pos : positions) {
 			world.setBlockState(pos, Blocks.AIR.getDefaultState(), 0);
 		}
 	}
 
 	@Override
-	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, ToolConfig config) {
-		return ToolTargeting.getBlockPositions(world, target, ToolSettings.SHAPE.get(config), (innerTarget, innerWorld, pos) -> {
+	public Set<BlockPos> getBlockPositions(BlockView world, Target target, Context context, Config config) {
+		return ToolTargeting.getBlockPositions(world, target, CommonToolSettings.SHAPE.get(config), (innerTarget, innerWorld, pos) -> {
 			if(ToolTargeting.isFree(innerWorld, pos)) return false;
 			if(TOP_ONLY.get(config)) return ToolTargeting.isFree(innerWorld, pos.offset(Direction.UP));
 			for(Direction d : Direction.values()) {
@@ -70,7 +70,7 @@ public class ToolPaint extends VoxelTool {
 	}
 	
 	@Override
-	public Map<String, ToolConfig> getPresets() {
-		return Map.of("Surface", getDefaultConfig().modify(ToolSettings.SHAPE, s -> s.shape(VoxEdit.SHAPE_DISC)).with(TOP_ONLY, true));
+	public Map<String, Config> getPresets() {
+		return Map.of("Surface", getDefaultConfig().modify(CommonToolSettings.SHAPE, s -> s.shape(VoxEdit.SHAPE_DISC)).with(TOP_ONLY, true));
 	}
 }

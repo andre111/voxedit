@@ -17,15 +17,15 @@ package me.andre111.voxedit.tool;
 
 import java.util.List;
 
+import me.andre111.voxedit.data.Context;
+import me.andre111.voxedit.data.RaycastTargets;
+import me.andre111.voxedit.data.Target;
+import me.andre111.voxedit.data.Config;
 import me.andre111.voxedit.editor.EditType;
 import me.andre111.voxedit.editor.Editor;
 import me.andre111.voxedit.editor.action.ModifyEntityAction;
 import me.andre111.voxedit.network.ServerNetworking;
 import me.andre111.voxedit.state.ServerState;
-import me.andre111.voxedit.tool.data.Context;
-import me.andre111.voxedit.tool.data.RaycastTargets;
-import me.andre111.voxedit.tool.data.Target;
-import me.andre111.voxedit.tool.data.ToolConfig;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NbtCompound;
@@ -39,12 +39,12 @@ public class EditNBTTool extends Tool {
 	}
 
 	@Override
-	public RaycastTargets getRaycastTargets(ToolConfig config) {
+	public RaycastTargets getRaycastTargets(Config config) {
 		return RaycastTargets.BLOCKS_AND_ENTITIES;
 	}
 
 	@Override
-	public void performAction(ServerPlayerEntity player, Action action, List<Target> targets, Context context, ToolConfig config, ServerState state) {
+	public void performAction(ServerPlayerEntity player, Action action, List<Target> targets, Context context, Config config, ServerState state) {
 		if(targets.size() != 1) return;
 		Target target = targets.get(0);
 		
