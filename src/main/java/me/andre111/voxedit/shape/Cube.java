@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.tool.shape;
+package me.andre111.voxedit.shape;
 
 import net.minecraft.util.math.Direction;
 
-public class Sphere extends Shape {
+public class Cube extends Shape {
 	@Override
 	public boolean contains(int x, int y, int z, Direction direction, double sizeX, double sizeY, double sizeZ) {
-		double xp = x / sizeX;
-		double yp = y / sizeY;
-		double zp = z / sizeZ;
-		//return Math.sqrt(xp*xp + yp*yp + zp*zp) <= 1;
-		return xp*xp + yp*yp + zp*zp <= 1;
+		return true;
 	}
 }

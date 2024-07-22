@@ -34,6 +34,11 @@ public interface Configurable<T extends Configurable<T>> {
     	return config;
     }
 	
+	@SuppressWarnings("unchecked")
+	public default Configured<T> getDefault() {
+		return new Configured<T>((T) this, getDefaultConfig());
+	}
+	
 	public static record Type<T extends Configurable<T>>(Codec<T> baseCodec) {
 	}
 }

@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.tool.shape;
+package me.andre111.voxedit.shape;
 
-import me.andre111.voxedit.VoxEdit;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Direction;
 
-public abstract class Shape {
-	public abstract boolean contains(int x, int y, int z, Direction direction, double sizeX, double sizeY, double sizeZ);
-	
-	public Identifier id() {
-		return VoxEdit.SHAPE_REGISTRY.getId(this);
-	}
-	
-	public Text asText() {
-		return Text.translatable("voxedit.shape."+id().toTranslationKey());
+public class Disc extends Shape {
+	@Override
+	public boolean contains(int x, int y, int z, Direction direction, double sizeX, double sizeY, double sizeZ) {
+		double xp = x / sizeX;
+		double yp = y / sizeY;
+		double zp = z / sizeZ;
+		if(Math.sqrt(xp*xp + yp*yp + zp*zp) > 1) return false;
+		if(direction.getOffsetX() != 0 && x != 0) return false;
+		if(direction.getOffsetY() != 0 && y != 0) return false;
+		if(direction.getOffsetZ() != 0 && z != 0) return false;
+		return true;
 	}
 }

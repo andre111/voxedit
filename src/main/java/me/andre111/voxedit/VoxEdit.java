@@ -54,6 +54,13 @@ import me.andre111.voxedit.selection.SelectionSet;
 import me.andre111.voxedit.selection.SelectionShape;
 import me.andre111.voxedit.selection.SelectionSubtract;
 import me.andre111.voxedit.selection.SelectionType;
+import me.andre111.voxedit.shape.Cube;
+import me.andre111.voxedit.shape.Cylinder;
+import me.andre111.voxedit.shape.Disc;
+import me.andre111.voxedit.shape.HollowCube;
+import me.andre111.voxedit.shape.HollowSphere;
+import me.andre111.voxedit.shape.Shape;
+import me.andre111.voxedit.shape.Sphere;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.ToolBlend;
 import me.andre111.voxedit.tool.ToolBrush;
@@ -66,13 +73,6 @@ import me.andre111.voxedit.tool.ToolPlace;
 import me.andre111.voxedit.tool.ToolRaise;
 import me.andre111.voxedit.tool.ToolScatter;
 import me.andre111.voxedit.tool.ToolSmooth;
-import me.andre111.voxedit.tool.shape.Cube;
-import me.andre111.voxedit.tool.shape.Cylinder;
-import me.andre111.voxedit.tool.shape.Disc;
-import me.andre111.voxedit.tool.shape.HollowCube;
-import me.andre111.voxedit.tool.shape.HollowSphere;
-import me.andre111.voxedit.tool.shape.Shape;
-import me.andre111.voxedit.tool.shape.Sphere;
 
 public class VoxEdit implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("voxedit");
@@ -96,6 +96,7 @@ public class VoxEdit implements ModInitializer {
     
     // 3. configurable types
     public static final Configurable.Type<Tool> TYPE_TOOL = Registry.register(CONFIGURABLE_TYPE_REGISTRY, id("tool"), new Configurable.Type<>(TOOL_REGISTRY.getCodec()));
+    public static final Configurable.Type<Shape> TYPE_SHAPE = Registry.register(CONFIGURABLE_TYPE_REGISTRY, id("shape"), new Configurable.Type<>(SHAPE_REGISTRY.getCodec()));
     public static final Configurable.Type<Filter> TYPE_FILTER = Registry.register(CONFIGURABLE_TYPE_REGISTRY, id("filter"), new Configurable.Type<>(FILTER_REGISTRY.getCodec()));
     
     // 4. registry entries

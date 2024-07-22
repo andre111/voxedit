@@ -15,10 +15,11 @@
  */
 package me.andre111.voxedit.data;
 
-import me.andre111.voxedit.tool.shape.ConfiguredShape;
+import me.andre111.voxedit.VoxEdit;
+import me.andre111.voxedit.shape.Shape;
 
 public class CommonToolSettings {
 	public static final Setting<Boolean> TARGET_FLUIDS = Setting.ofBoolean("targetFluids", false);
-	public static final Setting<ConfiguredShape> SHAPE = new Setting.TSShape("shape", true);
-	public static final Setting<ConfiguredShape> BASE_SHAPE = new Setting.TSShape("shape", false);
+	public static final Setting<Configured<Shape>> SHAPE = Setting.ofNested("shape", VoxEdit.TYPE_SHAPE, VoxEdit.SHAPE_SPHERE.getDefault(), () -> VoxEdit.SHAPE_REGISTRY.stream().toList(), true);
+	public static final Setting<Configured<Shape>> BASE_SHAPE = Setting.ofNested("shape", VoxEdit.TYPE_SHAPE, VoxEdit.SHAPE_SPHERE.getDefault(), () -> VoxEdit.SHAPE_REGISTRY.stream().toList(), false);
 }

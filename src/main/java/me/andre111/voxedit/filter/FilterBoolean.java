@@ -10,7 +10,7 @@ import net.minecraft.text.Text;
 
 public class FilterBoolean extends Filter {
 	public static final Setting<Op> OPERATION = Setting.ofEnum("operation", Op.class, Op::asText, true);
-	public static final Setting<List<Configured<Filter>>> FILTERS = Setting.ofNested("filters", VoxEdit.TYPE_FILTER, new Configured<>(VoxEdit.FILTER_HEIGHT, VoxEdit.FILTER_HEIGHT.getDefaultConfig()), () -> VoxEdit.FILTER_REGISTRY.stream().toList()).listOf(List.of(), -1, Text.translatable("voxedit.filters"));
+	public static final Setting<List<Configured<Filter>>> FILTERS = Setting.ofNested("filters", VoxEdit.TYPE_FILTER, new Configured<>(VoxEdit.FILTER_HEIGHT, VoxEdit.FILTER_HEIGHT.getDefaultConfig()), () -> VoxEdit.FILTER_REGISTRY.stream().toList(), true).listOf(List.of(), -1, Text.translatable("voxedit.filters"));
 	
 	public FilterBoolean() {
 		super(List.of(OPERATION, FILTERS));

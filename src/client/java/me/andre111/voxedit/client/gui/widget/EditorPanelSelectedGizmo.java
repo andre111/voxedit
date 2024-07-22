@@ -124,7 +124,7 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 
 					@Override
 					public <T> void add(Setting<T> setting, Supplier<Config> configGetter, Consumer<Config> configSetter, Consumer<Setting<?>> notifier) {
-						addContent(SettingWidget.of(0, 0, width, SettingWidget.BASE_HEIGTH, setting, () -> setting.get(configGetter.get()), (value) -> configGetter.get().with(setting, value), notifier));
+						addContent(SettingWidget.of(EditorPanelSelectedGizmo.this, 0, 0, width, SettingWidget.BASE_HEIGTH, setting, () -> setting.get(configGetter.get()), (value) -> configGetter.get().with(setting, value), notifier));
 					}
 				});
 			}

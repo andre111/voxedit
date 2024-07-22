@@ -135,6 +135,9 @@ public class EditorPanel extends ContainerWidget implements LayoutWidget {
 		buttonMoveDown.active = !parent.isLast(this);
 		
 		// content
+		int oldWidth = width;
+		int oldHeight = height;
+		
 		int x = getX();
 		int y = getY() + 28;
 		int maxHeight = getY() + 28;
@@ -154,6 +157,12 @@ public class EditorPanel extends ContainerWidget implements LayoutWidget {
 		height = Math.max(32, maxHeight + 4) - getY();
 
 		LayoutWidget.super.refreshPositions();
+		
+		if(oldWidth != width || oldHeight != height) {
+			if(parent != null) {
+				parent.refreshPositions();
+			}
+		}
 	}
 
 	public Identifier getID() {

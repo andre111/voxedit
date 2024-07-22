@@ -23,7 +23,7 @@ import me.andre111.voxedit.data.Configured;
 import me.andre111.voxedit.data.Setting;
 
 public class FilterOffset extends Filter {
-	public static final Setting<Configured<Filter>> FILTER = Setting.ofNested("filter", VoxEdit.TYPE_FILTER, new Configured<>(VoxEdit.FILTER_HEIGHT, VoxEdit.FILTER_HEIGHT.getDefaultConfig()), () -> VoxEdit.FILTER_REGISTRY.stream().toList());
+	public static final Setting<Configured<Filter>> FILTER = Setting.ofNested("filter", VoxEdit.TYPE_FILTER, new Configured<>(VoxEdit.FILTER_HEIGHT, VoxEdit.FILTER_HEIGHT.getDefaultConfig()), () -> VoxEdit.FILTER_REGISTRY.stream().toList(), true);
 	private static final Setting<Integer> OFFSET_X = Setting.ofInt("offsetX", 0, -16, 16);
 	private static final Setting<Integer> OFFSET_Y = Setting.ofInt("offsetY", 0, -16, 16);
 	private static final Setting<Integer> OFFSET_Z = Setting.ofInt("offsetZ", 0, -16, 16);

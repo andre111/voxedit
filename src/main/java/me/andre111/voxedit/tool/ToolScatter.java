@@ -20,11 +20,13 @@ import java.util.Set;
 
 import me.andre111.voxedit.data.Context;
 import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Size;
 import me.andre111.voxedit.data.Target;
 import me.andre111.voxedit.data.Config;
 import me.andre111.voxedit.data.CommonToolSettings;
 import me.andre111.voxedit.data.ToolTargeting;
 import me.andre111.voxedit.editor.EditorWorld;
+import me.andre111.voxedit.shape.Shape;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
@@ -64,6 +66,6 @@ public class ToolScatter extends VoxelTool {
 	
 	@Override
 	public Map<String, Config> getPresets() {
-		return Map.of("Place Valid", getDefaultConfig().modify(CommonToolSettings.SHAPE, s -> s.size(6)).with(CHECK_CAN_PLACE, true));
+		return Map.of("Place Valid", getDefaultConfig().modify(CommonToolSettings.SHAPE, s -> s.with(s.config().modify(Shape.SIZE, size -> new Size(true, false, 6, 6, 6)))).with(CHECK_CAN_PLACE, true));
 	}
 }

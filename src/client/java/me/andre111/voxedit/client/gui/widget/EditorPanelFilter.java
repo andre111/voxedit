@@ -40,7 +40,7 @@ public class EditorPanelFilter extends EditorPanel {
 		// settings
 		var filter = EditorState.filter();
 		if(filter != null) {
-			List<SettingWidget<?, ?>> widgets = SettingWidget.forInstance(0, 0, width, SettingWidget.BASE_HEIGTH, filter.value(), () -> EditorState.filter().config(), (config) -> {
+			List<SettingWidget<?, ?>> widgets = SettingWidget.forInstance(this, 0, 0, width, SettingWidget.BASE_HEIGTH, filter.value(), () -> EditorState.filter().config(), (config) -> {
 				EditorState.persistant().filter(filter.with(config));
 				parent.refreshPositions();
 			}, (setting) -> {});

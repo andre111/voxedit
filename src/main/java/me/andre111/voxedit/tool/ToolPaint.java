@@ -71,6 +71,6 @@ public class ToolPaint extends VoxelTool {
 	
 	@Override
 	public Map<String, Config> getPresets() {
-		return Map.of("Surface", getDefaultConfig().modify(CommonToolSettings.SHAPE, s -> s.shape(VoxEdit.SHAPE_DISC)).with(TOP_ONLY, true));
+		return Map.of("Surface", getDefaultConfig().modify(CommonToolSettings.SHAPE, s -> VoxEdit.SHAPE_DISC.getDefault()).with(TOP_ONLY, true));
 	}
 }

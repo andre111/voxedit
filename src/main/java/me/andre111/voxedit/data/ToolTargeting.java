@@ -20,7 +20,7 @@ import java.util.Set;
 
 import me.andre111.voxedit.filter.Filter;
 import me.andre111.voxedit.filter.FilterContext;
-import me.andre111.voxedit.tool.shape.ConfiguredShape;
+import me.andre111.voxedit.shape.Shape;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.world.BlockView;
@@ -29,57 +29,59 @@ public class ToolTargeting {
 	public static Set<BlockPos> getBlockPositions(BlockView world, Target target) {
 		return getBlockPositions(world, target, null, null, null);
 	}
-	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, ConfiguredShape shape) {
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, Configured<Shape> shape) {
 		return getBlockPositions(world, target, shape, null, null);
 	}
-	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, ConfiguredShape shape, TestPredicate testPredicate) {
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, Configured<Shape> shape, TestPredicate testPredicate) {
 		return getBlockPositions(world, target, shape, testPredicate, null);
 	}
-	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, ConfiguredShape shape, TestPredicate testPredicate, Configured<Filter> filter) {
+	public static Set<BlockPos> getBlockPositions(BlockView world, Target target, Configured<Shape> shape, TestPredicate testPredicate, Configured<Filter> filter) {
 		Set<BlockPos> positions = new HashSet<>();
 		
 		// size
-		int radiusX = shape.width();
-		int radiusY = shape.width();
-		int radiusZ = shape.width();
-		if(shape.splitSize()) {
+		Size radius = Shape.SIZE.get(shape.config());
+		int radiusX = radius.x();
+		int radiusY = radius.y();
+		int radiusZ = radius.z();
+		if(radius.split()) {
 			Axis axis = target.side().get().getAxis();
 			if(axis == Axis.X) {
-				radiusX = shape.height();
-				radiusY = shape.length();
-				radiusZ = shape.width();
+				radiusX = radius.y();
+				radiusY = radius.z();
+				radiusZ = radius.x();
 			} else if(axis == Axis.Y) {
-				radiusX = shape.width();
-				radiusY = shape.height();
-				radiusZ = shape.length();
+				radiusX = radius.x();
+				radiusY = radius.y();
+				radiusZ = radius.z();
 			} else if(axis == Axis.Z) {
-				radiusX = shape.width();
-				radiusY = shape.length();
-				radiusZ = shape.height();
+				radiusX = radius.x();
+				radiusY = radius.y();
+				radiusZ = radius.z();
 			}
 		}
 		
 		// center + offset
 		BlockPos center = target.getBlockPos();
-		if(shape.offset()) {
+		Size offset = Shape.OFFSET.get(shape.config());
+		if(offset.enabled()) {
 			switch(target.side().get()) {
 			case UP:
-				center = center.add(shape.offsetW(), shape.offsetH(), shape.offsetL());
+				center = center.add(offset.x(), offset.y(), offset.z());
 				break;
 			case DOWN:
-				center = center.add(shape.offsetW(), -shape.offsetH(), shape.offsetL());
+				center = center.add(offset.x(), -offset.y(), offset.z());
 				break;
 			case NORTH:
-				center = center.add(shape.offsetW(), shape.offsetL(), -shape.offsetH());
+				center = center.add(offset.x(), offset.z(), -offset.y());
 				break;
 			case EAST:
-				center = center.add(shape.offsetH(), shape.offsetL(), shape.offsetW());
+				center = center.add(offset.y(), offset.z(), offset.x());
 				break;
 			case SOUTH:
-				center = center.add(shape.offsetW(), shape.offsetL(), shape.offsetH());
+				center = center.add(offset.x(), offset.z(), offset.y());
 				break;
 			case WEST:
-				center = center.add(-shape.offsetH(), shape.offsetL(), shape.offsetW());
+				center = center.add(-offset.y(), offset.z(), offset.x());
 				break;
 			}
 		}
@@ -89,7 +91,7 @@ public class ToolTargeting {
 		for(int x = -radiusX; x <= radiusX; x++) {
         	for(int y = -radiusY; y <= radiusY; y++) {
         		for(int z = -radiusZ; z <= radiusZ; z++) {
-                	if(shape != null && !shape.shape().contains(x, y, z, target.getSide(), radiusX, radiusY, radiusZ)) continue;
+                	if(shape != null && !shape.value().contains(x, y, z, target.getSide(), radiusX, radiusY, radiusZ)) continue;
                 	
                 	pos.set(center.getX()+x, center.getY()+y, center.getZ()+z);
                 	

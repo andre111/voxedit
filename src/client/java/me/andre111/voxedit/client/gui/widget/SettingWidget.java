@@ -20,13 +20,11 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.data.Setting;
+import me.andre111.voxedit.data.Size;
 import me.andre111.voxedit.data.Config;
 import me.andre111.voxedit.data.Configurable;
 import me.andre111.voxedit.data.Configured;
-import me.andre111.voxedit.tool.shape.ConfiguredShape;
-import me.andre111.voxedit.tool.shape.Shape;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -55,21 +53,23 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 	protected final Consumer<V> valueSetter;
 	protected final Consumer<Setting<?>> notifier;
 
+	protected final LayoutWidget parent;
 	protected final List<Element> children = new ArrayList<>();
 	protected boolean reloading = false;
 	protected int gap = 2;
 	protected int paddingX = 0;
 	protected int paddingY = 0;
 
-	public SettingWidget(int x, int y, int width, int height, S setting, Supplier<V> valueGetter, Consumer<V> valueSetter, Consumer<Setting<?>> notifier) {
+	public SettingWidget(LayoutWidget parent, int x, int y, int width, int height, S setting, Supplier<V> valueGetter, Consumer<V> valueSetter, Consumer<Setting<?>> notifier) {
 		super(x, y, width, height, Text.empty());
 
 		this.setting = setting;
 		this.valueGetter = valueGetter;
 		this.valueSetter = valueSetter;
 		this.notifier = notifier;
-
-		children.addAll(create());
+		
+		this.parent = parent;
+		this.children.addAll(create());
 	}
 
 	protected V read() {
@@ -88,6 +88,7 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 		for(Element child : children()) {
 			if(child instanceof SettingWidget<?, ?> settingWidget) settingWidget.reload();
 		}
+		refreshPositions();
 		reloading = false;
 	}
 
@@ -105,6 +106,9 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 
 	@Override
 	public void refreshPositions() {
+		int oldWidth = width;
+		int oldHeight = height;
+		
 		int x = getX() + paddingX;
 		int y = getY() + paddingY;
 		int maxHeight = y;
@@ -126,6 +130,12 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 		height = Math.max(32, maxHeight + paddingY) - getY();
 
 		LayoutWidget.super.refreshPositions();
+		
+		if(oldWidth != width || oldHeight != height) {
+			if(parent != null) {
+				parent.refreshPositions();
+			}
+		}
 	}
 
 	@Override
@@ -144,36 +154,36 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 	protected abstract List<Element> create();
 	protected abstract void reloadValue();
 
-	public static List<SettingWidget<?, ?>> forInstance(int x, int y, int width, int height, Configurable<?> instance, Supplier<Config> configGetter, Consumer<Config> configSetter, Consumer<Setting<?>> notifier) {
+	public static List<SettingWidget<?, ?>> forInstance(LayoutWidget parent, int x, int y, int width, int height, Configurable<?> instance, Supplier<Config> configGetter, Consumer<Config> configSetter, Consumer<Setting<?>> notifier) {
 		List<SettingWidget<?, ?>> list = new ArrayList<>();
 		for(Setting<?> setting : instance.getSettings()) {
-			addOf(x, y, width, height, list, setting, configGetter, configSetter, notifier);
+			addOf(parent, x, y, width, height, list, setting, configGetter, configSetter, notifier);
 		}
 		return list;
 	}
 
-	private static <T> void addOf(int x, int y, int width, int height, List<SettingWidget<?, ?>> list, Setting<T> setting, Supplier<Config> configGetter, Consumer<Config> configSetter, Consumer<Setting<?>> notifier) {
-		list.add(of(x, y, width, height, setting, () -> setting.get(configGetter.get()), (value) -> configSetter.accept(configGetter.get().with(setting, value)), notifier));
+	private static <T> void addOf(LayoutWidget parent, int x, int y, int width, int height, List<SettingWidget<?, ?>> list, Setting<T> setting, Supplier<Config> configGetter, Consumer<Config> configSetter, Consumer<Setting<?>> notifier) {
+		list.add(of(parent, x, y, width, height, setting, () -> setting.get(configGetter.get()), (value) -> configSetter.accept(configGetter.get().with(setting, value)), notifier));
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static <T> SettingWidget<?, ?> of(int x, int y, int width, int height, Setting<T> setting, Supplier<T> configGetter, Consumer<T> configSetter, Consumer<Setting<?>> notifier) {
-		if(setting instanceof Setting.Bool boolSetting) return new Bool(x, y, width, height, boolSetting, (Supplier<Boolean>) configGetter, (Consumer<Boolean>) configSetter, notifier);
-		if(setting instanceof Setting.FixedValues enumSetting) return new FixedValues<>(x, y, width, height, enumSetting, configGetter, configSetter, notifier);
-		if(setting instanceof Setting.Int intSetting) return new Int(x, y, width, height, intSetting, (Supplier<Integer>) configGetter, (Consumer<Integer>) configSetter, notifier);
-		if(setting instanceof Setting.TSIdentifier identifierSetting) return new TSIdentifier<>(x, y, width, height, identifierSetting, (Supplier<Identifier>) configGetter, (Consumer<Identifier>) configSetter, notifier);
-		if(setting instanceof Setting.TSRegistry registrySetting) return new TSRegistry<>(x, y, width, height, registrySetting, configGetter, configSetter, notifier);
-		if(setting instanceof Setting.TSShape shapeSetting) return new TSShape(x, y, width, height, shapeSetting, (Supplier<ConfiguredShape>) configGetter, (Consumer<ConfiguredShape>) configSetter, notifier);
-		if(setting instanceof Setting.TSNested nestedSetting) return new TSNested(x, y, width, height, nestedSetting, configGetter, configSetter, notifier);
-		if(setting instanceof Setting.TSList listSetting) return new TSList(x, y, width, height, listSetting, configGetter, configSetter, notifier);
+	public static <T> SettingWidget<?, ?> of(LayoutWidget parent, int x, int y, int width, int height, Setting<T> setting, Supplier<T> configGetter, Consumer<T> configSetter, Consumer<Setting<?>> notifier) {
+		if(setting instanceof Setting.Bool boolSetting) return new Bool(parent, x, y, width, height, boolSetting, (Supplier<Boolean>) configGetter, (Consumer<Boolean>) configSetter, notifier);
+		if(setting instanceof Setting.FixedValues enumSetting) return new FixedValues<>(parent, x, y, width, height, enumSetting, configGetter, configSetter, notifier);
+		if(setting instanceof Setting.Int intSetting) return new Int(parent, x, y, width, height, intSetting, (Supplier<Integer>) configGetter, (Consumer<Integer>) configSetter, notifier);
+		if(setting instanceof Setting.TSIdentifier identifierSetting) return new TSIdentifier<>(parent, x, y, width, height, identifierSetting, (Supplier<Identifier>) configGetter, (Consumer<Identifier>) configSetter, notifier);
+		if(setting instanceof Setting.TSRegistry registrySetting) return new TSRegistry<>(parent, x, y, width, height, registrySetting, configGetter, configSetter, notifier);
+		if(setting instanceof Setting.TSNested nestedSetting) return new TSNested(parent, x, y, width, height, nestedSetting, configGetter, configSetter, notifier);
+		if(setting instanceof Setting.TSSize sizeSetting) return new TSSize(parent, x, y, width, height, sizeSetting, (Supplier<Size>) configGetter, (Consumer<Size>) configSetter, notifier);
+		if(setting instanceof Setting.TSList listSetting) return new TSList(parent, x, y, width, height, listSetting, configGetter, configSetter, notifier);
 		return null;
 	}
 
 	public static class Bool extends SettingWidget<Boolean, Setting<Boolean>> {
 		private CyclingButtonWidget<Boolean> button;
 
-		public Bool(int x, int y, int width, int height, Setting<Boolean> setting, Supplier<Boolean> configGetter, Consumer<Boolean> configSetter, Consumer<Setting<?>> notifier) {
-			super(x, y, width, height, setting, configGetter, configSetter, notifier);
+		public Bool(LayoutWidget parent, int x, int y, int width, int height, Setting<Boolean> setting, Supplier<Boolean> configGetter, Consumer<Boolean> configSetter, Consumer<Setting<?>> notifier) {
+			super(parent, x, y, width, height, setting, configGetter, configSetter, notifier);
 		}
 
 		@Override
@@ -192,8 +202,8 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 	public static class FixedValues<E> extends SettingWidget<E, Setting.FixedValues<E>> {
 		private Consumer<E> input;
 
-		public FixedValues(int x, int y, int width, int height, Setting.FixedValues<E> setting, Supplier<E> configGetter, Consumer<E> configSetter, Consumer<Setting<?>> notifier) {
-			super(x, y, width, height, setting, configGetter, configSetter, notifier);
+		public FixedValues(LayoutWidget parent, int x, int y, int width, int height, Setting.FixedValues<E> setting, Supplier<E> configGetter, Consumer<E> configSetter, Consumer<Setting<?>> notifier) {
+			super(parent, x, y, width, height, setting, configGetter, configSetter, notifier);
 		}
 
 		@Override
@@ -223,8 +233,8 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 	public static class Int extends SettingWidget<Integer, Setting.Int> {
 		private IntSliderWidget slider;
 
-		public Int(int x, int y, int width, int height, Setting.Int setting, Supplier<Integer> configGetter, Consumer<Integer> configSetter, Consumer<Setting<?>> notifier) {
-			super(x, y, width, height, setting, configGetter, configSetter, notifier);
+		public Int(LayoutWidget parent, int x, int y, int width, int height, Setting.Int setting, Supplier<Integer> configGetter, Consumer<Integer> configSetter, Consumer<Setting<?>> notifier) {
+			super(parent, x, y, width, height, setting, configGetter, configSetter, notifier);
 		}
 
 		@Override
@@ -243,8 +253,8 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 	public static class TSIdentifier<T> extends SettingWidget<Identifier, Setting.TSIdentifier<T>> {
 		private RegistryEntryWidget<T> input;
 
-		public TSIdentifier(int x, int y, int width, int height, Setting.TSIdentifier<T> setting, Supplier<Identifier> configGetter, Consumer<Identifier> configSetter, Consumer<Setting<?>> notifier) {
-			super(x, y, width, height, setting, configGetter, configSetter, notifier);
+		public TSIdentifier(LayoutWidget parent, int x, int y, int width, int height, Setting.TSIdentifier<T> setting, Supplier<Identifier> configGetter, Consumer<Identifier> configSetter, Consumer<Setting<?>> notifier) {
+			super(parent, x, y, width, height, setting, configGetter, configSetter, notifier);
 		}
 
 		@Override
@@ -263,8 +273,8 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 	public static class TSRegistry<T> extends SettingWidget<T, Setting.TSRegistry<T>> {
 		private Consumer<Identifier> input;
 
-		public TSRegistry(int x, int y, int width, int height, Setting.TSRegistry<T> setting, Supplier<T> configGetter, Consumer<T> configSetter, Consumer<Setting<?>> notifier) {
-			super(x, y, width, height, setting, configGetter, configSetter, notifier);
+		public TSRegistry(LayoutWidget parent, int x, int y, int width, int height, Setting.TSRegistry<T> setting, Supplier<T> configGetter, Consumer<T> configSetter, Consumer<Setting<?>> notifier) {
+			super(parent, x, y, width, height, setting, configGetter, configSetter, notifier);
 		}
 
 		@Override
@@ -291,141 +301,9 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 		}
 	}
 
-	public static class TSShape extends SettingWidget<ConfiguredShape, Setting.TSShape> {
-		private SelectionWidget<Shape> shapeWidget;
-		private CheckboxWidget splitSizeWidget;
-		private IntSliderWidget sizeSlider;
-		private IntSliderWidget widthSlider;
-		private IntSliderWidget heightSlider;
-		private IntSliderWidget lengthSlider;
-		private CheckboxWidget offsetWidget;
-		private IntSliderWidget offsetWSlider;
-		private IntSliderWidget offsetHSlider;
-		private IntSliderWidget offsetLSlider;
-
-		public TSShape(int x, int y, int width, int height, Setting.TSShape setting, Supplier<ConfiguredShape> configGetter, Consumer<ConfiguredShape> configSetter, Consumer<Setting<?>> notifier) {
-			super(x, y, width, height, setting, configGetter, configSetter, notifier);
-		}
-
-		@Override
-		protected List<Element> create() {
-			ConfiguredShape initialValue = read();
-
-			List<Element> list = new ArrayList<>();
-			list.add(new LineHorizontal(width, Text.translatable("voxedit.shape")));
-
-			// base shape
-			shapeWidget = new SelectionWidget<>(width, width/3, BASE_HEIGTH, initialValue.shape(), (value) -> {
-				if(reloading) return;
-				write(read().shape(value));
-			});
-			for(var entry : VoxEdit.SHAPE_REGISTRY) shapeWidget.addOption(entry, entry.asText());
-			list.add(shapeWidget);
-
-			// size
-			if(setting.showConfig()) {
-				splitSizeWidget = CheckboxWidget.builder(Text.translatable("voxedit.shape.settings.splitSize"), MinecraftClient.getInstance().textRenderer).checked(initialValue.splitSize()).callback((cb, value) -> {
-					if(reloading) return;
-					write(read().splitSize(value));
-				}).build();
-				splitSizeWidget.setWidth(width);
-				list.add(splitSizeWidget);
-
-				sizeSlider = new IntSliderWidget(0, 0, width, BASE_HEIGTH, Text.translatable("voxedit.shape.settings.size"), 1, 16, initialValue.width(), (value) -> {
-					if(reloading) return;
-					ConfiguredShape currentValue = read();
-					if(!currentValue.splitSize()) write(currentValue.size(value));
-				});
-				list.add(sizeSlider);
-				widthSlider = new IntSliderWidget(0, 0, (width-2*2)/3, BASE_HEIGTH, Text.translatable("voxedit.shape.settings.width"), 1, 16, initialValue.width(), (value) -> {
-					if(reloading) return;
-					ConfiguredShape currentValue = read();
-					if(currentValue.splitSize()) write(currentValue.width(value));
-					else write(currentValue.size(value));
-				});
-				list.add(widthSlider);
-				heightSlider = new IntSliderWidget(0, 0, (width-2*2)/3, BASE_HEIGTH, Text.translatable("voxedit.shape.settings.height"), 1, 16, initialValue.height(), (value) -> {
-					if(reloading) return;
-					ConfiguredShape currentValue = read();
-					if(currentValue.splitSize()) write(currentValue.height(value));
-					else write(currentValue.size(value));
-				});
-				list.add(heightSlider);
-				lengthSlider = new IntSliderWidget(0, 0, (width-2*2)/3, BASE_HEIGTH, Text.translatable("voxedit.shape.settings.length"), 1, 16, initialValue.length(), (value) -> {
-					if(reloading) return;
-					ConfiguredShape currentValue = read();
-					if(currentValue.splitSize()) write(currentValue.length(value));
-					else write(currentValue.size(value));
-				});
-				list.add(lengthSlider);
-
-				sizeSlider.active = sizeSlider.visible = !initialValue.splitSize();
-				widthSlider.active = widthSlider.visible = initialValue.splitSize();
-				heightSlider.active = heightSlider.visible = initialValue.splitSize();
-				lengthSlider.active = lengthSlider.visible = initialValue.splitSize();
-
-				// offset
-				offsetWidget = CheckboxWidget.builder(Text.translatable("voxedit.shape.settings.offset"), MinecraftClient.getInstance().textRenderer).checked(initialValue.offset()).callback((cb, value) -> {
-					if(reloading) return;
-					write(read().offset(value));
-				}).build();
-				offsetWidget.setWidth(width);
-				list.add(offsetWidget);
-				offsetWSlider = new IntSliderWidget(0, 0, (width-2*2)/3, BASE_HEIGTH, Text.translatable("voxedit.shape.settings.width"), -16, 16, initialValue.offsetW(), (value) -> {
-					if(reloading) return;
-					write(read().offsetW(value));
-				});
-				list.add(offsetWSlider);
-				offsetHSlider = new IntSliderWidget(0, 0, (width-2*2)/3, BASE_HEIGTH, Text.translatable("voxedit.shape.settings.height"), -16, 16, initialValue.offsetH(), (value) -> {
-					if(reloading) return;
-					write(read().offsetH(value));
-				});
-				list.add(offsetHSlider);
-				offsetLSlider = new IntSliderWidget(0, 0, (width-2*2)/3, BASE_HEIGTH, Text.translatable("voxedit.shape.settings.length"), -16, 16, initialValue.offsetL(), (value) -> {
-					if(reloading) return;
-					write(read().offsetL(value));
-				});
-				list.add(offsetLSlider);
-
-				offsetWSlider.active = offsetWSlider.visible = initialValue.offset();
-				offsetHSlider.active = offsetHSlider.visible = initialValue.offset();
-				offsetLSlider.active = offsetLSlider.visible = initialValue.offset();
-			}
-
-			list.add(new LineHorizontal(width, null));
-			return list;
-		}
-
-		@Override
-		protected void reloadValue() {
-			ConfiguredShape value = read();
-			shapeWidget.setValue(value.shape());
-
-			if(setting.showConfig()) {
-				if(splitSizeWidget.isChecked() != value.splitSize()) splitSizeWidget.onPress();
-				sizeSlider.setIntValue(value.width());
-				widthSlider.setIntValue(value.width());
-				heightSlider.setIntValue(value.height());
-				lengthSlider.setIntValue(value.length());
-				sizeSlider.active = sizeSlider.visible = !value.splitSize();
-				widthSlider.active = widthSlider.visible = value.splitSize();
-				heightSlider.active = heightSlider.visible = value.splitSize();
-				lengthSlider.active = lengthSlider.visible = value.splitSize();
-
-				if(offsetWidget.isChecked() != value.offset()) offsetWidget.onPress();
-				offsetWSlider.setIntValue(value.offsetW());
-				offsetHSlider.setIntValue(value.offsetH());
-				offsetLSlider.setIntValue(value.offsetL());
-				offsetWSlider.active = offsetWSlider.visible = value.offset();
-				offsetHSlider.active = offsetHSlider.visible = value.offset();
-				offsetLSlider.active = offsetLSlider.visible = value.offset();
-			}
-		}
-	}
-
 	public static class TSNested<T extends Configurable<T>> extends SettingWidget<Configured<T>, Setting.TSNested<T>> {
-		public TSNested(int x, int y, int width, int height, Setting.TSNested<T> setting, Supplier<Configured<T>> configGetter, Consumer<Configured<T>> configSetter, Consumer<Setting<?>> notifier) {
-			super(x, y, width, height, setting, configGetter, configSetter, notifier);
+		public TSNested(LayoutWidget parent, int x, int y, int width, int height, Setting.TSNested<T> setting, Supplier<Configured<T>> configGetter, Consumer<Configured<T>> configSetter, Consumer<Setting<?>> notifier) {
+			super(parent, x, y, width, height, setting, configGetter, configSetter, notifier);
 			paddingX = 6;
 			paddingY = 12;
 		}
@@ -442,14 +320,34 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 			Configured<T> c = read();
 			setMessage(c.value().getName());
 
-			var settingWidgets = forInstance(getX(), getY(), width-paddingX*2, BASE_HEIGTH, c.value(), () -> {
-				return read().config();
-			}, (config) -> {
-				write(read().with(config));
-			}, (s) -> {});
-			for(var sw : settingWidgets) sw.reload();
-
-			children.addAll(settingWidgets);
+			var baseWidget = new SelectionWidget<>(width-paddingX*2, (width-paddingX*2)/3, BASE_HEIGTH, c.value(), (value) -> {
+				if(reloading) return;
+				
+				// transfer as much as possible
+				Config oldConfig = read().config();
+				Config newConfig = value.getDefaultConfig();
+				for(Setting<?> setting : value.getSettings()) {
+					if(setting.isPresentAndValid(oldConfig)) {
+						newConfig = newConfig.withRaw(setting.key(), oldConfig.values().get(setting.key()));
+					}
+				}
+				
+				write(new Configured<>(value, newConfig));
+				reload();
+			});
+			for(var entry : setting.getAvailableValues()) baseWidget.addOption(entry, entry.getName());
+			children.add(baseWidget);
+			
+			if(setting.showConfig()) {
+				var settingWidgets = forInstance(this, getX(), getY(), width-paddingX*2, BASE_HEIGTH, c.value(), () -> {
+					return read().config();
+				}, (config) -> {
+					write(read().with(config));
+				}, (s) -> {});
+				for(var sw : settingWidgets) sw.reload();
+				children.addAll(settingWidgets);
+			}
+			
 			refreshPositions();
 		}
 
@@ -480,30 +378,98 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 
 			super.renderWidget(context, mouseX, mouseY, tickDelta);
 		}
+	}
+	
+	public static class TSSize extends SettingWidget<Size, Setting.TSSize> {
+		private CheckboxWidget enabledWidget;
+		private CheckboxWidget splitWidget;
+		private IntSliderWidget combinedSlider;
+		private IntSliderWidget xSlider;
+		private IntSliderWidget ySlider;
+		private IntSliderWidget zSlider;
 		
-		@Override
-	    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-			if (super.mouseClicked(mouseX, mouseY, button)) return true;
+		public TSSize(LayoutWidget parent, int x, int y, int width, int height, Setting.TSSize setting, Supplier<Size> valueGetter, Consumer<Size> valueSetter, Consumer<Setting<?>> notifier) {
+			super(parent, x, y, width, height, setting, valueGetter, valueSetter, notifier);
+		}
 
-			Rect2i titleRect = getTitleRect();
-			if(titleRect.contains((int) mouseX, (int) mouseY)) {
-				playDownSound(MinecraftClient.getInstance().getSoundManager());
-				//TODO: implement actual selection dialog?
-				var list = setting.getAvailableValues();
-				int index = (list.indexOf(read().value()) + 1) % list.size();
-				write(new Configured<>(list.get(index), list.get(index).getDefaultConfig()));
-				reload();
-				return true;
+		@Override
+		protected List<Element> create() {
+			Size initialValue = read();
+			List<Element> list = new ArrayList<>();
+			
+			if(setting.useEnable()) {
+				enabledWidget = CheckboxWidget.builder(Text.translatable("voxedit.shape.settings.offset"), MinecraftClient.getInstance().textRenderer).checked(initialValue.enabled()).callback((cb, value) -> {
+					if(reloading) return;
+					write(read().enabled(value));
+				}).build();
+				enabledWidget.setWidth(width);
+				list.add(enabledWidget);
 			}
-			return false;
+			if(setting.useSplit()) {
+				splitWidget = CheckboxWidget.builder(Text.translatable("voxedit.shape.settings.splitSize"), MinecraftClient.getInstance().textRenderer).checked(initialValue.split()).callback((cb, value) -> {
+					if(reloading) return;
+					write(read().split(value));
+				}).build();
+				splitWidget.setWidth(width);
+				list.add(splitWidget);
+			}
+
+			combinedSlider = new IntSliderWidget(0, 0, width, BASE_HEIGTH, Text.translatable("voxedit.shape.settings.size"), setting.minValue(), setting.maxValue(), initialValue.x(), (value) -> {
+				if(reloading) return;
+				Size currentValue = read();
+				if(!currentValue.split()) write(currentValue.size(value));
+			});
+			list.add(combinedSlider);
+			xSlider = new IntSliderWidget(0, 0, (width-2*2)/3, BASE_HEIGTH, Text.translatable("voxedit.shape.settings.width"), setting.minValue(), setting.maxValue(), initialValue.x(), (value) -> {
+				if(reloading) return;
+				write(read().x(value));
+			});
+			list.add(xSlider);
+			ySlider = new IntSliderWidget(0, 0, (width-2*2)/3, BASE_HEIGTH, Text.translatable("voxedit.shape.settings.height"), setting.minValue(), setting.maxValue(), initialValue.y(), (value) -> {
+				if(reloading) return;
+				write(read().y(value));
+			});
+			list.add(ySlider);
+			zSlider = new IntSliderWidget(0, 0, (width-2*2)/3, BASE_HEIGTH, Text.translatable("voxedit.shape.settings.length"), setting.minValue(), setting.maxValue(), initialValue.z(), (value) -> {
+				if(reloading) return;
+				write(read().z(value));
+			});
+			list.add(zSlider);
+
+			//xSlider.active = xSlider.visible = !setting.useEnable() || initialValue.enabled();
+			//ySlider.active = ySlider.visible = !setting.useEnable() || initialValue.enabled();
+			//zSlider.active = zSlider.visible = !setting.useEnable() || initialValue.enabled();
+			
+			return list;
+		}
+
+		@Override
+		protected void reloadValue() {
+			Size value = read();
+			
+			if(enabledWidget != null && enabledWidget.isChecked() != value.enabled()) enabledWidget.onPress();
+			if(splitWidget != null && splitWidget.isChecked() != value.split()) splitWidget.onPress();
+			
+			combinedSlider.setIntValue(value.x());
+			xSlider.setIntValue(value.x());
+			ySlider.setIntValue(value.y());
+			zSlider.setIntValue(value.z());
+			
+			boolean enabled = !setting.useEnable() || value.enabled();
+			boolean split = !setting.useSplit() || value.split();
+			
+			combinedSlider.active = combinedSlider.visible = enabled && !split;
+			xSlider.active = xSlider.visible = enabled && split;
+			ySlider.active = ySlider.visible = enabled && split;
+			zSlider.active = zSlider.visible = enabled && split;
 		}
 	}
 
 	public static class TSList<T> extends SettingWidget<List<T>, Setting.TSList<T, Setting<T>>> {
 		private SettingListWidget listWidget;
 
-		public TSList(int x, int y, int width, int height, Setting.TSList<T, Setting<T>> setting, Supplier<List<T>> configGetter, Consumer<List<T>> configSetter, Consumer<Setting<?>> notifier) {
-			super(x, y, width, height, setting, configGetter, configSetter, notifier);
+		public TSList(LayoutWidget parent, int x, int y, int width, int height, Setting.TSList<T, Setting<T>> setting, Supplier<List<T>> configGetter, Consumer<List<T>> configSetter, Consumer<Setting<?>> notifier) {
+			super(parent, x, y, width, height, setting, configGetter, configSetter, notifier);
 		}
 
 		@Override
@@ -536,7 +502,7 @@ public abstract class SettingWidget<V, S extends Setting<V>> extends ContainerWi
 			for(int i=0; i<list.size(); i++) {
 				final int index = i;
 
-				SettingWidget<?, ?> settingWidget = of(getX(), getY(), listWidget.getRowWidth(), BASE_HEIGTH, setting.setting(), () -> {
+				SettingWidget<?, ?> settingWidget = of(listWidget, getX(), getY(), listWidget.getRowWidth(), BASE_HEIGTH, setting.setting(), () -> {
 					return read().get(index);
 				}, (value) -> {
 					List<T> newList = new ArrayList<>(read());

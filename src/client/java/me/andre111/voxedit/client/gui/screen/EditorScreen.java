@@ -64,6 +64,7 @@ import me.andre111.voxedit.network.CPCommand;
 import me.andre111.voxedit.network.CPSelection;
 import me.andre111.voxedit.network.Command;
 import me.andre111.voxedit.selection.SelectionSet;
+import me.andre111.voxedit.shape.Shape;
 import me.andre111.voxedit.tool.Tool;
 import me.andre111.voxedit.tool.Tool.Action;
 import me.andre111.voxedit.tool.VoxelTool;
@@ -457,8 +458,9 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 		if(EditorState.tool().has(CommonToolSettings.SHAPE)) {
 			var config = EditorState.toolConfig();
 			var shape = CommonToolSettings.SHAPE.get(config);
-			if(!shape.splitSize()) {
-				newConfig = config.with(CommonToolSettings.SHAPE, shape.size(shape.width()+change));
+			var size = Shape.SIZE.get(shape.config());
+			if(!size.split()) {
+				newConfig = config.modify(CommonToolSettings.SHAPE, c -> c.with(c.config().modify(Shape.SIZE, s -> s.size(s.x()+change))));
 			}
 		} else if(EditorState.toolConfig().values().get("radius") instanceof ConfigValue.CVString stringValue) {
 			int radius = Integer.parseInt(stringValue.get());

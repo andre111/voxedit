@@ -22,19 +22,10 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.JsonOps;
-
-import me.andre111.voxedit.VoxEdit;
-import me.andre111.voxedit.tool.shape.ConfiguredShape;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.JsonHelper;
 
 public sealed abstract class Setting<V> {
 	private final String key;
@@ -90,7 +81,16 @@ public sealed abstract class Setting<V> {
 			V value = reader.apply(config.values().get(key));
 			return isValid(value);
 		} catch(Exception e) {
-			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	public boolean isPresentAndValid(Config config) {
+		if(!config.values().containsKey(key)) return false;
+		try {
+			V value = reader.apply(config.values().get(key));
+			return isValid(value);
+		} catch(Exception e) {
 		}
 		return false;
 	}
@@ -122,8 +122,12 @@ public sealed abstract class Setting<V> {
 		return new TSRegistry<>(key, defaultValue, registry, showFixedSelection, toText);
 	}
 	
-	public static <T extends Configurable<T>> Setting<Configured<T>> ofNested(String key, Configurable.Type<T> type, Configured<T> defaultValue, Supplier<List<T>> availableValues) {
-		return new TSNested<>(key, type, defaultValue, availableValues);
+	public static Setting<Size> ofSize(String key, Size defaultValue, boolean useEnable, boolean useSplit, int minValue, int maxValue) {
+		return new TSSize(key, defaultValue, useEnable, useSplit, minValue, maxValue);
+	}
+	
+	public static <T extends Configurable<T>> Setting<Configured<T>> ofNested(String key, Configurable.Type<T> type, Configured<T> defaultValue, Supplier<List<T>> availableValues, boolean showConfig) {
+		return new TSNested<>(key, type, defaultValue, availableValues, showConfig);
 	}
 	
 	private static sealed abstract class Simple<V> extends Setting<V> {
@@ -247,44 +251,55 @@ public sealed abstract class Setting<V> {
 		}
 	}
 	
-	//TODO: replace with Configured<Shape> and use TSNested?
-	public static final class TSShape extends Simple<ConfiguredShape> {
-		private final boolean showConfig;
+	public static final class TSSize extends Setting<Size> {
+		private final boolean useEnable;
+		private final boolean useSplit;
+		private final int minValue;
+		private final int maxValue;
 		
-		public TSShape(String key, boolean showConfig) {
-			super(key, new ConfiguredShape(VoxEdit.SHAPE_SPHERE, false, 5, 5, 5, false, 0, 0, 0),  json -> parse(ConfiguredShape.CODEC, json), value -> toJson(ConfiguredShape.CODEC, value));
-			this.showConfig = showConfig;
+		public TSSize(String key, Size defaultValue, boolean useEnable, boolean useSplit, int minValue, int maxValue) {
+			super(key, defaultValue, value -> value instanceof ConfigValue.CVSize size ? size.get() : defaultValue, s -> new ConfigValue.CVSize(s));
+			this.useEnable = useEnable;
+			this.useSplit = useSplit;
+			this.minValue = minValue;
+			this.maxValue = maxValue;
 		}
 		
-		public boolean showConfig() {
-			return showConfig;
+		public boolean useEnable() {
+			return useEnable;
+		}
+		
+		public boolean useSplit() {
+			return useSplit;
+		}
+		
+		public int minValue() {
+			return minValue;
+		}
+		
+		public int maxValue() {
+			return maxValue;
 		}
 
 		@Override
-		protected boolean isValid(ConfiguredShape value) {
-			return value != null && value.isValid();
+		protected boolean isValid(Size value) {
+			if(value == null) return false;
+			if(value.x() < minValue) return false;
+			if(value.x() > maxValue) return false;
+			if(value.y() < minValue) return false;
+			if(value.y() > maxValue) return false;
+			if(value.z() < minValue) return false;
+			if(value.z() > maxValue) return false;
+			return true;
 		}
 	}
 	
 	public static final class TSNested<T extends Configurable<T>> extends Setting<Configured<T>> {
 		private final Supplier<List<T>> availableValues;
+		private final boolean showConfig;
 		
-		public TSNested(String key, Configurable.Type<T> type, Configured<T> defaultValue, Supplier<List<T>> availableValues) {
-			/*super(key, defaultValue, entry -> {
-				if(entry instanceof ConfigValue.CVMap mapEntry && mapEntry.get().get("$type") instanceof ConfigValue.CVString typeString) {
-					T type = parse(defaultValue.value().getBaseCodec(), typeString.get());
-					if(type != null) {
-						Config config = new Config(mapEntry.get());
-						if(type.isValid(config)) return new Configured<>(type, config);
-					}
-				}
-				return defaultValue;
-			}, value -> {
-				Map<String, ConfigValue<?>> map = new HashMap<>();
-				map.putAll(value.config().values());
-				map.put("$type", new ConfigValue.CVString(toJson(value.value().getBaseCodec(), value.value())));
-				return new ConfigValue.CVMap(map);
-			});*/
+		@SuppressWarnings("unchecked")
+		public TSNested(String key, Configurable.Type<T> type, Configured<T> defaultValue, Supplier<List<T>> availableValues, boolean showConfig) {
 			super(key, defaultValue, value -> {
 				if(value instanceof ConfigValue.CVConfigured configuredValue) {
 					if(configuredValue.get().value().getType().equals(type) && configuredValue.get().isValid()) {
@@ -295,6 +310,7 @@ public sealed abstract class Setting<V> {
 			}, value -> new ConfigValue.CVConfigured(value));
 			
 			this.availableValues = availableValues;
+			this.showConfig = showConfig;
 		}
 
 		@Override
@@ -304,6 +320,10 @@ public sealed abstract class Setting<V> {
 		
 		public List<T> getAvailableValues() {
 			return availableValues.get();
+		}
+		
+		public boolean showConfig() {
+			return showConfig;
 		}
 	}
 	
@@ -347,18 +367,5 @@ public sealed abstract class Setting<V> {
 			return true;
 		}
 		
-	}
-
-	private static final Gson GSON = new Gson();
-	private static <T> T parse(Codec<T> codec, String json) {
-		JsonElement jsonElement = new JsonPrimitive(json);
-		if(json.charAt(0) == '"' || json.charAt(0) == '[' || json.charAt(0) == '{') {
-			jsonElement = JsonHelper.deserialize(GSON, json, JsonElement.class);
-		}
-		return codec.decode(JsonOps.INSTANCE, jsonElement).result().get().getFirst();
-	}
-	private static <T> String toJson(Codec<T> codec, T value) {
-		JsonElement jsonElement = codec.encodeStart(JsonOps.INSTANCE, value).result().get();
-		return jsonElement instanceof JsonPrimitive jsonPrimitive && jsonPrimitive.isString() ? jsonPrimitive.getAsString() : jsonElement.toString();
 	}
 }

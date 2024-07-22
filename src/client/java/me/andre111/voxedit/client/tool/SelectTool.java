@@ -117,7 +117,7 @@ public class SelectTool extends ClientTool {
 			if(EditorState.selected() instanceof ActiveSelection sel) {
 				sel.setSelection(new SelectionShape(BlockBox.encompassPositions(List.of(p1, p2)).get(), sel.getSelection().getShape()));
 			} else {
-				EditorState.selected(new ActiveSelection(new SelectionShape(BlockBox.encompassPositions(List.of(p1, p2)).get(), CommonToolSettings.BASE_SHAPE.get(config).shape()), config));
+				EditorState.selected(new ActiveSelection(new SelectionShape(BlockBox.encompassPositions(List.of(p1, p2)).get(), CommonToolSettings.BASE_SHAPE.get(config).value()), config));
 			}
 		}
 	}

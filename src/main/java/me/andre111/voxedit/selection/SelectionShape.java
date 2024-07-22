@@ -21,7 +21,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import me.andre111.voxedit.VoxEdit;
-import me.andre111.voxedit.tool.shape.Shape;
+import me.andre111.voxedit.shape.Shape;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;

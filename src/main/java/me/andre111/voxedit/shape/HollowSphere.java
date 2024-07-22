@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.tool.shape;
+package me.andre111.voxedit.shape;
 
 import net.minecraft.util.math.Direction;
 
 public class HollowSphere extends Shape {
-
 	@Override
 	public boolean contains(int x, int y, int z, Direction direction, double sizeX, double sizeY, double sizeZ) {
 		double xp = x / sizeX;
@@ -36,5 +35,4 @@ public class HollowSphere extends Shape {
 		
 		return (1 - edge) <= dist && dist <= (1 + edge);
 	}
-
 }

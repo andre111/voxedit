@@ -1,6 +1,10 @@
 package me.andre111.voxedit.data;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import io.netty.buffer.ByteBuf;
@@ -11,8 +15,14 @@ import net.minecraft.network.codec.PacketCodecs;
 public record Configured<T extends Configurable<T>>(T value, Config config) {
 	public static final Codec<Configured<?>> GENERIC_CODEC = VoxEdit.CONFIGURABLE_TYPE_REGISTRY.getCodec().dispatch(
 			configured -> configured.value().getType(), 
-			type -> createCodec(type.baseCodec(), "type").fieldOf("instance"));
-			
+			type -> getInstanceCodec(type));
+	
+	private static final Map<Configurable.Type<?>, MapCodec<?>> INSTANCE_CODEC_CACHE = new HashMap<>();
+	@SuppressWarnings("unchecked")
+	private static MapCodec<Configured<?>> getInstanceCodec(Configurable.Type<?> type) {
+		return (MapCodec<Configured<?>>) INSTANCE_CODEC_CACHE.computeIfAbsent(type, t -> createCodec(t.baseCodec(), "type").fieldOf("instance"));
+	}
+	
 	public static <T extends Configurable<T>> Codec<Configured<T>> createCodec(Codec<T> baseCodec, String baseName) {
 		return RecordCodecBuilder.create(instance -> instance
 		.group(

@@ -59,7 +59,7 @@ public class ActiveSelection extends Gizmo implements Positionable, Renderable, 
 		actions.add(Text.translatable("voxedit.selection.apply"), () -> apply());
 		actions.add(Text.translatable("voxedit.selection.cancel"), () -> cancel());
 		actions.add(CommonToolSettings.BASE_SHAPE, () -> config, (c) -> config = c, (s) -> {
-			selection = new SelectionShape(selection.getBoundingBox(), CommonToolSettings.BASE_SHAPE.get(config).shape());
+			selection = new SelectionShape(selection.getBoundingBox(), CommonToolSettings.BASE_SHAPE.get(config).value());
 			RENDERER.rebuild(selection);
 			modified();
 		});
