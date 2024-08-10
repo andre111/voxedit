@@ -20,6 +20,7 @@ import java.util.Iterator;
 import org.jetbrains.annotations.Nullable;
 
 import me.andre111.voxedit.schematic.Schematic;
+import me.andre111.voxedit.schematic.SchematicLightingProvider;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.fluid.FluidState;

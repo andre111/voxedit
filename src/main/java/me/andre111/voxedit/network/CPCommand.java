@@ -31,6 +31,7 @@ public record CPCommand(Command command, String data) implements CustomPayload {
 	
 	static {
 		PayloadTypeRegistry.playC2S().register(ID, CODEC);
+		PayloadTypeRegistry.playS2C().register(ID, CODEC);
 	}
 	
 	@Override

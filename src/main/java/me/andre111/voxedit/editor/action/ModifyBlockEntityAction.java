@@ -21,8 +21,8 @@ import me.andre111.voxedit.editor.history.EditHistoryReader;
 import me.andre111.voxedit.editor.history.EditHistoryWriter;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.StructureWorldAccess;
 
 public class ModifyBlockEntityAction extends EditAction<ModifyBlockEntityAction> {
 	private final BlockPos pos;
@@ -36,7 +36,7 @@ public class ModifyBlockEntityAction extends EditAction<ModifyBlockEntityAction>
 	}
 
 	@Override
-	public void undo(ServerWorld world, EditStats stats) {
+	public void undo(StructureWorldAccess world, EditStats stats) {
 		BlockEntity be = world.getBlockEntity(pos);
 		if(be != null) {
 			be.read(oldNbt, world.getRegistryManager());
@@ -45,7 +45,7 @@ public class ModifyBlockEntityAction extends EditAction<ModifyBlockEntityAction>
 	}
 
 	@Override
-	public void redo(ServerWorld world, EditStats stats) {
+	public void redo(StructureWorldAccess world, EditStats stats) {
 		BlockEntity be = world.getBlockEntity(pos);
 		if(be != null) {
 			be.read(newNbt, world.getRegistryManager());

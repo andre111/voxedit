@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.network;
+package me.andre111.voxedit.data.jsondef;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
+import java.util.Map;
 
-public enum Command {
-	UNDO,
-	REDO,
-	CLEAR_HISTORY,
-	EDITOR_ACTIVATE,
-	EDITOR_DEACTIVATE,
-	SAVE_SCHEMATIC,
-	DELETE_SCHEMATIC,
-	DEV,
-	DEV_GET_FEATURE_CONFIG;
+public sealed interface JsonDef {
+	public boolean optional();
 	
-	public static final PacketCodec<ByteBuf, Command> PACKET_CODEC = PacketCodecs.BYTE.xmap(b -> Command.values()[b], c -> (byte) c.ordinal());
+	public record Boolean(boolean defaultValue, boolean optional) implements JsonDef {
+	}
+	public record Integer(int defaultValue, int minValue, int maxValue, boolean optional) implements JsonDef {
+	}
+	public record Defined(String type, boolean optional) implements JsonDef {
+	}
+	public record Complex(Map<String, JsonDef> properties, boolean optional) implements JsonDef {
+	}
+	public record List(JsonDef listType, boolean optional) implements JsonDef {
+	}
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.client.gui.widget;
+package me.andre111.voxedit.client.gui.widget.editor;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,6 +22,11 @@ import java.util.List;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.gui.screen.InputScreen;
+import me.andre111.voxedit.client.gui.widget.BlockStateWidget;
+import me.andre111.voxedit.client.gui.widget.IntSliderWidget;
+import me.andre111.voxedit.client.gui.widget.LineHorizontal;
+import me.andre111.voxedit.client.gui.widget.ModListWidget;
+import me.andre111.voxedit.client.gui.widget.SelectionWidget;
 import me.andre111.voxedit.data.BlockPalette;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -49,7 +54,7 @@ public class EditorPanelPalette extends EditorPanel {
     }
 
     private boolean hasEntrySelected() {
-        return paletteWidget.getSelectedOrNull() != null;
+        return paletteWidget != null && paletteWidget.getSelectedOrNull() != null;
     }
     
     @Override
@@ -82,11 +87,11 @@ public class EditorPanelPalette extends EditorPanel {
             int index = paletteWidget.getSelectedOrNull().index;
             list.remove(index);
             
-            paletteWidget.setSelected(list.isEmpty() ? null : paletteWidget.children().get(Math.min(index, list.size() - 1)));
+            paletteWidget.setSelected(list.isEmpty() ? -1 : Math.min(index, list.size() - 1));
             EditorState.blockPalette(new BlockPalette(list));
             paletteWidget.updateEntries();
             updateButtons();
-        }).size(width / 2 - gap, 20).build();
+        }).size(width / 2 - gapX, 20).build();
     	addContent(removeEntryButton);
     	
     	addContent(ButtonWidget.builder(Text.translatable("voxedit.screen.blockPalette.add"), button -> {
@@ -95,9 +100,9 @@ public class EditorPanelPalette extends EditorPanel {
             
             EditorState.blockPalette(new BlockPalette(list));
             paletteWidget.updateEntries();
-            paletteWidget.setSelected(paletteWidget.children().get(paletteWidget.children().size()-1));
+            paletteWidget.setSelected(paletteWidget.children().size()-1);
             updateButtons();
-        }).size(width / 2 - gap, 20).build());
+        }).size(width / 2 - gapX, 20).build());
     	
         updateButtons();
         
@@ -153,8 +158,8 @@ public class EditorPanelPalette extends EditorPanel {
 		}
 
 		@Override
-		public void setSelected(BlockPaletteEntry entry) {
-			super.setSelected(entry);
+		public void setSelected(int selectedIndex) {
+			super.setSelected(selectedIndex);
 			updateButtons();
 		}
 
@@ -164,7 +169,7 @@ public class EditorPanelPalette extends EditorPanel {
 	    }
 
 		public void updateEntries() {
-			int i = children().indexOf(getSelectedOrNull());
+			int i = selectedIndex();
 			clearEntries();
 			
 			for (int j = 0; j < EditorState.blockPalette().size(); j++) {
@@ -172,7 +177,7 @@ public class EditorPanelPalette extends EditorPanel {
 			}
 			List<BlockPaletteEntry> list = children();
 			if (i >= 0 && i < list.size()) {
-				setSelected(list.get(i));
+				setSelected(i);
 			}
 		}
 

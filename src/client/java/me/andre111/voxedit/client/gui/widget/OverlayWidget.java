@@ -31,16 +31,18 @@ import net.minecraft.text.Text;
 public class OverlayWidget extends ContainerWidget implements LayoutWidget {
 	private Widget parent;
 	private Widget overlay;
+	private boolean center;
 
 	public OverlayWidget(int x, int y, int width, int height) {
 		super(x, y, width, height, Text.empty());
 		visible = false;
 	}
 	
-	public void openOverlay(Widget parent, Widget overlay) {
+	public void openOverlay(Widget parent, Widget overlay, boolean center) {
 		closeOverlay();
 		this.parent = parent;
 		this.overlay = overlay;
+		this.center = center;
 		visible = true;
 		refreshPositions();
 	}
@@ -108,6 +110,10 @@ public class OverlayWidget extends ContainerWidget implements LayoutWidget {
 			int y = parent.getY() + parent.getHeight();
 			int w = overlay.getWidth();
 			int h = overlay.getHeight();
+			
+			if(center && w < parent.getWidth()) {
+				x += (parent.getWidth() - w) / 2;
+			}
 			
 			if(x < getX()) x = getX();
 			if(y < getY()) y = getY();

@@ -73,7 +73,11 @@ import me.andre111.voxedit.tool.ToolPlace;
 import me.andre111.voxedit.tool.ToolRaise;
 import me.andre111.voxedit.tool.ToolScatter;
 import me.andre111.voxedit.tool.ToolSmooth;
+import me.andre111.voxedit.tool.ToolSpread;
 
+//TODO: Next Plans:
+// Spread (multiple featues ovre area with density, +++ options)
+// Feature (Tree only for start) Editor with live preview
 public class VoxEdit implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("voxedit");
     
@@ -119,6 +123,7 @@ public class VoxEdit implements ModInitializer {
     public static final ToolFlatten TOOL_FLATTEN = Registry.register(TOOL_REGISTRY, id("flatten"), new ToolFlatten());
     public static final ToolBlend TOOL_BLEND = Registry.register(TOOL_REGISTRY, id("blend"), new ToolBlend());
     public static final ToolPlace TOOL_PLACE = Registry.register(TOOL_REGISTRY, id("place"), new ToolPlace());
+    public static final ToolSpread TOOL_SPREAD = Registry.register(TOOL_REGISTRY, id("spread"), new ToolSpread());
     public static final ToolExtrude TOOL_EXTRUDE = Registry.register(TOOL_REGISTRY, id("extrude"), new ToolExtrude());
     public static final ToolRaise TOOL_RAISE = Registry.register(TOOL_REGISTRY, id("raise"), new ToolRaise());
     public static final EditNBTTool TOOL_EDITNBT = Registry.register(TOOL_REGISTRY, id("nbtedit"), new EditNBTTool());

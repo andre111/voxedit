@@ -124,7 +124,7 @@ public class SchematicRenderer implements AutoCloseable {
         if(alpha < 1f) RenderSystem.enableBlend();
         if(disableDepthTest) RenderSystem.disableDepthTest();
         ShaderProgram shader = RenderSystem.getShader();
-        setDefaultUniforms(shader, VertexFormat.DrawMode.QUADS, modelViewMat, projMat, window);
+        shader.initializeUniforms(VertexFormat.DrawMode.QUADS, modelViewMat, projMat, window);
         if(shader.colorModulator != null) shader.colorModulator.set(colorMult, colorMult, colorMult, alpha);
         shader.chunkOffset.set(viewOffset.x, viewOffset.y, viewOffset.z);
         shader.bind();
@@ -146,15 +146,15 @@ public class SchematicRenderer implements AutoCloseable {
     }
 	
     private static WeakHashMap<Schematic, CompletableFuture<Identifier>> cachedPreviews = new WeakHashMap<>();
-    public static CompletableFuture<Identifier> getPreview(Schematic schematic, int width, int height) {
+    public static CompletableFuture<Identifier> getPreview(Schematic schematic, int width, int height, boolean cache) {
     	// avoid re-rendering existing previews
-    	if(cachedPreviews.containsKey(schematic)) {
+    	if(cache && cachedPreviews.containsKey(schematic)) {
     		return cachedPreviews.get(schematic);
     	}
     	
     	// create future
     	CompletableFuture<Identifier> future = new CompletableFuture<>();
-    	cachedPreviews.put(schematic, future);
+    	if(cache) cachedPreviews.put(schematic, future);
     	
     	// render preview
     	SchematicView view = new SchematicView(new BlockPos(0, 0, 0), schematic);
@@ -198,49 +198,7 @@ public class SchematicRenderer implements AutoCloseable {
     	
     	return future;
     }
-    
-    // This should be part of shaderprogramm class in future minecraft versions if I understand correctly
-    public static void setDefaultUniforms(ShaderProgram shader, VertexFormat.DrawMode mode, Matrix4f modelViewMat, Matrix4f projMat, Window window) {
-        for (int i = 0; i < 12; ++i) {
-            int j = RenderSystem.getShaderTexture(i);
-            shader.addSampler("Sampler" + i, j);
-        }
-        if (shader.modelViewMat != null) {
-        	shader.modelViewMat.set(modelViewMat);
-        }
-        if (shader.projectionMat != null) {
-        	shader.projectionMat.set(projMat);
-        }
-        if (shader.colorModulator != null) {
-        	shader.colorModulator.set(RenderSystem.getShaderColor());
-        }
-        if (shader.glintAlpha != null) {
-        	shader.glintAlpha.set(RenderSystem.getShaderGlintAlpha());
-        }
-        if (shader.fogStart != null) {
-        	shader.fogStart.set(RenderSystem.getShaderFogStart());
-        }
-        if (shader.fogEnd != null) {
-        	shader.fogEnd.set(RenderSystem.getShaderFogEnd());
-        }
-        if (shader.fogColor != null) {
-        	shader.fogColor.set(RenderSystem.getShaderFogColor());
-        }
-        if (shader.fogShape != null) {
-        	shader.fogShape.set(RenderSystem.getShaderFogShape().getId());
-        }
-        if (shader.textureMat != null) {
-        	shader.textureMat.set(RenderSystem.getTextureMatrix());
-        }
-        if (shader.gameTime != null) {
-        	shader.gameTime.set(RenderSystem.getShaderGameTime());
-        }
-        if (shader.screenSize != null) {
-        	shader.screenSize.set((float)window.getWidth(), (float)window.getHeight());
-        }
-        if (shader.lineWidth != null && (mode == VertexFormat.DrawMode.LINES || mode == VertexFormat.DrawMode.LINE_STRIP)) {
-        	shader.lineWidth.set(RenderSystem.getShaderLineWidth());
-        }
-        RenderSystem.setupShaderLights(shader);
+    public static void freePreview(Identifier id) {
+    	MinecraftClient.getInstance().getTextureManager().destroyTexture(id);
     }
 }

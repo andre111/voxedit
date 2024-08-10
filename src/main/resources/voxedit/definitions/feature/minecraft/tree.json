@@ -1,0 +1,38 @@
+{
+	"ignore_vines": {
+		"type": "boolean",
+		"optional": true,
+		"defaultValue": false
+	},
+	"force_dirt": {
+		"type": "boolean",
+		"optional": true,
+		"defaultValue": false
+	},
+	"dirt_provider": {
+		"type": "blockstate_provider"
+	},
+	"trunk_provider": {
+		"type": "blockstate_provider"
+	},
+	"foliage_provider": {
+		"type": "blockstate_provider"
+	},
+	"minimum_size": {
+		"type": "minimum_size"
+	},
+	"root_placer": {
+		"type": "root_placer",
+		"optional": true
+	},
+	"trunk_placer": {
+		"type": "trunk_placer"
+	},
+	"foliage_placer": {
+		"type": "foliage_placer"
+	},
+	"decorators": {
+		"type": "list",
+		"list_type": "tree_decorator"
+	}
+}

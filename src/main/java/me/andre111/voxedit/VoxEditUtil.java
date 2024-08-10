@@ -24,8 +24,10 @@ import java.util.stream.Stream;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonSyntaxException;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 
 import net.minecraft.block.BlockState;
@@ -37,6 +39,7 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtSizeTracker;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryOps;
 import net.minecraft.registry.RegistryWrapper.Impl;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
 import net.minecraft.util.math.BlockPos;
@@ -46,6 +49,27 @@ public class VoxEditUtil {
 		// create unlinked copy and adjust position
 		NbtCompound nbt = source.createNbtWithId(registryLookup);
 		return BlockEntity.createFromNbt(pos, state, nbt, registryLookup);
+	}
+	
+	public static <V> V parseJson(String json, Codec<V> codec, V defaultValue, WrapperLookup wrapperLookup) {
+		try {
+			JsonElement element = (new Gson()).fromJson(json, JsonElement.class);
+			V value = codec.decode(RegistryOps.of(JsonOps.INSTANCE, wrapperLookup), element).result().orElse(Pair.of(defaultValue, element)).getFirst();
+			return value;
+		} catch(JsonSyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return defaultValue;
+	}
+	
+	public static <V> String toJson(V value, Codec<V> codec, WrapperLookup wrapperLookup) {
+		DataResult<JsonElement> result = codec.encodeStart(RegistryOps.of(JsonOps.INSTANCE, wrapperLookup), value);
+		if(result.isSuccess()) {
+			return (new Gson()).toJson(result.getOrThrow());
+		} else {
+			return null;
+		}
 	}
 	
 	public static <V> V readJson(Path path, Codec<V> codec, V defaultValue) {

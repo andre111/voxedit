@@ -20,7 +20,7 @@ import java.util.List;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import me.andre111.voxedit.client.gui.widget.EditorWidget;
+import me.andre111.voxedit.client.gui.widget.editor.EditorWidget;
 import net.minecraft.util.Identifier;
 
 public record EditorLayout(List<PanelLocation> panelLocations) {

@@ -99,7 +99,7 @@ public class MenuBarWidget extends ContainerWidget implements LayoutWidget {
 		private Category(MenuBarWidget menu, Text text) {
 			this.menu = menu;
 			this.button = ButtonWidget.builder(text, (b) -> {
-					menu.overlayWidget.openOverlay(getButton(), getEntriesWidget());
+					menu.overlayWidget.openOverlay(getButton(), getEntriesWidget(), false);
 				}).width(MinecraftClient.getInstance().textRenderer.getWidth(text)+8).build();
 			this.entries = new ArrayList<>();
 		}

@@ -23,10 +23,9 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Clearable;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.StructureWorldAccess;
 
 public class SetBlockAction extends EditAction<SetBlockAction> {
 	private final BlockPos pos;
@@ -34,7 +33,7 @@ public class SetBlockAction extends EditAction<SetBlockAction> {
 	private final BlockState oldState;
 	private final NbtCompound oldNbt;
 
-	public SetBlockAction(World world, BlockPos pos, BlockState newState) {
+	public SetBlockAction(StructureWorldAccess world, BlockPos pos, BlockState newState) {
 		this.pos = pos;
 		this.newState = newState;
 		
@@ -54,7 +53,7 @@ public class SetBlockAction extends EditAction<SetBlockAction> {
 	}
 
 	@Override
-	public void undo(ServerWorld world, EditStats stats) {
+	public void undo(StructureWorldAccess world, EditStats stats) {
 		// if had block entity -> first set block without to ensure it is newly created
 		if(oldNbt != null) {
             Clearable.clear(world.getBlockEntity(pos)); // do not drop anything
@@ -73,7 +72,7 @@ public class SetBlockAction extends EditAction<SetBlockAction> {
 	}
 	
 	@Override
-	public void redo(ServerWorld world, EditStats stats) {
+	public void redo(StructureWorldAccess world, EditStats stats) {
 		if(world.getBlockEntity(pos) != null) {
 			Clearable.clear(world.getBlockEntity(pos));
 		}

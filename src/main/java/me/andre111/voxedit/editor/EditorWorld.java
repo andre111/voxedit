@@ -42,11 +42,13 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.RegistryWrapper.WrapperLookup;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.resource.featuretoggle.FeatureSet;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
@@ -55,41 +57,45 @@ import net.minecraft.util.TypeFilter;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Heightmap.Type;
 import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.StructureWorldAccess;
-import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeAccess;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkManager;
+import net.minecraft.world.chunk.ChunkSection;
 import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.world.chunk.UpgradeData;
 import net.minecraft.world.chunk.light.LightingProvider;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.event.GameEvent;
 import net.minecraft.world.event.GameEvent.Emitter;
+import net.minecraft.world.tick.BasicTickScheduler;
+import net.minecraft.world.tick.EmptyTickSchedulers;
 import net.minecraft.world.tick.QueryableTickScheduler;
 
 public class EditorWorld implements StructureWorldAccess {
-	private final ServerWorld world;
-	private final EditHistory undo;
+	private final StructureWorldAccess world;
 	private final List<EditAction<?>> actions;
 	private final Map<BlockPos, BlockState> changedBlockStates;
 	private final Map<BlockPos, ModifiedBlockEntity> changedBlockEntities;
 	
-	public EditorWorld(ServerWorld world, EditHistory undo) {
+	public EditorWorld(StructureWorldAccess world) {
 		this.world = world;
-		this.undo = undo;
 		this.actions = new ArrayList<>();
 		this.changedBlockStates = new HashMap<>();
 		this.changedBlockEntities = new HashMap<>();
 	}
 
-	public EditStats apply(ServerPlayerEntity player, Text text) {
+	public EditStats apply(ServerPlayerEntity player, Text text, EditHistory undo) {
 		EditStats result = new EditStats(text);
 		
 		for(var e : changedBlockEntities.entrySet()) {
@@ -151,7 +157,8 @@ public class EditorWorld implements StructureWorldAccess {
 	@Override
 	public ServerWorld toServerWorld() {
 		// TODO Auto-generated method stub
-		return null;
+		System.err.println("Warning: Called toServerWorld in EditorWorld, modifications to the returned world will NOT be tracked.");
+		return world.toServerWorld();
 	}
 
 	@Override
@@ -161,12 +168,12 @@ public class EditorWorld implements StructureWorldAccess {
 
 	@Override
 	public QueryableTickScheduler<Block> getBlockTickScheduler() {
-		return world.getBlockTickScheduler();
+		return EmptyTickSchedulers.getClientTickScheduler();
 	}
 
 	@Override
 	public QueryableTickScheduler<Fluid> getFluidTickScheduler() {
-		return world.getFluidTickScheduler();
+		return EmptyTickSchedulers.getClientTickScheduler();
 	}
 
 	@Override
@@ -185,7 +192,7 @@ public class EditorWorld implements StructureWorldAccess {
 	}
 
 	@Override
-	public ServerChunkManager getChunkManager() {
+	public ChunkManager getChunkManager() {
 		return world.getChunkManager();
 	}
 
@@ -226,8 +233,9 @@ public class EditorWorld implements StructureWorldAccess {
 	}
 
 	@Override
-	public Chunk getChunk(int var1, int var2, ChunkStatus var3, boolean var4) {
-		return world.getChunk(var1, var2, var3, var4);
+	public Chunk getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
+		return new EditorWorldChunk(this, new ChunkPos(chunkX, chunkZ));
+		//return world.getChunk(var1, var2, var3, var4);
 	}
 
 	@Override
@@ -256,6 +264,7 @@ public class EditorWorld implements StructureWorldAccess {
 	}
 
 	@Override
+	@Deprecated
 	public int getSeaLevel() {
 		return world.getSeaLevel();
 	}
@@ -352,7 +361,6 @@ public class EditorWorld implements StructureWorldAccess {
 
 	@Override
 	public boolean breakBlock(BlockPos pos, boolean var2, Entity var3, int var4) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
@@ -362,11 +370,11 @@ public class EditorWorld implements StructureWorldAccess {
 	}
 
 	private static class ModifiedBlockEntity {
-		private final World world;
+		private final StructureWorldAccess world;
 		private final BlockEntity be;
 		private final NbtCompound oldNbt;
 		
-		private ModifiedBlockEntity(World world, BlockEntity be) {
+		private ModifiedBlockEntity(StructureWorldAccess world, BlockEntity be) {
 			this.world = world;
 			this.be = be;
 			this.oldNbt = be.createNbtWithId(world.getRegistryManager());
@@ -377,5 +385,119 @@ public class EditorWorld implements StructureWorldAccess {
 			if(newNbt.equals(oldNbt)) return null;
 			return new ModifyBlockEntityAction(pos, oldNbt, newNbt);
 		}
+	}
+
+	
+	private static class EditorWorldChunk extends Chunk {
+		private final EditorWorld editorWorld;
+
+		public EditorWorldChunk(EditorWorld editorWorld, ChunkPos pos) {
+			super(pos, UpgradeData.NO_UPGRADE_DATA, editorWorld, editorWorld.getRegistryManager().get(RegistryKeys.BIOME), 0L, null, null);
+			this.editorWorld = editorWorld;
+
+			int y = editorWorld.getBottomSectionCoord();
+			for(int i=0; i<getSectionArray().length; i++) {
+				getSectionArray()[i] = new EditorChunkSection(editorWorld.getRegistryManager().get(RegistryKeys.BIOME), this, ChunkSectionPos.from(pos, y+i));
+			}
+		}
+
+		@Override
+		public BlockEntity getBlockEntity(BlockPos pos) {
+			return editorWorld.getBlockEntity(pos);
+		}
+
+		@Override
+		public BlockState getBlockState(BlockPos pos) {
+			return editorWorld.getBlockState(pos);
+		}
+
+		@Override
+		public FluidState getFluidState(BlockPos pos) {
+			return editorWorld.getFluidState(pos);
+		}
+
+		@Override
+		public BlockState setBlockState(BlockPos pos, BlockState state, boolean move) {
+			BlockState oldState = editorWorld.getBlockState(pos);
+			if(editorWorld.setBlockState(pos, state, Block.NOTIFY_ALL | (move ? Block.MOVED : 0))) {
+				return oldState;
+			} else {
+				return null;
+			}
+		}
+
+		@Override
+		public void setBlockEntity(BlockEntity var1) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void addEntity(Entity var1) {
+		}
+
+		@Override
+		public ChunkStatus getStatus() {
+			return ChunkStatus.FULL;
+		}
+
+		@Override
+		public void removeBlockEntity(BlockPos pos) {
+		}
+
+		@Override
+		public NbtCompound getPackedBlockEntityNbt(BlockPos var1, WrapperLookup var2) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public BasicTickScheduler<Block> getBlockTickScheduler() {
+			return EmptyTickSchedulers.getReadOnlyTickScheduler();
+		}
+
+		@Override
+		public BasicTickScheduler<Fluid> getFluidTickScheduler() {
+			return EmptyTickSchedulers.getReadOnlyTickScheduler();
+		}
+
+		@Override
+		public TickSchedulers getTickSchedulers() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	}
+	private static class EditorChunkSection extends ChunkSection {
+		private final EditorWorldChunk chunk;
+		private final ChunkSectionPos pos;
+
+		public EditorChunkSection(Registry<Biome> biomeRegistry, EditorWorldChunk chunk, ChunkSectionPos pos) {
+			super(biomeRegistry);
+			this.chunk = chunk;
+			this.pos = pos;
+		}
+		
+		@Override
+		public BlockState getBlockState(int x, int y, int z) {
+	        return chunk.getBlockState(pos.getMinPos().add(x, y, z));
+	    }
+
+		@Override
+	    public FluidState getFluidState(int x, int y, int z) {
+	        return chunk.getFluidState(pos.getMinPos().add(x, y, z));
+	    }
+
+		@Override
+	    public void lock() {
+	    }
+
+		@Override
+	    public void unlock() {
+	    }
+
+		@Override
+	    public BlockState setBlockState(int x, int y, int z, BlockState state, boolean lock) {
+	        return chunk.setBlockState(pos.getMinPos().add(x, y, z), state, false);
+	    }
 	}
 }

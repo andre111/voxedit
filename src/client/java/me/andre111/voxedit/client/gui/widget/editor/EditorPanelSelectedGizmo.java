@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.client.gui.widget;
+package me.andre111.voxedit.client.gui.widget.editor;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -26,6 +26,9 @@ import me.andre111.voxedit.client.gizmo.Positionable;
 import me.andre111.voxedit.client.gizmo.Rotatable90Deg;
 import me.andre111.voxedit.client.gizmo.RotatableFreeYaw;
 import me.andre111.voxedit.client.gizmo.Sizeable;
+import me.andre111.voxedit.client.gui.widget.IntFieldWidget;
+import me.andre111.voxedit.client.gui.widget.LineHorizontal;
+import me.andre111.voxedit.client.gui.widget.SettingWidget;
 import me.andre111.voxedit.data.Setting;
 import me.andre111.voxedit.data.Config;
 import net.minecraft.client.MinecraftClient;
@@ -61,15 +64,15 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 		Gizmo selected = EditorState.selected();
 		if(selected instanceof Positionable p) {
 			addContent(new LineHorizontal(getWidth(), Text.translatable("voxedit.gizmo.position")));
-			x = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("X"), 0, v -> {
+			x = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gapX*2)/3, 20, Text.of("X"), 0, v -> {
 				Vec3d pos = p.getPos();
 				p.setPos(new Vec3d(v, pos.getY(), pos.getZ()));
 			});
-			y = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("Y"), 0, v -> {
+			y = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gapX*2)/3, 20, Text.of("Y"), 0, v -> {
 				Vec3d pos = p.getPos();
 				p.setPos(new Vec3d(pos.getX(), v, pos.getZ()));
 			});
-			z = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("Z"), 0, v -> {
+			z = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gapX*2)/3, 20, Text.of("Z"), 0, v -> {
 				Vec3d pos = p.getPos();
 				p.setPos(new Vec3d(pos.getX(), pos.getY(), v));
 			});
@@ -79,15 +82,15 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 		}
 		if(selected instanceof Sizeable s) {
 			addContent(new LineHorizontal(getWidth(), Text.translatable("voxedit.gizmo.size")));
-			sizeX = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("X"), 0, v -> {
+			sizeX = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gapX*2)/3, 20, Text.of("X"), 0, v -> {
 				BlockPos size = s.getSize();
 				s.setSize(new BlockPos(v, size.getY(), size.getZ()));
 			});
-			sizeY = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("Y"), 0, v -> {
+			sizeY = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gapX*2)/3, 20, Text.of("Y"), 0, v -> {
 				BlockPos size = s.getSize();
 				s.setSize(new BlockPos(size.getX(), v, size.getZ()));
 			});
-			sizeZ = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gap*2)/3, 20, Text.of("Z"), 0, v -> {
+			sizeZ = new IntFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, (getWidth()-gapX*2)/3, 20, Text.of("Z"), 0, v -> {
 				BlockPos size = s.getSize();
 				s.setSize(new BlockPos(size.getX(), size.getY(), v));
 			});
@@ -99,10 +102,10 @@ public class EditorPanelSelectedGizmo extends EditorPanel {
 			addContent(new LineHorizontal(getWidth(), Text.translatable("voxedit.gizmo.rotation")));
 			addContent(ButtonWidget.builder(Text.translatable("voxedit.gizmo.rotation.left"), (b) -> {
 				r.setRotation(r.getRotation().rotate(BlockRotation.COUNTERCLOCKWISE_90));
-			}).size((getWidth()-gap)/2, 20).build());
+			}).size((getWidth()-gapX)/2, 20).build());
 			addContent(ButtonWidget.builder(Text.translatable("voxedit.gizmo.rotation.right"), (b) -> {
 				r.setRotation(r.getRotation().rotate(BlockRotation.CLOCKWISE_90));
-			}).size((getWidth()-gap)/2, 20).build());
+			}).size((getWidth()-gapX)/2, 20).build());
 		}
 		if(selected instanceof RotatableFreeYaw ry) {
 			addContent(new LineHorizontal(getWidth(), Text.translatable("voxedit.gizmo.yaw")));

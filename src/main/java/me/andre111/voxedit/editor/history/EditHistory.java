@@ -35,6 +35,7 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtSizeTracker;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.world.StructureWorldAccess;
 
 public class EditHistory {
 	private final Path path;
@@ -87,7 +88,7 @@ public class EditHistory {
 		}
 	}
 	
-	public CPHistoryInfo push(ServerWorld world, EditHistoryState state) {
+	public CPHistoryInfo push(StructureWorldAccess world, EditHistoryState state) {
 		// replace/remove undone states
 		boolean append = true;
 		if(index < states.size()-1) {
@@ -123,13 +124,13 @@ public class EditHistory {
 		else return new CPHistoryInfo(states.stream().map(EditHistoryState::getStats).toList(), index, false, getSize());
 	}
 	
-	public EditStats undo(ServerWorld world) {
+	public EditStats undo(StructureWorldAccess world) {
 		if(index < 0) return EditStats.EMPTY;
 		setIndex(index-1);
 		return states.get(index+1).undo(world);
 	}
 	
-	public EditStats redo(ServerWorld world) {
+	public EditStats redo(StructureWorldAccess world) {
 		if(index >= states.size()-1) return EditStats.EMPTY;
 		setIndex(index+1);
 		return states.get(index).redo(world);

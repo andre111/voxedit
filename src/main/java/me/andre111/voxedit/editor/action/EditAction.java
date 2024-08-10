@@ -23,13 +23,13 @@ import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.editor.history.EditHistoryReader;
 import me.andre111.voxedit.editor.history.EditHistoryWriter;
 import net.minecraft.registry.Registry;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.world.StructureWorldAccess;
 
 public abstract class EditAction<A extends EditAction<A>> {
 	public abstract Type<A> type();
-	public abstract void undo(ServerWorld world, EditStats stats);
-	public abstract void redo(ServerWorld world, EditStats stats);
+	public abstract void undo(StructureWorldAccess world, EditStats stats);
+	public abstract void redo(StructureWorldAccess world, EditStats stats);
 	
 	public static abstract class Type<A extends EditAction<A>> {
 		public final Identifier id() {

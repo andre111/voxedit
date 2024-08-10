@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.client.gui.widget;
+package me.andre111.voxedit.client.gui.widget.editor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +21,9 @@ import java.util.List;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.gui.screen.InputScreen;
+import me.andre111.voxedit.client.gui.widget.LineHorizontal;
+import me.andre111.voxedit.client.gui.widget.SelectionWidget;
+import me.andre111.voxedit.client.gui.widget.SettingWidget;
 import me.andre111.voxedit.data.Config;
 import me.andre111.voxedit.tool.Tool;
 import net.minecraft.text.Text;

@@ -205,7 +205,7 @@ public class SelectionRenderer {
 	        RenderSystem.enableBlend();
 	        RenderSystem.depthMask(false);
 	        ShaderProgram shader = RenderSystem.getShader();
-	        SchematicRenderer.setDefaultUniforms(shader, VertexFormat.DrawMode.QUADS, modelViewMat, projMat, window);
+	        shader.initializeUniforms(VertexFormat.DrawMode.QUADS, modelViewMat, projMat, window);
 	        if(shader.colorModulator != null) shader.colorModulator.set(r, g, b, alpha);
 	        shader.bind();
 	        faceBuffer.bind();
@@ -219,7 +219,7 @@ public class SelectionRenderer {
         if(lineBuffer != null) {
 			RenderLayer.getLines().startDrawing();
 			ShaderProgram shader = RenderSystem.getShader();
-	        SchematicRenderer.setDefaultUniforms(shader, VertexFormat.DrawMode.LINES, modelViewMat, projMat, window);
+			shader.initializeUniforms(VertexFormat.DrawMode.LINES, modelViewMat, projMat, window);
 	        shader.bind();
 	        lineBuffer.bind();
 	        lineBuffer.draw();

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.client.gui.widget;
+package me.andre111.voxedit.client.gui.widget.editor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +27,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import me.andre111.voxedit.client.EditorLayout;
 import me.andre111.voxedit.client.gui.Textures;
 import me.andre111.voxedit.client.gui.screen.EditorScreen;
+import me.andre111.voxedit.client.gui.widget.MenuBarWidget;
+import me.andre111.voxedit.client.gui.widget.OverlayWidget;
+import me.andre111.voxedit.client.gui.widget.StatusBarWidget;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;

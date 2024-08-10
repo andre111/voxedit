@@ -53,7 +53,7 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
     private int padding;
     private double scrollAmount;
     private boolean scrolling;
-    private E selected;
+    private int selectedIndex = -1;
     private boolean renderBackground = true;
     private E hoveredEntry;
 
@@ -74,15 +74,15 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
     }
     
     public int selectedIndex() {
-    	return children.indexOf(selected);
+    	return selectedIndex;
     }
 
     public E getSelectedOrNull() {
-        return this.selected;
+        return selectedIndex != -1 ? children.get(selectedIndex) : null;
     }
 
-    public void setSelected(@Nullable E entry) {
-        this.selected = entry;
+    public void setSelected(int selectedIndex) {
+        this.selectedIndex = selectedIndex;
     }
 
     public E getFirst() {
@@ -99,7 +99,7 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
 
     protected void clearEntries() {
         this.children.clear();
-        this.selected = null;
+        this.selectedIndex = -1;
     }
 
     protected E getEntry(int index) {
@@ -145,7 +145,7 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
 
     protected int getMaxPosition() {
     	int height = padding;
-    	for(E child : children) height += child.getHeight()+1;
+    	for(E child : children) height += child.getHeight()+3;
         return height;
     }
 
@@ -294,17 +294,17 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
 
     @Override
     public void setFocused(Element focused) {
-        super.setFocused(focused);
         int i = children.indexOf(focused);
         if (i >= 0) {
         	E entry = children.get(i);
-            setSelected(entry);
+            if(selectedIndex != i) setSelected(i);
             if (client.getNavigationType().isKeyboard()) {
             	ensureVisible(entry);
             }
         } else {
-        	setSelected(null);
+        	if(selectedIndex >= 0) setSelected(-1);
         }
+        super.setFocused(focused);
     }
 
     @Nullable
@@ -353,8 +353,8 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
     }
 
     protected void drawSelectionHighlight(DrawContext context, int entryX, int entryY, int entryWidth, int entryHeight, int borderColor, int fillColor) {
-        context.fill(entryX-2, entryY-2, entryX+entryWidth+2, entryY+entryHeight-1, borderColor);
-        context.fill(entryX-1, entryY-1, entryX+entryWidth+1, entryY+entryHeight-2, fillColor);
+        context.fill(entryX-2, entryY-2, entryX+entryWidth+2, entryY+entryHeight+2, borderColor);
+        context.fill(entryX-1, entryY-1, entryX+entryWidth+1, entryY+entryHeight+1, fillColor);
     }
 
     public int getRowLeft() {
@@ -388,7 +388,7 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
     protected boolean removeEntry(E entry) {
         boolean bl = this.children.remove(entry);
         if (bl && entry == this.getSelectedOrNull()) {
-            this.setSelected(null);
+            this.setSelected(-1);
         }
         return bl;
     }
@@ -422,7 +422,7 @@ public abstract class ModListWidget<E extends ModListWidget.Entry<E>> extends Co
 		for(E child : children) {
 			child.setPosition(currentX, currentY);
 			child.setWidth(getRowWidth());
-			currentY += child.getHeight()+1;
+			currentY += child.getHeight()+3;
 		}
 		LayoutWidget.super.refreshPositions();
 	}

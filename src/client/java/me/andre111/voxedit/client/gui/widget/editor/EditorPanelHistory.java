@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.client.gui.widget;
+package me.andre111.voxedit.client.gui.widget.editor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +21,7 @@ import java.util.List;
 import me.andre111.voxedit.VoxEdit;
 import me.andre111.voxedit.client.EditorState;
 import me.andre111.voxedit.client.gui.screen.InputScreen;
+import me.andre111.voxedit.client.gui.widget.ModListWidget;
 import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.editor.EditStats;
 import me.andre111.voxedit.network.CPCommand;
@@ -54,20 +55,20 @@ public class EditorPanelHistory extends EditorPanel {
     	
     	clearContent();
     	
-    	infoWidget = new TextWidget(width/2-gap/2, 20, Text.translatable("voxedit.history.size", getFormattedSize()), MinecraftClient.getInstance().textRenderer);
+    	infoWidget = new TextWidget(width/2-gapX/2, 20, Text.translatable("voxedit.history.size", getFormattedSize()), MinecraftClient.getInstance().textRenderer);
     	addContent(infoWidget);
     	clearButton = ButtonWidget.builder(Text.translatable("voxedit.history.clear"), (button) -> {
     		InputScreen.showConfirmation(parent.getScreen(), Text.translatable("voxedit.prompt.history.clear"), () -> {
     			ClientNetworking.sendCommand(Command.CLEAR_HISTORY);
     		});
-    	}).size(width/2-gap/2, 20).build();
+    	}).size(width/2-gapX/2, 20).build();
     	addContent(clearButton);
     	historyWidget = new HistoryListWidget();
     	addContent(historyWidget);
-    	ButtonWidget undoButton = ButtonWidget.builder(Text.translatable("voxedit.history.undo"), (button) -> { ClientPlayNetworking.send(new CPCommand(Command.UNDO, "")); }).size(width/2-gap/2, 20).build();
+    	ButtonWidget undoButton = ButtonWidget.builder(Text.translatable("voxedit.history.undo"), (button) -> { ClientPlayNetworking.send(new CPCommand(Command.UNDO, "")); }).size(width/2-gapX/2, 20).build();
     	if(EditorState.historyIndex() < 0) undoButton.active = false;
     	addContent(undoButton);
-    	ButtonWidget redoButton = ButtonWidget.builder(Text.translatable("voxedit.history.redo"), (button) -> { ClientPlayNetworking.send(new CPCommand(Command.REDO, "")); }).size(width/2-gap/2, 20).build();
+    	ButtonWidget redoButton = ButtonWidget.builder(Text.translatable("voxedit.history.redo"), (button) -> { ClientPlayNetworking.send(new CPCommand(Command.REDO, "")); }).size(width/2-gapX/2, 20).build();
     	if(EditorState.historyIndex() >= EditorState.history().size()-1) redoButton.active = false;
     	addContent(redoButton);
         

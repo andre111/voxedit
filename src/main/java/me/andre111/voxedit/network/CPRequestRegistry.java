@@ -23,11 +23,14 @@ import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.util.Identifier;
 
 public record CPRequestRegistry(int requestID, RegistryKey<? extends Registry<?>> registryKey) implements CustomPayload {
 	public static final Id<CPRequestRegistry> ID = new Id<>(VoxEdit.id("request_registry"));
-	public static final PacketCodec<ByteBuf, CPRequestRegistry> CODEC = PacketCodec.tuple(PacketCodecs.INTEGER, CPRequestRegistry::requestID, RegistryKey.createPacketCodec(RegistryKey.ofRegistry(RegistryKeys.ROOT)), CPRequestRegistry::registryKey, CPRequestRegistry::new);
+	public static final PacketCodec<ByteBuf, CPRequestRegistry> CODEC = PacketCodec.tuple(
+			PacketCodecs.INTEGER, CPRequestRegistry::requestID, 
+			Identifier.PACKET_CODEC.xmap(RegistryKey::ofRegistry, RegistryKey::getValue), CPRequestRegistry::registryKey, 
+			CPRequestRegistry::new);
 	static {
 		PayloadTypeRegistry.playC2S().register(ID, CODEC);
 	}

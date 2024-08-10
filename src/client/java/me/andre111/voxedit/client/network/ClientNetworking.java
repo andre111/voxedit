@@ -16,8 +16,10 @@
 package me.andre111.voxedit.client.network;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 
 import me.andre111.voxedit.client.EditorState;
@@ -44,6 +46,7 @@ import net.minecraft.util.Identifier;
 public class ClientNetworking {
 	private static int nextRegistryRequestID = 0;
 	private static Map<Integer, CompletableFuture<List<Identifier>>> registryRequests = new HashMap<>();
+	private static Queue<CompletableFuture<String>> configuredFeatureRequests = new LinkedList<>();
 	
 	public static void init() {
 		ClientPlayNetworking.registerGlobalReceiver(CPNBTEditor.ID, (payload, context) -> {
@@ -70,6 +73,13 @@ public class ClientNetworking {
 		
 		ClientPlayNetworking.registerGlobalReceiver(CPStatusMessage.ID, (payload, context) -> {
 			EditorScreen.get().statusMessage(payload.status());
+		});
+		
+		ClientPlayNetworking.registerGlobalReceiver(CPCommand.ID, (payload, context) -> {
+			if(payload.command() == Command.DEV_GET_FEATURE_CONFIG) {
+				CompletableFuture<String> future = configuredFeatureRequests.poll();
+				if(future != null) future.complete(payload.data());
+			}
 		});
 	}
 	
@@ -106,6 +116,13 @@ public class ClientNetworking {
 		
 		ClientPlayNetworking.send(new CPRequestRegistry(id, registryKey));
 		
+		return future;
+	}
+	
+	public static CompletableFuture<String> getConfiguredFeature(Identifier id) {
+		CompletableFuture<String> future = new CompletableFuture<>();
+		configuredFeatureRequests.add(future);
+		ClientPlayNetworking.send(new CPCommand(Command.DEV_GET_FEATURE_CONFIG, id.toString()));
 		return future;
 	}
 }

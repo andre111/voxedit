@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.andre111.voxedit.client.gui.widget;
+package me.andre111.voxedit.client.gui.widget.editor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +24,7 @@ import me.andre111.voxedit.client.VoxEditClient;
 import me.andre111.voxedit.client.gizmo.SchematicPlacement;
 import me.andre111.voxedit.client.gui.Textures;
 import me.andre111.voxedit.client.gui.screen.InputScreen;
+import me.andre111.voxedit.client.gui.widget.ModListWidget;
 import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.client.renderer.SchematicRenderer;
 import me.andre111.voxedit.client.tool.ObjectTool;
@@ -80,15 +81,15 @@ public class EditorPanelSchematics extends EditorPanel {
 	}
 
     private void updateButtons() {
-    	placeButton.active = schematicList.getSelectedOrNull() != null;
-    	deleteButton.active = schematicList.getSelectedOrNull() != null;
+    	placeButton.active = schematicList != null && schematicList.getSelectedOrNull() != null;
+    	deleteButton.active = schematicList != null && schematicList.getSelectedOrNull() != null;
     }
 	
 	@Override
 	public void refreshPositions() {
 		schematicList.setWidth(width);
-		placeButton.setWidth((width-gap)/2);
-		deleteButton.setWidth((width-gap)/2);
+		placeButton.setWidth((width-gapX)/2);
+		deleteButton.setWidth((width-gapX)/2);
 		super.refreshPositions();
 	}
 
@@ -100,7 +101,7 @@ public class EditorPanelSchematics extends EditorPanel {
 		}
 
 		public void updateEntries() {
-			int i = children().indexOf(getSelectedOrNull());
+			int i = selectedIndex();
 			clearEntries();
 			
 			for(var e : EditorState.schematics().entrySet()) {
@@ -110,13 +111,13 @@ public class EditorPanelSchematics extends EditorPanel {
 			
 			List<SchematicEntry> list = children();
 			if (i >= 0 && i < list.size()) {
-				setSelected(list.get(i));
+				setSelected(i);
 			}
 		}
 
 		@Override
-		public void setSelected(SchematicEntry entry) {
-			super.setSelected(entry);
+		public void setSelected(int selectedIndex) {
+			super.setSelected(selectedIndex);
 			updateButtons();
 		}
 
@@ -140,7 +141,7 @@ public class EditorPanelSchematics extends EditorPanel {
 				children.add(nameWidget);
 				children.add(dimensionsWidget);
 				
-				SchematicRenderer.getPreview(schematic, PREVIEW_RESOLUTION, PREVIEW_RESOLUTION).thenAccept(id -> previewID = id);
+				SchematicRenderer.getPreview(schematic, PREVIEW_RESOLUTION, PREVIEW_RESOLUTION, true).thenAccept(id -> previewID = id);
 			}
 
 			@Override

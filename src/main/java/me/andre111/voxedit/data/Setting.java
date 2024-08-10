@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.mojang.datafixers.util.Either;
+
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.text.Text;
@@ -120,6 +122,10 @@ public sealed abstract class Setting<V> {
 	
 	public static <T> Setting<T> ofUnsynchedRegistry(String key, T defaultValue, Registry<T> registry, boolean showFixedSelection, Function<T, Text> toText) {
 		return new TSRegistry<>(key, defaultValue, registry, showFixedSelection, toText);
+	}
+	
+	public static <T> Setting<EntryOrTag<T>> ofRegistryEntryOrTag(String key, Registry<T> registry) {
+		return new TSRegistryEntryOrTag<>(key, registry);
 	}
 	
 	public static Setting<Size> ofSize(String key, Size defaultValue, boolean useEnable, boolean useSplit, int minValue, int maxValue) {
@@ -248,6 +254,24 @@ public sealed abstract class Setting<V> {
 		@Override
 		protected boolean isValid(T value) {
 			return value != null && registry.getId(value) != null;
+		}
+	}
+	
+	public static final class TSRegistryEntryOrTag<T> extends Simple<EntryOrTag<T>> {
+		private final Registry<T> registry;
+		
+		public TSRegistryEntryOrTag(String key, Registry<T> registry) {
+			super(key, new EntryOrTag<>(Either.left(registry.getDefaultEntry().get().value())), s -> EntryOrTag.fromString(registry, s), e -> e.asString(registry));
+			this.registry = registry;
+		}
+		
+		public Registry<T> registry() {
+			return registry;
+		}
+		
+		@Override
+		protected boolean isValid(EntryOrTag<T> value) {
+			return value != null && value.isPresent(registry);
 		}
 	}
 	

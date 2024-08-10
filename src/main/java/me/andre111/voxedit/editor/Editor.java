@@ -31,9 +31,9 @@ import net.minecraft.util.math.BlockPos;
 public class Editor {
 	public static EditStats undoable(ServerPlayerEntity player, ServerWorld world, Text text, Consumer<EditorWorld> edit, BlockPos origin, boolean preview) {
 		EditHistory undo = EditHistory.of(player, world);
-		EditorWorld worldAccess = new EditorWorld(world, undo);
+		EditorWorld worldAccess = new EditorWorld(world);
 		edit.accept(worldAccess);
-		return preview ? worldAccess.toSchematic(player, text, origin) : worldAccess.apply(player, text);
+		return preview ? worldAccess.toSchematic(player, text, origin) : worldAccess.apply(player, text, undo);
 	}
 	
 	public static EditStats undoableAction(ServerPlayerEntity player, ServerWorld world, Text text, EditAction<?> action) {

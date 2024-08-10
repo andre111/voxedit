@@ -15,6 +15,37 @@
  */
 package me.andre111.voxedit.client.gui.screen;
 
-public interface UnscaledScreen {
+import me.andre111.voxedit.client.VoxEditClient;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.text.Text;
 
+public abstract class UnscaledScreen extends Screen {
+	private final Screen parent;
+
+	protected UnscaledScreen(Screen parent, Text title) {
+		super(title);
+		this.parent = parent;
+		width = MinecraftClient.getInstance().getWindow().getFramebufferWidth();
+		height = MinecraftClient.getInstance().getWindow().getFramebufferHeight();
+	}
+	
+    @Override
+    public void close() {
+        this.client.setScreen(parent);
+    }
+
+	@Override
+	public void onDisplayed() {
+		VoxEditClient.unscaleGui();
+		MinecraftClient.getInstance().options.hudHidden = true;
+		width = MinecraftClient.getInstance().getWindow().getFramebufferWidth();
+		height = MinecraftClient.getInstance().getWindow().getFramebufferHeight();
+	}
+
+	@Override
+	public void removed() {
+		MinecraftClient.getInstance().options.hudHidden = false;
+		VoxEditClient.restoreGuiScale();
+	}
 }

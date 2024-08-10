@@ -23,7 +23,7 @@ import me.andre111.voxedit.editor.history.EditHistoryReader;
 import me.andre111.voxedit.editor.history.EditHistoryWriter;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.world.StructureWorldAccess;
 
 public class ModifyEntityAction extends EditAction<ModifyEntityAction> {
 	private final UUID uuid;
@@ -37,8 +37,8 @@ public class ModifyEntityAction extends EditAction<ModifyEntityAction> {
 	}
 
 	@Override
-	public void undo(ServerWorld world, EditStats stats) {
-		Entity entity = world.getEntity(uuid);
+	public void undo(StructureWorldAccess world, EditStats stats) {
+		Entity entity = world.toServerWorld().getEntity(uuid); //TODO: this might be a problem
 		if(entity != null) {
 	        entity.readNbt(oldNbt);
 	        stats.changedEntity();
@@ -46,8 +46,8 @@ public class ModifyEntityAction extends EditAction<ModifyEntityAction> {
 	}
 
 	@Override
-	public void redo(ServerWorld world, EditStats stats) {
-		Entity entity = world.getEntity(uuid);
+	public void redo(StructureWorldAccess world, EditStats stats) {
+		Entity entity = world.toServerWorld().getEntity(uuid); //TODO: this might be a problem
 		if(entity != null) {
 	        entity.readNbt(newNbt);
 	        stats.changedEntity();

@@ -38,15 +38,15 @@ import me.andre111.voxedit.client.gizmo.ActiveSelection;
 import me.andre111.voxedit.client.gizmo.Gizmo;
 import me.andre111.voxedit.client.gizmo.GizmoHandle;
 import me.andre111.voxedit.client.gizmo.Renderable;
-import me.andre111.voxedit.client.gui.widget.EditorPanelFilter;
-import me.andre111.voxedit.client.gui.widget.EditorPanelHistory;
-import me.andre111.voxedit.client.gui.widget.EditorPanelPalette;
-import me.andre111.voxedit.client.gui.widget.EditorPanelSchematics;
-import me.andre111.voxedit.client.gui.widget.EditorPanelSelectedGizmo;
-import me.andre111.voxedit.client.gui.widget.EditorPanelToolConfig;
-import me.andre111.voxedit.client.gui.widget.EditorPanelTools;
-import me.andre111.voxedit.client.gui.widget.EditorWidget;
 import me.andre111.voxedit.client.gui.widget.MenuBarWidget;
+import me.andre111.voxedit.client.gui.widget.editor.EditorPanelFilter;
+import me.andre111.voxedit.client.gui.widget.editor.EditorPanelHistory;
+import me.andre111.voxedit.client.gui.widget.editor.EditorPanelPalette;
+import me.andre111.voxedit.client.gui.widget.editor.EditorPanelSchematics;
+import me.andre111.voxedit.client.gui.widget.editor.EditorPanelSelectedGizmo;
+import me.andre111.voxedit.client.gui.widget.editor.EditorPanelToolConfig;
+import me.andre111.voxedit.client.gui.widget.editor.EditorPanelTools;
+import me.andre111.voxedit.client.gui.widget.editor.EditorWidget;
 import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.client.renderer.SchematicRenderer;
 import me.andre111.voxedit.client.renderer.SchematicView;
@@ -86,7 +86,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.RaycastContext;
 
-public class EditorScreen extends Screen implements UnscaledScreen {
+public class EditorScreen extends UnscaledScreen {
 	private static EditorScreen INSTANCE;
 
 	public static EditorScreen get() {
@@ -109,7 +109,7 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 	private SchematicRenderer previewRenderer;
 
 	private EditorScreen() {
-		super(Text.translatable("voxedit.screen.main"));
+		super(null, Text.translatable("voxedit.screen.main"));
 
 		EditorState.CHANGE_SCHEMATIC.register((id, schematic) -> {
 			Tool tool = EditorState.tool();
@@ -136,12 +136,8 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 
 	@Override
 	public void init() {
-		VoxEditClient.unscaleGui();
-		MinecraftClient.getInstance().options.hudHidden = true;
 		isActive = true;
 		ClientNetworking.sendCommand(Command.EDITOR_ACTIVATE);
-		width = MinecraftClient.getInstance().getWindow().getFramebufferWidth();
-		height = MinecraftClient.getInstance().getWindow().getFramebufferHeight();
 
 		if(widget == null) {
 			widget = new EditorWidget(this);
@@ -151,7 +147,8 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 			MenuBarWidget menu = widget.getMenu();
 			menu.addCategory(Text.translatable("voxedit.screen.menu.edit"))
 			.addEntry(Text.translatable("voxedit.screen.menu.edit.undo"), () -> { ClientNetworking.sendCommand(Command.UNDO); })
-			.addEntry(Text.translatable("voxedit.screen.menu.edit.redo"), () -> { ClientNetworking.sendCommand(Command.REDO); });
+			.addEntry(Text.translatable("voxedit.screen.menu.edit.redo"), () -> { ClientNetworking.sendCommand(Command.REDO); })
+			.addEntry(Text.translatable("voxedit.screen.menu.edit.features"), () -> { MinecraftClient.getInstance().setScreen(new FeatureEditorScreen(this)); });
 			menu.addCategory(Text.translatable("voxedit.screen.menu.selection"))
 			.addEntry(Text.translatable("voxedit.screen.menu.selection.clear"), () -> { 
 				if(EditorState.selected() instanceof ActiveSelection sel) sel.cancel(); 
@@ -524,16 +521,15 @@ public class EditorScreen extends Screen implements UnscaledScreen {
 
 	@Override
 	public void onDisplayed() {
-		VoxEditClient.unscaleGui();
+		super.onDisplayed();
 		isActive = true;
 		ClientNetworking.sendCommand(Command.EDITOR_ACTIVATE);
 	}
 
 	@Override
 	public void removed() {
+		super.removed();
 		EditorState.positions(Collections.emptySet());
-		MinecraftClient.getInstance().options.hudHidden = false;
-		VoxEditClient.restoreGuiScale();
 	}
 
 	@Override
