@@ -47,6 +47,7 @@ public class AutoLayoutContainerWidget extends ContainerWidget implements Layout
 	}
 	
 	public void addChild(Element child) {
+		if(child == this) throw new IllegalArgumentException("Trying to add container as child of itself.");
 		children.add(child);
 	}
 

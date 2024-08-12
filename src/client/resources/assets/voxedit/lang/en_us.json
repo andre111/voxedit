@@ -152,7 +152,7 @@
     "key.voxedit.increaseRadius": "Tool Radius Increase",
     "key.voxedit.decreaseSpeed": "Camera Speed Decrease",
     "key.voxedit.increaseSpeed": "Camera Speed Increase",
-    "key.voxedit.openMenu": "Open Tool Setttings Menu",
+    "key.voxedit.openMenu": "Open Editor",
     "key.voxedit.redo": "Redo Action",
     "key.voxedit.undo": "Undo Action"
 }

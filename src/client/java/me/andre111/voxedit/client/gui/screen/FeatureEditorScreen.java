@@ -33,9 +33,12 @@ import me.andre111.voxedit.client.gui.widget.DropdownListWidget;
 import me.andre111.voxedit.client.gui.widget.IntFieldWidget;
 import me.andre111.voxedit.client.gui.widget.OverlayWidget;
 import me.andre111.voxedit.client.gui.widget.RegistryEntryWidget;
+import me.andre111.voxedit.client.gui.widget.json.JsonEditWidget;
 import me.andre111.voxedit.client.network.ClientNetworking;
 import me.andre111.voxedit.client.renderer.SchematicRenderer;
 import me.andre111.voxedit.client.renderer.SchematicView;
+import me.andre111.voxedit.data.jsondef.JsonDef;
+import me.andre111.voxedit.data.jsondef.JsonDefLoader;
 import me.andre111.voxedit.network.CPGenerateExample;
 import me.andre111.voxedit.schematic.Schematic;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -68,6 +71,7 @@ public class FeatureEditorScreen extends UnscaledScreen {
 	private AutoLayoutContainerWidget featureConfigPanel;
 	private RegistryEntryWidget<?> featureSelector;
 	private DropdownListWidget featureTypeSelector;
+	private JsonEditWidget<?> rootConfig;
 	
 	private long seed = 0;
 
@@ -145,8 +149,15 @@ public class FeatureEditorScreen extends UnscaledScreen {
 	
 	private void rebuild() {
 		featureConfigPanel.children().clear();
-		String type = featureTypeSelector.getValue();
 		
+		String type = featureTypeSelector.getValue();
+		JsonDef def = JsonDefLoader.getDef("feature", Identifier.tryParse(type));
+		if(def != null) {
+			rootConfig = JsonEditWidget.create(def, "", featureConfigPanel, overlay);
+			featureConfigPanel.addChild(rootConfig);
+		}
+		
+		featureConfigPanel.refreshPositions();
 	}
 	
 	@Override
@@ -156,6 +167,14 @@ public class FeatureEditorScreen extends UnscaledScreen {
         setCameraRotation(cameraYaw - (float) deltaX / 10, cameraPitch + (float) deltaY / 10);
         
         return true;
+    }
+	
+	@Override
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        renderBackground(context, mouseX, mouseY, delta);
+        panel.render(context, mouseX, mouseY, delta);
+        featureConfigPanel.render(context, mouseX, mouseY, delta);
+        overlay.render(context, mouseX, mouseY, delta);
     }
 	
 	@Override

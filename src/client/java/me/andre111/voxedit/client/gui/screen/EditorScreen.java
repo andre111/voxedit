@@ -148,7 +148,7 @@ public class EditorScreen extends UnscaledScreen {
 			menu.addCategory(Text.translatable("voxedit.screen.menu.edit"))
 			.addEntry(Text.translatable("voxedit.screen.menu.edit.undo"), () -> { ClientNetworking.sendCommand(Command.UNDO); })
 			.addEntry(Text.translatable("voxedit.screen.menu.edit.redo"), () -> { ClientNetworking.sendCommand(Command.REDO); })
-			.addEntry(Text.translatable("voxedit.screen.menu.edit.features"), () -> { MinecraftClient.getInstance().setScreen(new FeatureEditorScreen(this)); });
+			;//.addEntry(Text.translatable("voxedit.screen.menu.edit.features"), () -> { MinecraftClient.getInstance().setScreen(new FeatureEditorScreen(this)); });
 			menu.addCategory(Text.translatable("voxedit.screen.menu.selection"))
 			.addEntry(Text.translatable("voxedit.screen.menu.selection.clear"), () -> { 
 				if(EditorState.selected() instanceof ActiveSelection sel) sel.cancel(); 
@@ -164,8 +164,8 @@ public class EditorScreen extends UnscaledScreen {
 					});
 				}
 			});
-			menu.addCategory(Text.translatable("voxedit.screen.menu.settings"))
-			.addEntry(Text.translatable("voxedit.screen.menu.settings.keys"), () -> {});
+			//menu.addCategory(Text.translatable("voxedit.screen.menu.settings"))
+			//.addEntry(Text.translatable("voxedit.screen.menu.settings.keys"), () -> {});
 
 			widget.addPanel(parent -> new EditorPanelTools(parent), EditorWidget.Location.LEFT);
 			widget.addPanel(parent -> new EditorPanelToolConfig(parent), EditorWidget.Location.LEFT);

@@ -18,6 +18,7 @@ package me.andre111.voxedit.client.input;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.Identifier;
 
+@SuppressWarnings("unused")
 public class VoxEditKeyBinding {
 	private final Identifier id;
     private final String translationKey;

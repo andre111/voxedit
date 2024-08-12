@@ -24,9 +24,15 @@ public sealed interface JsonDef {
 	}
 	public record Integer(int defaultValue, int minValue, int maxValue, boolean optional) implements JsonDef {
 	}
-	public record Defined(String type, boolean optional) implements JsonDef {
+	public record Defined(String kind, boolean optional) implements JsonDef {
 	}
 	public record Complex(Map<String, JsonDef> properties, boolean optional) implements JsonDef {
+	}
+	public record BlockState() implements JsonDef {
+		@Override
+		public boolean optional() {
+			return false;
+		}
 	}
 	public record List(JsonDef listType, boolean optional) implements JsonDef {
 	}

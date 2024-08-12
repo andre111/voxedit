@@ -96,9 +96,11 @@ public class ServerNetworking {
 					break;
 				case EDITOR_ACTIVATE:
 					state.editorActive(true);
+					ServerStates.updateTickFreeze(context.server());
 					break;
 				case EDITOR_DEACTIVATE:
 					state.editorActive(false);
+					ServerStates.updateTickFreeze(context.server());
 					break;
 				case SAVE_SCHEMATIC:
 					if(payload.data().isBlank()) return;

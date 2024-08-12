@@ -19,6 +19,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import me.andre111.voxedit.client.gui.widget.AutoLayoutContainerWidget;
+import me.andre111.voxedit.client.gui.widget.OverlayWidget;
 import me.andre111.voxedit.data.jsondef.JsonDef;
 import net.minecraft.client.gui.Element;
 import net.minecraft.text.Text;
@@ -34,7 +35,7 @@ public abstract class JsonEditWidget<D extends JsonDef> extends AutoLayoutContai
 		this.jsonName = jsonName;
 	}
 	
-	public JsonDef getDef() {
+	public D getDef() {
 		return jsonDef;
 	}
 	
@@ -53,4 +54,18 @@ public abstract class JsonEditWidget<D extends JsonDef> extends AutoLayoutContai
 	protected abstract JsonElement getValue();
 	protected abstract void setValue(JsonElement element);
 	
+	public static JsonEditWidget<?> create(JsonDef def, String name, Element parent, OverlayWidget overlay) {
+		int width = 300;
+		int height = 20;
+		
+		return switch(def) {
+		case JsonDef.Boolean b -> new BooleanJsonEditWidget(b, name, parent, 0, 0, width, height);
+		case JsonDef.Integer i -> new IntegerJsonEditWidget(i, name, parent, 0, 0, width, height);
+		case JsonDef.Defined d -> new DefinedJsonEditWidget(d.kind(), d, name, parent, 0, 0, width, height, overlay);
+		case JsonDef.Complex c -> new ComplexJsonEditWidget(c, name, parent, 0, 0, width, height, overlay);
+		//TODO: JsonDef.BlockState
+		//TODO: JsonDef.List
+		default -> null;
+		};
+	}
 }

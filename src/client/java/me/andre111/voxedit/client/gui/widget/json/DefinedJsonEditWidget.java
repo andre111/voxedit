@@ -24,14 +24,15 @@ import com.google.gson.JsonObject;
 import me.andre111.voxedit.client.gui.widget.DropdownListWidget;
 import me.andre111.voxedit.client.gui.widget.OverlayWidget;
 import me.andre111.voxedit.data.jsondef.JsonDef;
-import me.andre111.voxedit.data.jsondef.JsonDef.Complex;
 import me.andre111.voxedit.data.jsondef.JsonDef.Defined;
 import me.andre111.voxedit.data.jsondef.JsonDefLoader;
 import net.minecraft.client.gui.Element;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 public class DefinedJsonEditWidget extends JsonEditWidget<JsonDef.Defined> {
 	private final String kind;
+	private final OverlayWidget overlay;
 	private final DropdownListWidget typeSelector;
 	private final List<JsonEditWidget<?>> children = new ArrayList<>();
 	
@@ -41,12 +42,13 @@ public class DefinedJsonEditWidget extends JsonEditWidget<JsonDef.Defined> {
 		super(jsonDef, jsonName, parent, x, y, width, height);
 		
 		this.kind = kind;
+		this.overlay = overlay;
 		
 		List<String> types = new ArrayList<>();
 		if(jsonDef.optional()) types.add("");
 		for(Identifier type : JsonDefLoader.getKnownTypes(kind)) types.add(type.toString());
 		
-		this.typeSelector = new DropdownListWidget(0, 0, width, 20, getMessage(), types.get(0), types, value -> {}, overlay);
+		this.typeSelector = new DropdownListWidget(0, 0, width, 20, Text.of(jsonName+": "), types.isEmpty() ? "" : types.get(0), types, value -> {}, overlay);
 		addChild(typeSelector);
 	}
 	
@@ -69,7 +71,15 @@ public class DefinedJsonEditWidget extends JsonEditWidget<JsonDef.Defined> {
 			children.clear();
 			children().clear();
 			addChild(typeSelector);
+			
 			//TODO: add property edit widgets
+			JsonDef def = JsonDefLoader.getDef(kind, Identifier.tryParse(jsonObject.get("type").getAsString()));
+			if(def instanceof JsonDef.Complex c) {
+				for(var e : c.properties().entrySet()) {
+					JsonEditWidget<?> child = JsonEditWidget.create(e.getValue(), e.getKey(), this, overlay);
+					if(child != null) children.add(child);
+				}
+			}
 		}
 	}
 

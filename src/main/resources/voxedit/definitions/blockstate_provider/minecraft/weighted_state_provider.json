@@ -1,0 +1,14 @@
+{
+	"entries": {
+		"type": "list",
+		"list_type": {
+			"data": {
+				"type": "blockstate"
+			},
+			"weight": {
+				"type": "integer",
+				"defaultValue": 1
+			}
+		}
+	}
+}

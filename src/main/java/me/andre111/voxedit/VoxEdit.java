@@ -16,7 +16,6 @@
 package me.andre111.voxedit;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.SimpleRegistry;
@@ -73,7 +72,6 @@ import me.andre111.voxedit.tool.ToolPlace;
 import me.andre111.voxedit.tool.ToolRaise;
 import me.andre111.voxedit.tool.ToolScatter;
 import me.andre111.voxedit.tool.ToolSmooth;
-import me.andre111.voxedit.tool.ToolSpread;
 
 //TODO: Next Plans:
 // Spread (multiple featues ovre area with density, +++ options)
@@ -123,7 +121,7 @@ public class VoxEdit implements ModInitializer {
     public static final ToolFlatten TOOL_FLATTEN = Registry.register(TOOL_REGISTRY, id("flatten"), new ToolFlatten());
     public static final ToolBlend TOOL_BLEND = Registry.register(TOOL_REGISTRY, id("blend"), new ToolBlend());
     public static final ToolPlace TOOL_PLACE = Registry.register(TOOL_REGISTRY, id("place"), new ToolPlace());
-    public static final ToolSpread TOOL_SPREAD = Registry.register(TOOL_REGISTRY, id("spread"), new ToolSpread());
+    //public static final ToolSpread TOOL_SPREAD = Registry.register(TOOL_REGISTRY, id("spread"), new ToolSpread());
     public static final ToolExtrude TOOL_EXTRUDE = Registry.register(TOOL_REGISTRY, id("extrude"), new ToolExtrude());
     public static final ToolRaise TOOL_RAISE = Registry.register(TOOL_REGISTRY, id("raise"), new ToolRaise());
     public static final EditNBTTool TOOL_EDITNBT = Registry.register(TOOL_REGISTRY, id("nbtedit"), new EditNBTTool());
@@ -146,9 +144,9 @@ public class VoxEdit implements ModInitializer {
 	public void onInitialize() {
     	ServerNetworking.init();
     	//TODO: Remove general tick freezing (only when editor is active? and provide option to disable)
-		ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
-    		server.getTickManager().setFrozen(true);
-    	});
+		//ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
+    	//	server.getTickManager().setFrozen(true);
+    	//});
 	}
 	
 	public static Identifier id(String path) {
